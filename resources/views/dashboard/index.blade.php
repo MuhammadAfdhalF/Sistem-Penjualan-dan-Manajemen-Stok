@@ -25,24 +25,21 @@ Halaman Dashboard
             @forelse ($produk as $produk)
             <tr class="{{ $produk->isStokDiBawahROP() ? 'table-danger' : '' }}">
                 <td>{{ $produk->nama_produk }}</td>
-                <td>{{ $produk->stok }}</td>
+                <td>{{ $produk->stok_bertingkat }}</td> <!-- Ganti di sini -->
                 <td>{{ $produk->rop }}</td>
                 <td>{{ $produk->lead_time ?? '-' }}</td>
                 <td>{{ $produk->daily_usage !== null ? number_format($produk->daily_usage, 2) : '-' }}</td>
                 <td>{{ $produk->safety_stock !== null ? number_format($produk->safety_stock, 2) : '-' }}</td>
 
-
                 <td>
                     @if($produk->isStokDiBawahROP())
                     <span class="badge bg-danger">
-                        Butuh Reorder Min: {{ ($produk->rop - $produk->stok) + 1 }}
+                        Butuh Reorder Min: {{ $produk->tampilkanStok3Tingkatan(max(0, ($produk->rop - $produk->stok) + 1)) }}
                     </span>
                     @else
                     <span class="badge bg-success">Stok Aman</span>
                     @endif
                 </td>
-
-
             </tr>
             @empty
             <tr>
@@ -50,6 +47,7 @@ Halaman Dashboard
             </tr>
             @endforelse
         </tbody>
+
     </table>
 </div>
 @endsection

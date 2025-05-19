@@ -90,36 +90,39 @@ class Produk extends Model
         return $this->hasMany(Satuan::class);
     }
 
-    // public function tampilkanStok3Tingkatan()
-    // {
-    //     $stok = $this->stok; // stok dalam satuan terkecil, misal bks/pcs
-    //     $konversi = $this->satuanKonversi;
-    //     if (!$konversi) {
-    //         return "{$stok} {$this->satuan}";
-    //     }
+    // ntuk mengubah angka stok berapa pun ke format bertingkat, bisa dipakai untuk kebutuhan reorder min dll
+    public function tampilkanStok3Tingkatan(int $stok): string
+    {
+        $satuans = $this->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
 
-    //     $isiBesarKeKecil = $konversi->isi_besar_ke_sedang * $konversi->isi_sedang_ke_kecil;
+        if ($satuans->isEmpty()) {
+            return $stok . ' ' . $this->satuan_utama;
+        }
 
-    //     $stokBesar = intdiv($stok, $isiBesarKeKecil);
-    //     $sisaBesar = $stok % $isiBesarKeKecil;
+        $result = [];
+        foreach ($satuans as $satuan) {
+            if ($satuan->konversi_ke_satuan_utama <= 0) continue;
 
-    //     $stokSedang = intdiv($sisaBesar, $konversi->isi_sedang_ke_kecil);
-    //     $stokKecil = $sisaBesar % $konversi->isi_sedang_ke_kecil;
+            $jumlah = intdiv($stok, $satuan->konversi_ke_satuan_utama);
+            $stok = $stok % $satuan->konversi_ke_satuan_utama;
 
-    //     $hasil = [];
-    //     if ($stokBesar > 0) {
-    //         $hasil[] = "{$stokBesar} {$konversi->satuan_besar}";
-    //     }
-    //     if ($stokSedang > 0) {
-    //         $hasil[] = "{$stokSedang} {$konversi->satuan_sedang}";
-    //     }
-    //     if ($stokKecil > 0) {
-    //         $hasil[] = "{$stokKecil} {$konversi->satuan_kecil}";
-    //     }
+            if ($jumlah > 0) {
+                $result[] = $jumlah . ' ' . $satuan->nama_satuan;
+            }
+        }
 
-    //     return implode(', ', $hasil);
-    // }
+        if ($stok > 0) {
+            $result[] = $stok . ' ' . $this->satuan_utama;
+        }
 
+        if (empty($result)) {
+            return '0 ' . $this->satuan_utama;
+        }
+
+        return implode(' ', $result);
+    }
+
+//  stok produk saat ini
     public function getStokBertingkatAttribute(): string
     {
         $stok = (int) $this->stok; // stok total, integer supaya lebih mudah mod/div

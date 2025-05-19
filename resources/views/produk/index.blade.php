@@ -53,7 +53,7 @@
                                 {{ $item->stok_bertingkat }}
                                 @if($item->isStokDiBawahROP())
                                 <span class="badge bg-danger ms-2">
-                                    <!-- Butuh Reorder Min: {{ max(0, ($item->rop - $item->stok) + 1) }} -->
+                                    Butuh Reorder Min: {{ $item->tampilkanStok3Tingkatan(max(0, ($item->rop - $item->stok) + 1)) }}
                                 </span>
                                 @else
                                 <span class="badge bg-success ms-2">Stok Aman</span>
