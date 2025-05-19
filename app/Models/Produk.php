@@ -4,6 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+/**
+ * @property int $lead_time
+ * @property float $daily_usage
+ * @property float $safety_stock
+ * @property int $stok
+ */
 
 class Produk extends Model
 {
@@ -33,9 +39,9 @@ class Produk extends Model
         'harga_normal' => 'integer',
         'harga_grosir' => 'integer',
         'rop' => 'integer',
-        'safety_stock' => 'integer',
+        'safety_stock' => 'float',
         'lead_time' => 'integer',
-        'daily_usage' => 'integer',
+        'daily_usage' => 'float',
     ];
 
     /**

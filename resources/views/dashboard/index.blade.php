@@ -28,8 +28,10 @@ Halaman Dashboard
                 <td>{{ $produk->stok }}</td>
                 <td>{{ $produk->rop }}</td>
                 <td>{{ $produk->lead_time ?? '-' }}</td>
-                <td>{{ $produk->daily_usage ?? '-' }}</td>
-                <td>{{ $produk->safety_stock ?? '-' }}</td>
+                <td>{{ $produk->daily_usage !== null ? number_format($produk->daily_usage, 2) : '-' }}</td>
+                <td>{{ $produk->safety_stock !== null ? number_format($produk->safety_stock, 2) : '-' }}</td>
+
+
                 <td>
                     @if($produk->isStokDiBawahROP())
                     <span class="badge bg-danger">

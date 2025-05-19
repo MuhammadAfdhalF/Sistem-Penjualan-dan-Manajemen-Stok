@@ -15,8 +15,15 @@ class ProdukController extends Controller
 {
     public function index()
     {
+        // Ambil semua produk
         $produk = Produk::all();
-        return view('produk.index', compact('produk'));
+
+        // Pisahkan produk berdasarkan status stok vs ROP
+        $produkMenipis = $produk->filter(function ($item) {
+            return $item->stok <= $item->rop;
+        });
+
+        return view('produk.index', compact('produk', 'produkMenipis'));
     }
 
     public function create()
@@ -33,7 +40,7 @@ class ProdukController extends Controller
             'harga_normal'   => 'required|numeric|min:0',
             'harga_grosir'   => 'required|numeric|min:0',
             'stok'           => 'required|numeric|min:0',
-            //'rop'          => 'required|numeric|min:0',  // Hapus ini
+            // 'rop'          => 'required|numeric|min:0',  // Hapus ini
             'kategori'       => 'required|string|max:255',
             'satuan'         => 'required|string|in:bks,pcs,kg,liter,box',
             'lead_time'      => 'required|integer|min:0',
@@ -41,8 +48,8 @@ class ProdukController extends Controller
             'safety_stock'   => 'required|integer|min:0',
         ]);
 
-        // Hitung ROP otomatis
-        $rop = ($request->lead_time * $request->daily_usage) + $request->safety_stock;
+        // // Hitung ROP otomatis
+        // $rop = ($request->lead_time * $request->daily_usage) + $request->safety_stock;
 
         $gambar = $request->file('gambar');
         $fileName = 'produk_' . Str::slug($request->nama_produk) . '_' . $gambar->getClientOriginalName();
@@ -56,7 +63,7 @@ class ProdukController extends Controller
                 'harga_normal'  => $request->harga_normal,
                 'harga_grosir'  => $request->harga_grosir,
                 'stok'          => $request->stok,
-                'rop'           => $rop,  // pakai hasil hitung
+                // 'rop'           => $rop,  // pakai hasil hitung
                 'kategori'      => $request->kategori,
                 'gambar'        => $fileName,
                 'satuan'        => $request->satuan,
@@ -84,77 +91,94 @@ class ProdukController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'nama_produk'    => 'required|string|max:255',
-            'deskripsi'      => 'required|string|max:500',
-            'gambar'         => 'nullable|image|mimes:jpeg,png,jpg',
-            'harga_normal'   => 'required|numeric|min:0',
-            'harga_grosir'   => 'required|numeric|min:0',
-            'stok'           => 'required|numeric|min:0',
-            //'rop'          => 'required|numeric|min:0', // hapus validasi rop
-            'kategori'       => 'required|string|max:255',
-            'satuan'         => 'required|string|in:bks,pcs,kg,liter,box',
-            'lead_time'      => 'required|integer|min:0',
-            'daily_usage'    => 'required|integer|min:0',
-            'safety_stock'   => 'required|integer|min:0',
-        ]);
-
-        $produk = Produk::findOrFail($id);
-
-        // Hitung ulang ROP
-        $rop = ($request->lead_time * $request->daily_usage) + $request->safety_stock;
-
-        $fileName = $produk->gambar; // default pakai gambar lama
-
-        if ($request->hasFile('gambar')) {
-            $gambar = $request->file('gambar');
-            $fileName = 'produk_' . Str::slug($request->nama_produk) . '_' . $gambar->getClientOriginalName();
-            $gambar->storeAs('gambar_produk', $fileName, 'public');
-            // Jika mau hapus gambar lama bisa ditambah kode di sini
-        }
-
         try {
-            $produk->update([
+            Log::info("Sebelum update produk ID {$id}", ['input' => $request->all()]);
+
+            $request->validate([
+                'nama_produk'    => 'required|string|max:255',
+                'deskripsi'      => 'required|string|max:500',
+                'gambar'         => 'nullable|image|mimes:jpeg,png,jpg',
+                'harga_normal'   => 'required|numeric|min:0',
+                'harga_grosir'   => 'required|numeric|min:0',
+                'stok'           => 'required|numeric|min:0',
+                //'rop'          => 'required|numeric|min:0', // hapus validasi rop
+                'kategori'       => 'required|string|max:255',
+                'satuan'         => 'required|string|in:bks,pcs,kg,liter,box',
+                'lead_time'      => 'required|integer|min:0',
+                'daily_usage'    => 'required|integer|min:0',
+                'safety_stock'   => 'required|integer|min:0',
+            ]);
+
+            $produk = Produk::findOrFail($id);
+            Log::info("Produk ditemukan:", ['produk_id' => $produk->id]);
+
+            $rop = ($request->lead_time * $request->daily_usage) + $request->safety_stock;
+
+            $fileName = $produk->gambar;
+
+            if ($request->hasFile('gambar')) {
+                $gambar = $request->file('gambar');
+                $fileName = 'produk_' . Str::slug($request->nama_produk) . '_' . time() . '.' . $gambar->getClientOriginalExtension();
+                $gambar->storeAs('gambar_produk', $fileName, 'public');
+            }
+
+            Log::info("Sebelum update model produk ID {$id}", ['gambar' => $fileName]);
+
+            $dataToUpdate = [
                 'nama_produk'   => $request->nama_produk,
                 'deskripsi'     => $request->deskripsi,
                 'harga_normal'  => $request->harga_normal,
                 'harga_grosir'  => $request->harga_grosir,
                 'stok'          => $request->stok,
-                'rop'           => $rop,  // simpan hasil hitung
+                //'rop'           => $rop,
                 'kategori'      => $request->kategori,
-                'gambar'        => $fileName,
                 'satuan'        => $request->satuan,
                 'lead_time'     => $request->lead_time,
                 'daily_usage'   => $request->daily_usage,
                 'safety_stock'  => $request->safety_stock,
-            ]);
+                'gambar'        => $fileName,
+            ];
 
-            DB::commit();
+            $produk->update($dataToUpdate);
 
-            // Panggil command update daily_usage dan rop setelah transaksi berhasil
+            Log::info("Berhasil update produk ID {$id}");
+
             Artisan::call('produk:update-dailyusage-rop');
+            Log::info("Selesai Artisan call produk:update-dailyusage-rop");
+
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil diperbarui.');
         } catch (\Exception $e) {
+            Log::error("Gagal memperbarui produk ID {$id}: " . $e->getMessage(), [
+                'input' => $request->all(),
+                'user_id' => auth()->id(),
+            ]);
             return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data. ' . $e->getMessage());
         }
     }
 
 
-
     public function destroy(Produk $produk)
     {
+        DB::beginTransaction();
+        Log::info('Memulai proses hapus produk ID: ' . $produk->id);
+
         try {
+            // Hapus gambar jika ada
             if ($produk->gambar && Storage::disk('public')->exists('gambar_produk/' . $produk->gambar)) {
                 Storage::disk('public')->delete('gambar_produk/' . $produk->gambar);
             }
 
-            $produk->delete();
-            DB::commit();
+            $produk->delete(); // Hapus data produk dari DB
 
-            // Panggil command update daily_usage dan rop setelah transaksi berhasil
+            DB::commit(); // Commit transaksi
+
+            // Jalankan Artisan command setelah commit
             Artisan::call('produk:update-dailyusage-rop');
+
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil dihapus.');
         } catch (\Exception $e) {
+            DB::rollBack(); // Batalkan jika gagal
+            Log::error('Gagal menghapus produk: ' . $e->getMessage()); // Tambahkan log untuk debugging
             return redirect()->route('produk.index')->with('error', 'Gagal menghapus data produk. Silakan coba lagi.');
         }
     }

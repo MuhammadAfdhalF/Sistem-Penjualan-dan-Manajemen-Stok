@@ -35,7 +35,7 @@
                     </thead>
                     <tbody>
                         @foreach ($produk as $index => $item)
-                        <tr>
+                        <tr class="{{ $item->isStokDiBawahROP() ? 'table-danger' : '' }}">
                             <td>{{ $index + 1 }}</td>
                             <td>
                                 @if ($item->gambar)
@@ -50,16 +50,15 @@
                             <td>{{ number_format($item->harga_grosir, 0, ',', '.') }}</td>
                             <td>
                                 {{ $item->stok }}
-                                @php
-                                $rop = ($item->lead_time * $item->daily_usage) + $item->safety_stock;
-                                @endphp
-                                @if ($item->stok <= $rop)
-                                    <span class="badge bg-danger ms-2" title="Stok sudah mencapai atau di bawah ROP">⚠️ Stok Hampir Habis</span>
-                                    @else
-                                    <span class="badge bg-success ms-2" title="Stok aman">✓ Aman</span>
-                                    @endif
+                                @if($item->isStokDiBawahROP())
+                                <span class="badge bg-danger">
+                                    Butuh Reorder Min: {{ ($item->rop - $item->stok) + 1 }}
+                                </span>
+                                @else
+                                <span class="badge bg-success">Stok Aman</span>
+                                @endif
                             </td>
-                            <td>{{ $rop }}</td>
+                            <td>{{ $item->rop }}</td>
                             <td>{{ $item->kategori }}</td>
                             <td>{{ $item->satuan }}</td>
                             <td>
@@ -71,6 +70,29 @@
                                 </button>
                             </td>
                         </tr>
+
+                        <!-- Modal Konfirmasi Hapus -->
+                        <div class="modal fade" id="confirmDeleteModal{{ $item->id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel{{ $item->id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmDeleteModalLabel{{ $item->id }}">Konfirmasi Hapus</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Apakah Anda yakin ingin menghapus produk {{ $item->nama_produk }}?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                        <form action="{{ route('produk.destroy', $item->id) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger">Hapus</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         @endforeach
                     </tbody>
 

@@ -53,7 +53,7 @@
 
                     <!-- HAPUS INPUT ROP MANUAL -->
 
-                    <!-- TAMBAH INPUT LEAD TIME, DAILY USAGE, SAFETY STOCK -->
+                    <!-- TAMBAH INPUT LEAD TIME,  SAFETY STOCK -->
                     <div class="col-md-4 mb-3">
                         <label for="lead_time" class="form-label">Lead Time (hari)</label>
                         <input type="number" name="lead_time" id="lead_time" class="form-control @error('lead_time') is-invalid @enderror" placeholder="Masukkan lead time" value="{{ old('lead_time') }}" min="0" required>
@@ -62,13 +62,13 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-4 mb-3">
+                    <!-- <div class="col-md-4 mb-3">
                         <label for="daily_usage" class="form-label">Pemakaian Harian (daily usage)</label>
                         <input type="number" name="daily_usage" id="daily_usage" class="form-control @error('daily_usage') is-invalid @enderror" placeholder="Masukkan pemakaian harian" value="{{ old('daily_usage') }}" min="0" required>
                         @error('daily_usage')
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
-                    </div>
+                    </div> -->
 
                     <div class="col-md-4 mb-3">
                         <label for="safety_stock" class="form-label">Safety Stock</label>
