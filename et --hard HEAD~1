@@ -1,0 +1,54 @@
+[33mcommit bdec4fb9972eb27313479e78deb6713a3f34b267[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/stok_variasi[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mstok_variasi[m[33m)[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 22:50:43 2025 +0700
+
+    Menyelesaikan ROP
+
+[33mcommit 488bcfd27d805ef546b5b455e35c1ddbbce383a7[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 20:22:52 2025 +0700
+
+    add branch.balde.php
+
+[33mcommit 125128f398ace06d15983ddf7ca89cc3f313ac49[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 20:09:04 2025 +0700
+
+    menghapus branch.blade.php
+
+[33mcommit a900fdb9f97c296b6904699e877a15d88b1ce205[m
+Merge: 9c36972 83a2c57
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 20:07:40 2025 +0700
+
+    Merge branch 'modifikasi_stok'
+
+[33mcommit 83a2c57390630fa777e6baf177df07464e3df5bb[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 20:03:48 2025 +0700
+
+    coba-coba branch
+
+[33mcommit 9c36972e1ee6aa66beebf7b29d05cb6e26951d03[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 20:01:20 2025 +0700
+
+    coba-coba brench
+
+[33mcommit b3ec3dc8816f924734aefbb526c7bfb1ed6b4e56[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 19:40:01 2025 +0700
+
+    Hapus file yang tidak diperlukan
+
+[33mcommit e54e56bac07c6606a8d735a19c5ff4f2e01dbab5[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 19:32:02 2025 +0700
+
+    menambahkan test di dashboard
+
+[33mcommit eb7f36ce0a28f9d25a39a5a91046a3f3cfec01cd[m
+Author: afdhal <afdallilo123@gmail.com>
+Date:   Mon May 19 19:28:06 2025 +0700
+
+    add file first commit
