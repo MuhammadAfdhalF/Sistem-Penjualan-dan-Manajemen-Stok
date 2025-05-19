@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 class UpdateDailyUsageRop extends Command
 {
     protected $signature = 'produk:update-dailyusage-rop';
-    protected $description = 'Update daily usage dan ROP produk berdasarkan transaksi 30 hari terakhir';
+    protected $description = 'Update daily usage produk berdasarkan transaksi 30 hari terakhir';
 
     public function handle()
     {
@@ -29,13 +29,12 @@ class UpdateDailyUsageRop extends Command
             // Hitung daily usage
             $dailyUsage = $jumlahTerjual / $periodeHari;
 
-            // Hitung ROP
+            // Hitung ROP, hanya untuk log
             $rop = ($produk->lead_time * $dailyUsage) + $produk->safety_stock;
 
-            // Simpan ke database
+            // Simpan ke database hanya daily_usage
             $produk->update([
                 'daily_usage' => $dailyUsage,
-                'rop' => $rop,
             ]);
 
             // Tampilkan ke console
@@ -45,7 +44,7 @@ class UpdateDailyUsageRop extends Command
             Log::info("UpdateDailyUsageRop | Produk ID: {$produk->id} | Jumlah Terjual: {$jumlahTerjual} | Lead Time: {$produk->lead_time} | Safety Stock: {$produk->safety_stock} | Daily Usage: {$dailyUsage} | ROP: {$rop}");
         }
 
-        $this->info("Update daily usage dan ROP selesai.");
+        $this->info("Update daily usage selesai.");
         return 0;
     }
 }

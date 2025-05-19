@@ -29,7 +29,7 @@
                             <th>Stok</th>
                             <th>ROP</th>
                             <th>Kategori</th>
-                            <th>Satuan</th>
+                            <th>Satuan Utama</th>
                             <th>Opsi</th>
                         </tr>
                     </thead>
@@ -49,18 +49,19 @@
                             <td>{{ number_format($item->harga_normal, 0, ',', '.') }}</td>
                             <td>{{ number_format($item->harga_grosir, 0, ',', '.') }}</td>
                             <td>
-                                {{ $item->stok }}
+                                {{-- Tampilkan stok bertingkat --}}
+                                {{ $item->stok_bertingkat }}
                                 @if($item->isStokDiBawahROP())
-                                <span class="badge bg-danger">
-                                    Butuh Reorder Min: {{ ($item->rop - $item->stok) + 1 }}
+                                <span class="badge bg-danger ms-2">
+                                    <!-- Butuh Reorder Min: {{ max(0, ($item->rop - $item->stok) + 1) }} -->
                                 </span>
                                 @else
-                                <span class="badge bg-success">Stok Aman</span>
+                                <span class="badge bg-success ms-2">Stok Aman</span>
                                 @endif
                             </td>
                             <td>{{ $item->rop }}</td>
                             <td>{{ $item->kategori }}</td>
-                            <td>{{ $item->satuan }}</td>
+                            <td>{{ $item->satuan_utama ?? $item->satuan }}</td>
                             <td>
                                 <a href="{{ route('produk.edit', $item->id) }}" class="btn btn-warning btn-sm">Edit</a>
                                 <button type="button" class="btn btn-danger btn-sm"

@@ -15,12 +15,27 @@ return new class extends Migration
             $table->id();
             $table->string('nama_produk');
             $table->text('deskripsi')->nullable();
-            $table->integer('stok')->default(0);
-            $table->string('satuan'); // contoh: pcs, bungkus, liter
-            $table->decimal('harga_normal', 15, 2); // harga normal
-            $table->decimal('harga_grosir', 15, 2)->nullable(); // harga grosir, bisa null jika tidak ada
-            $table->string('gambar')->nullable(); // path ke gambar produk
-            $table->string('kategori'); // contoh: makanan, minuman, rokok
+
+            // stok disimpan dalam satuan terkecil (decimal untuk pecahan stok)
+            $table->decimal('stok', 15, 2)->default(0);
+
+            // satuan terkecil (satuan utama), misal: pcs, bungkus, kg
+            $table->string('satuan_utama');
+
+            // satuan besar default (misal: karton, slof, karung) opsional untuk tampilan
+            $table->string('satuan_besar')->nullable();
+
+            // konversi satuan besar ke satuan utama, misal: 1 karton = 40 pcs
+            $table->decimal('konversi_satuan_besar_ke_utama', 15, 2)->nullable();
+
+            $table->decimal('harga_normal', 15, 2);
+            $table->decimal('harga_grosir', 15, 2)->nullable();
+            $table->string('gambar')->nullable();
+            $table->string('kategori')->index();
+
+            $table->integer('lead_time')->default(0);
+            $table->decimal('safety_stock', 10, 2)->default(0);
+            $table->decimal('daily_usage', 10, 2)->default(0);
             $table->timestamps();
         });
     }

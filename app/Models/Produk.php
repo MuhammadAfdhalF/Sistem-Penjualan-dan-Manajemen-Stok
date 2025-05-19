@@ -4,77 +4,159 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-/**
- * @property int $lead_time
- * @property float $daily_usage
- * @property float $safety_stock
- * @property int $stok
- */
 
+/**
+ * @property int $id
+ * @property string $nama_produk
+ * @property string|null $deskripsi
+ * @property float $stok
+ * @property string $satuan_utama
+ * @property float $harga_normal
+ * @property float|null $harga_grosir
+ * @property float|null $rop
+ * @property float|null $safety_stock
+ * @property int|null $lead_time
+ * @property float|null $daily_usage
+ * @property string|null $gambar
+ * @property string|null $kategori
+ */
 class Produk extends Model
 {
     use HasFactory;
 
-    // Jika tabel memang 'produk', bisa dihapus properti ini
     protected $table = 'produks';
 
     protected $fillable = [
         'nama_produk',
         'deskripsi',
         'stok',
-        'satuan',
+        'satuan_utama',  // pastikan konsisten dengan migration
         'harga_normal',
         'harga_grosir',
         'gambar',
         'kategori',
-        'rop',           // Kalau ROP manual
-        'safety_stock',  // kalau pakai manual safety stock
-        'lead_time',     // kalau pakai rumus
-        'daily_usage',   // kalau pakai rumus
+        'rop',           // bisa null jika ROP dihitung otomatis
+        'safety_stock',
+        'lead_time',
+        'daily_usage',
     ];
 
-    // Casting tipe data agar selalu benar
     protected $casts = [
-        'stok' => 'integer',
-        'harga_normal' => 'integer',
-        'harga_grosir' => 'integer',
-        'rop' => 'integer',
+        'stok' => 'float',
+        'harga_normal' => 'float',
+        'harga_grosir' => 'float',
+        'rop' => 'float',
         'safety_stock' => 'float',
         'lead_time' => 'integer',
         'daily_usage' => 'float',
     ];
 
     /**
-     * Relasi: Satu produk memiliki banyak entri stok (jika ada tabel stok).
+     * Cek apakah stok saat ini di bawah atau sama dengan ROP.
+     * Jika ROP null, anggap stok aman (false).
      */
-    public function stoks()
+    public function isStokDiBawahROP(): bool
     {
-        return $this->hasMany(Stok::class);
-    }
+        if (is_null($this->rop)) {
+            return false;
+        }
 
-    /**
-     * Cek apakah stok berada di bawah atau sama dengan ROP.
-     * Bisa dipakai untuk logika peringatan.
-     */
-    public function isStokDiBawahROP()
-    {
         return $this->stok <= $this->rop;
     }
 
     /**
-     * (Optional) Hitung ROP otomatis jika ingin pakai rumus:
-     * ROP = (Lead Time x Daily Usage) + Safety Stock
+     * Accessor untuk ROP yang dihitung secara otomatis
+     * berdasarkan lead_time, daily_usage, dan safety_stock.
+     *
+     * @return float
      */
-    public function getCalculatedRopAttribute()
+    public function getCalculatedRopAttribute(): float
+    {
+        $leadTime = $this->lead_time ?? 0;
+        $dailyUsage = $this->daily_usage ?? 0;
+        $safetyStock = $this->safety_stock ?? 0;
+
+        return ($leadTime * $dailyUsage) + $safetyStock;
+    }
+
+    // Relasi jika nanti ingin menambah model kategori
+    // public function kategori()
+    // {
+    //     return $this->belongsTo(Kategori::class, 'kategori', 'nama_kategori');
+    // }
+
+    public function satuans()
+    {
+        return $this->hasMany(Satuan::class);
+    }
+
+    // public function tampilkanStok3Tingkatan()
+    // {
+    //     $stok = $this->stok; // stok dalam satuan terkecil, misal bks/pcs
+    //     $konversi = $this->satuanKonversi;
+    //     if (!$konversi) {
+    //         return "{$stok} {$this->satuan}";
+    //     }
+
+    //     $isiBesarKeKecil = $konversi->isi_besar_ke_sedang * $konversi->isi_sedang_ke_kecil;
+
+    //     $stokBesar = intdiv($stok, $isiBesarKeKecil);
+    //     $sisaBesar = $stok % $isiBesarKeKecil;
+
+    //     $stokSedang = intdiv($sisaBesar, $konversi->isi_sedang_ke_kecil);
+    //     $stokKecil = $sisaBesar % $konversi->isi_sedang_ke_kecil;
+
+    //     $hasil = [];
+    //     if ($stokBesar > 0) {
+    //         $hasil[] = "{$stokBesar} {$konversi->satuan_besar}";
+    //     }
+    //     if ($stokSedang > 0) {
+    //         $hasil[] = "{$stokSedang} {$konversi->satuan_sedang}";
+    //     }
+    //     if ($stokKecil > 0) {
+    //         $hasil[] = "{$stokKecil} {$konversi->satuan_kecil}";
+    //     }
+
+    //     return implode(', ', $hasil);
+    // }
+
+    public function getStokBertingkatAttribute(): string
+    {
+        $stok = (int) $this->stok; // stok total, integer supaya lebih mudah mod/div
+        $satuans = $this->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
+
+        if ($satuans->isEmpty()) {
+            return $stok . ' ' . $this->satuan_utama;
+        }
+
+        $result = [];
+        foreach ($satuans as $satuan) {
+            if ($satuan->konversi_ke_satuan_utama <= 0) continue; // safety check
+
+            $jumlah = intdiv($stok, $satuan->konversi_ke_satuan_utama);
+            $stok = $stok % $satuan->konversi_ke_satuan_utama;
+
+            if ($jumlah > 0) {
+                $result[] = $jumlah . ' ' . $satuan->nama_satuan;
+            }
+        }
+
+        // Jika masih ada stok tersisa (lebih kecil dari satuan terkecil)
+        if ($stok > 0) {
+            // Asumsikan satuan terkecil = satuan_utama
+            $result[] = $stok . ' ' . $this->satuan_utama;
+        }
+
+        if (empty($result)) {
+            return '0 ' . $this->satuan_utama;
+        }
+
+        return implode(' ', $result); // contoh output: "10 slof 3 bks"
+    }
+
+
+    public function getRopAttribute()
     {
         return ($this->lead_time * $this->daily_usage) + $this->safety_stock;
     }
-
-    /**
-     * (Opsional) Relasi ke model kategori jika digunakan
-     */
-    // public function kategori()
-    // {
-    //     return $this->belongsTo(Kategori::class);
-    // }
 }

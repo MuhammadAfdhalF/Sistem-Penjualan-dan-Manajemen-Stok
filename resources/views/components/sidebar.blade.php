@@ -26,6 +26,8 @@
                 <ul class="pc-navbar">
                     <x-sidebar.links title="Dashboard" icon="ti ti-dashboard" route='dashboard.index' />
                     <x-sidebar.links title="Produk" icon="ti ti-package" route='produk.index' />
+                    <x-sidebar.links title="Satuan" icon="ti ti-basket" route="satuan.index" />
+
                     <x-sidebar.links title="Stok" icon="ti ti-stack" route='stok.index' />
                     <x-sidebar.links title="Transaksi Offline" icon="ti ti-building-store" route='transaksi_offline.index' />
                     <x-sidebar.links title="Detail Transaksi Offline" icon="ti ti-file-invoice" route='transaksi_offline_detail.index' />
