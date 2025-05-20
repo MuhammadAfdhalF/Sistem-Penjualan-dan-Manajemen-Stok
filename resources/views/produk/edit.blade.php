@@ -50,17 +50,60 @@
                         @enderror
                     </div>
 
-                    {{-- Stok --}}
                     <div class="col-md-6 mb-3">
-                        <label for="stok" class="form-label">Stok</label>
-                        <input type="number" name="stok" id="stok"
-                            class="form-control @error('stok') is-invalid @enderror"
-                            placeholder="Masukkan stok produk"
-                            value="{{ old('stok', $produk->stok) }}" min="0" required>
+                        <label class="form-label">Input Stok</label>
+
+                        {{-- Pilihan mode --}}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="mode_stok" id="mode_utama" value="utama"
+                                {{ old('mode_stok', 'utama') === 'utama' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_utama">
+                                Input langsung satuan utama ({{ $produk->satuan_utama }})
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="mode_stok" id="mode_bertahap" value="bertahap"
+                                {{ old('mode_stok') === 'bertahap' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_bertahap">
+                                Input stok berdasarkan satuan bertingkat
+                            </label>
+                        </div>
+
+                        {{-- Input stok satuan utama --}}
+                        <input type="number" name="stok" id="stok_utama"
+                            class="form-control @error('stok') is-invalid @enderror mt-2"
+                            value="{{ old('stok', $produk->stok) }}"
+                            min="0">
                         @error('stok')
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
+
+                        {{-- Input stok bertingkat --}}
+                        <div id="stokBertingkatInputs" class="row mt-2" style="display: none;">
+                            @foreach($satuanBertingkat as $satuan)
+                            <div class="col-md-6 mt-2">
+                                <label class="form-label">{{ $satuan->nama_satuan }}</label>
+                                <input type="number"
+                                    class="form-control stok-bertahap-input"
+                                    name="stok_bertahap[{{ $satuan->id }}]"
+                                    data-konversi="{{ $satuan->konversi_ke_satuan_utama }}"
+                                    min="0"
+                                    value="{{ old('stok_bertahap.' . $satuan->id, $stokBertingkatDefault[$satuan->id] ?? 0) }}">
+                            </div>
+                            @endforeach
+
+                            <div class="col-md-6 mt-2">
+                                <label class="form-label">{{ $produk->satuan_utama }}</label>
+                                <input type="number"
+                                    class="form-control stok-bertahap-input"
+                                    name="stok_bertahap[utama]"
+                                    data-konversi="1"
+                                    min="0"
+                                    value="{{ old('stok_bertahap.utama', $stokBertingkatDefault['utama'] ?? 0) }}">
+                            </div>
+                        </div>
                     </div>
+
 
                     {{-- Lead Time --}}
                     <div class="col-md-4 mb-3">
@@ -161,3 +204,48 @@
     </div>
 </div>
 @endsection
+
+
+@push('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const modeUtama = document.getElementById('mode_utama');
+        const modeBertahap = document.getElementById('mode_bertahap');
+        const stokUtamaInput = document.getElementById('stok_utama');
+        const stokBertingkat = document.getElementById('stokBertingkatInputs');
+
+        function hitungTotalStok() {
+            let total = 0;
+            document.querySelectorAll('.stok-bertahap-input').forEach(input => {
+                const jumlah = parseInt(input.value) || 0;
+                const konversi = parseInt(input.dataset.konversi);
+                total += jumlah * konversi;
+            });
+            stokUtamaInput.value = total;
+        }
+
+        function toggleInput() {
+            if (modeUtama.checked) {
+                stokUtamaInput.style.display = 'block';
+                stokUtamaInput.disabled = false;
+                stokBertingkat.style.display = 'none';
+                stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = true);
+            } else {
+                stokUtamaInput.style.display = 'none';
+                stokUtamaInput.disabled = true;
+                stokBertingkat.style.display = 'flex';
+                stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = false);
+                hitungTotalStok();
+            }
+        }
+
+        modeUtama.addEventListener('change', toggleInput);
+        modeBertahap.addEventListener('change', toggleInput);
+        document.querySelectorAll('.stok-bertahap-input').forEach(input => {
+            input.addEventListener('input', hitungTotalStok);
+        });
+
+        toggleInput(); // Set posisi awal
+    });
+</script>
+@endpush

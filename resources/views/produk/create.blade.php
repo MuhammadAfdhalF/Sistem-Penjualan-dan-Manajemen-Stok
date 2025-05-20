@@ -43,12 +43,53 @@
                         @enderror
                     </div>
 
+                    {{-- Pilihan input stok: satuan utama atau bertingkat --}}
                     <div class="col-md-6 mb-3">
-                        <label for="stok" class="form-label">Stok</label>
-                        <input type="number" name="stok" id="stok" class="form-control @error('stok') is-invalid @enderror" placeholder="Masukkan stok produk" value="{{ old('stok') }}" min="0" required>
-                        @error('stok')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
+                        <label class="form-label">Input Stok</label>
+                        <select id="stok_type" name="stok_type" class="form-select mb-2">
+                            <option value="utama" {{ old('stok_type', 'utama') == 'utama' ? 'selected' : '' }}>
+                                Stok Satuan Utama ({{ old('satuan_utama', $produk->satuan_utama ?? 'pcs') }})
+                            </option>
+                            <option value="bertingkat" {{ old('stok_type') == 'bertingkat' ? 'selected' : '' }}>
+                                Stok Satuan Bertingkat
+                            </option>
+                        </select>
+
+                        {{-- Input stok satuan utama --}}
+                        <div id="stok-utama-input-wrapper" style="{{ old('stok_type', 'utama') == 'utama' ? 'display:block' : 'display:none' }}">
+                            <input type="number" name="stok_utama" id="stok_utama" class="form-control @error('stok_utama') is-invalid @enderror"
+                                placeholder="Masukkan stok produk" value="{{ old('stok_utama', $produk->stok ?? 0) }}" min="0">
+                            @error('stok_utama')
+                            <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        {{-- Input stok satuan bertingkat --}}
+                        <div id="stok-bertingkat-input-wrapper" style="{{ old('stok_type') == 'bertingkat' ? 'display:block' : 'display:none' }}">
+                            <select name="satuan_bertingkat" id="satuan_bertingkat" class="form-select mb-2 @error('satuan_bertingkat') is-invalid @enderror">
+                                <option value="" disabled {{ old('satuan_bertingkat') ? '' : 'selected' }}>Pilih satuan bertingkat</option>
+                                @foreach($satuanBertingkat as $satuan)
+                                <option value="{{ $satuan->konversi_ke_satuan_utama }}"
+                                    {{ old('satuan_bertingkat') == $satuan->konversi_ke_satuan_utama ? 'selected' : '' }}>
+                                    {{ $satuan->nama_satuan }} (Konversi ke {{ old('satuan_utama', $produk->satuan_utama ?? 'pcs') }}: {{ $satuan->konversi_ke_satuan_utama }})
+                                </option>
+                                @endforeach
+                            </select>
+                            @error('satuan_bertingkat')
+                            <small class="text-danger">{{ $message }}</small>
+                            @enderror
+
+                            <input type="number" name="stok_bertingkat_qty" id="stok_bertingkat_qty"
+                                class="form-control @error('stok_bertingkat_qty') is-invalid @enderror"
+                                placeholder="Masukkan jumlah satuan bertingkat"
+                                value="{{ old('stok_bertingkat_qty', 0) }}" min="0">
+                            @error('stok_bertingkat_qty')
+                            <small class="text-danger">{{ $message }}</small>
+                            @enderror
+                        </div>
+
+                        {{-- Hidden input stok final, opsional jika mau update dengan JS --}}
+                        <input type="hidden" name="stok" id="stok_final" value="{{ old('stok', $produk->stok ?? 0) }}">
                     </div>
 
                     <!-- Input Lead Time -->
@@ -126,4 +167,48 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const stokType = document.getElementById('stok_type');
+        const stokUtamaWrapper = document.getElementById('stok-utama-input-wrapper');
+        const stokBertingkatWrapper = document.getElementById('stok-bertingkat-input-wrapper');
+        const stokUtamaInput = document.getElementById('stok_utama');
+        const satuanBertingkatSelect = document.getElementById('satuan_bertingkat');
+        const stokBertingkatQtyInput = document.getElementById('stok_bertingkat_qty');
+        const stokFinalInput = document.getElementById('stok_final');
+
+        function updateStokFinal() {
+            if (stokType.value === 'utama') {
+                const val = parseInt(stokUtamaInput.value) || 0;
+                stokFinalInput.value = val;
+            } else {
+                const konversi = parseInt(satuanBertingkatSelect.value) || 0;
+                const qty = parseInt(stokBertingkatQtyInput.value) || 0;
+                stokFinalInput.value = konversi * qty;
+            }
+        }
+
+        stokType.addEventListener('change', () => {
+            if (stokType.value === 'utama') {
+                stokUtamaWrapper.style.display = 'block';
+                stokBertingkatWrapper.style.display = 'none';
+            } else {
+                stokUtamaWrapper.style.display = 'none';
+                stokBertingkatWrapper.style.display = 'block';
+            }
+            updateStokFinal();
+        });
+
+        stokUtamaInput.addEventListener('input', updateStokFinal);
+        satuanBertingkatSelect.addEventListener('change', updateStokFinal);
+        stokBertingkatQtyInput.addEventListener('input', updateStokFinal);
+
+        // Initialize stok final on page load
+        updateStokFinal();
+    });
+</script>
 @endsection
