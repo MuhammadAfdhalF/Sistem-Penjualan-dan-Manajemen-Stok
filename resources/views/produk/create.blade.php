@@ -92,6 +92,23 @@
                         <input type="hidden" name="stok" id="stok_final" value="{{ old('stok', $produk->stok ?? 0) }}">
                     </div>
 
+                    <!-- Satuan Utama-->
+
+                    <div class="col-md-6 mb-3">
+                        <label for="satuan_utama" class="form-label">Satuan</label>
+                        <select name="satuan_utama" id="satuan_utama" class="form-control @error('satuan_utama') is-invalid @enderror" required>
+                            <option value="" disabled {{ old('satuan_utama') ? '' : 'selected' }}>Pilih satuan</option>
+                            <option value="bks" {{ old('satuan_utama') == 'bks' ? 'selected' : '' }}>bks</option>
+                            <option value="pcs" {{ old('satuan_utama') == 'pcs' ? 'selected' : '' }}>pcs</option>
+                            <option value="kg" {{ old('satuan_utama') == 'kg' ? 'selected' : '' }}>kg</option>
+                            <option value="liter" {{ old('satuan_utama') == 'liter' ? 'selected' : '' }}>liter</option>
+                            <option value="box" {{ old('satuan_utama') == 'box' ? 'selected' : '' }}>box</option>
+                        </select>
+                        @error('satuan_utama')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
                     <!-- Input Lead Time -->
                     <div class="col-md-4 mb-3">
                         <label for="lead_time" class="form-label">Lead Time (hari)</label>
@@ -111,20 +128,7 @@
                         @enderror
                     </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label for="satuan_utama" class="form-label">Satuan</label>
-                        <select name="satuan_utama" id="satuan_utama" class="form-control @error('satuan_utama') is-invalid @enderror" required>
-                            <option value="" disabled {{ old('satuan_utama') ? '' : 'selected' }}>Pilih satuan</option>
-                            <option value="bks" {{ old('satuan_utama') == 'bks' ? 'selected' : '' }}>bks</option>
-                            <option value="pcs" {{ old('satuan_utama') == 'pcs' ? 'selected' : '' }}>pcs</option>
-                            <option value="kg" {{ old('satuan_utama') == 'kg' ? 'selected' : '' }}>kg</option>
-                            <option value="liter" {{ old('satuan_utama') == 'liter' ? 'selected' : '' }}>liter</option>
-                            <option value="box" {{ old('satuan_utama') == 'box' ? 'selected' : '' }}>box</option>
-                        </select>
-                        @error('satuan_utama')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
+
 
 
                     <div class="col-md-6 mb-3">

@@ -37,28 +37,26 @@ class ProdukController extends Controller
     {
         Log::info('Request Produk Store:', $request->all());
 
-        // Atur rules dasar
         $rules = [
-            'nama_produk'    => 'required|string|max:255',
-            'deskripsi'      => 'required|string|max:500',
-            'gambar'         => 'required|image|mimes:jpeg,png,jpg',
-            'harga_normal'   => 'required|numeric|min:0',
-            'harga_grosir'   => 'nullable|numeric|min:0',
-            'kategori'       => 'required|string|max:255',
-            'satuan_utama'   => 'required|string|max:50',
-            'lead_time'      => 'required|integer|min:0',
-            'safety_stock'   => 'required|numeric|min:0',
-            'mode_stok'      => 'required|in:utama,bertahap',
+            'nama_produk'         => 'required|string|max:255',
+            'deskripsi'           => 'required|string|max:500',
+            'gambar'              => 'required|image|mimes:jpeg,png,jpg',
+            'harga_normal'        => 'required|numeric|min:0',
+            'harga_grosir'        => 'nullable|numeric|min:0',
+            'kategori'            => 'required|string|max:255',
+            'satuan_utama'        => 'required|string|max:50',
+            'lead_time'           => 'required|integer|min:0',
+            'safety_stock'        => 'required|numeric|min:0',
+            'stok_type'           => 'required|in:utama,bertingkat',
         ];
 
-        // Validasi stok sesuai mode stok
-        if ($request->mode_stok === 'utama') {
+        // Validasi berdasarkan mode stok
+        if ($request->stok_type === 'utama') {
             $rules['stok'] = 'required|numeric|min:0';
-            $rules['stok_bertahap'] = 'nullable';
         } else {
-            $rules['stok'] = 'nullable';
-            $rules['stok_bertahap'] = 'required|array';
-            $rules['stok_bertahap.*'] = 'numeric|min:0';
+            $rules['stok_utama']           = 'required|numeric|min:0';
+            $rules['stok_bertingkat_qty']  = 'required|numeric|min:0';
+            $rules['satuan_bertingkat']    = 'required|numeric|min:1';
         }
 
         $request->validate($rules);
@@ -68,7 +66,6 @@ class ProdukController extends Controller
         }
 
         $gambar = $request->file('gambar');
-
         if (!$gambar->isValid()) {
             return back()->with('error', 'File gambar tidak valid.');
         }
@@ -78,24 +75,15 @@ class ProdukController extends Controller
 
         try {
             DB::beginTransaction();
-
             $gambar->storeAs('gambar_produk', $fileName, 'public');
 
-            // Hitung stok akhir jika mode bertahap
-            $stokFinal = $request->stok;
-            if ($request->mode_stok === 'bertahap') {
-                $stokBertahap = $request->stok_bertahap;
-                $stokFinal = 0;
-                foreach ($stokBertahap as $key => $qty) {
-                    if ($key === 'utama') {
-                        $konversi = 1;
-                    } else {
-                        // Jika perlu ambil konversi dari database satuan, sesuaikan di sini.
-                        // Sebagai contoh, set default 1 jika tidak ada data.
-                        $konversi = 1;
-                    }
-                    $stokFinal += ((float)$qty) * $konversi;
-                }
+            // Hitung stok akhir
+            if ($request->stok_type === 'utama') {
+                $stokFinal = $request->stok;
+            } else {
+                $stokFinal =
+                    ((float) $request->stok_utama) +
+                    (((float) $request->stok_bertingkat_qty) * ((float) $request->satuan_bertingkat));
             }
 
             Produk::create([
@@ -113,19 +101,20 @@ class ProdukController extends Controller
             ]);
 
             DB::commit();
+            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
-
             Log::error('Produk Store Error', [
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
             ]);
-
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data. ' . $e->getMessage());
         }
     }
+
+
 
     public function edit($id)
     {
@@ -234,6 +223,7 @@ class ProdukController extends Controller
             ]);
 
             DB::commit();
+            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil diperbarui.');
         } catch (\Exception $e) {

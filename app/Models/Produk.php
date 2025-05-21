@@ -35,7 +35,6 @@ class Produk extends Model
         'harga_grosir',
         'gambar',
         'kategori',
-        'rop',           // bisa null jika ROP dihitung otomatis
         'safety_stock',
         'lead_time',
         'daily_usage',
