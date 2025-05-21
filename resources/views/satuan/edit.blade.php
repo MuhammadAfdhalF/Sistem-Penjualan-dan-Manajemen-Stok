@@ -59,6 +59,17 @@
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
+
+                    {{-- Level --}}
+                    <div class="col-md-6 mb-3">
+                        <label for="level" class="form-label">Level (1 sampai 5)</label>
+                        <input type="number" name="level" id="level" min="1" max="5"
+                            class="form-control @error('level') is-invalid @enderror"
+                            value="{{ old('level', $satuan->level) }}" required>
+                        @error('level')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="text-end">

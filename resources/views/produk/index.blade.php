@@ -24,12 +24,10 @@
                             <th>Gambar</th>
                             <th>Nama Produk</th>
                             <th>Deskripsi</th>
-                            <th>Harga Normal</th>
-                            <th>Harga Grosir</th>
                             <th>Stok</th>
                             <th>ROP</th>
                             <th>Kategori</th>
-                            <th>Satuan Utama</th>
+                            <th>Harga</th>
                             <th>Opsi</th>
                         </tr>
                     </thead>
@@ -46,10 +44,7 @@
                             </td>
                             <td>{{ $item->nama_produk }}</td>
                             <td>{{ $item->deskripsi }}</td>
-                            <td>{{ number_format($item->harga_normal, 0, ',', '.') }}</td>
-                            <td>{{ number_format($item->harga_grosir, 0, ',', '.') }}</td>
                             <td>
-                                {{-- Tampilkan stok bertingkat --}}
                                 {{ $item->stok_bertingkat }}
                                 @if($item->isStokDiBawahROP())
                                 <span class="badge bg-danger ms-2">
@@ -61,7 +56,17 @@
                             </td>
                             <td>{{ $item->rop }}</td>
                             <td>{{ $item->kategori }}</td>
-                            <td>{{ $item->satuan_utama ?? $item->satuan }}</td>
+
+                            {{-- Kolom Harga --}}
+                            <td style="font-size: 13px;">
+                                @forelse ($item->hargaProduks as $harga)
+                                • <strong>{{ $harga->satuan->nama_satuan }}</strong> - {{ $harga->jenis_pelanggan }}:
+                                Rp{{ number_format($harga->harga, 0, ',', '.') }}<br>
+                                @empty
+                                <span class="text-muted">Belum ada harga</span>
+                                @endforelse
+                            </td>
+
                             <td>
                                 <a href="{{ route('produk.edit', $item->id) }}" class="btn btn-warning btn-sm">Edit</a>
                                 <button type="button" class="btn btn-danger btn-sm"
@@ -96,7 +101,6 @@
                         </div>
                         @endforeach
                     </tbody>
-
                 </table>
             </div> <!-- .table-responsive -->
         </div>

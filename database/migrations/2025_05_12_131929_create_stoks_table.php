@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::create('stoks', function (Blueprint $table) {
             $table->id(); // Primary key
-            $table->foreignId('produk_id')->constrained('produks')->onDelete('cascade'); // Foreign key ke tabel produks
-            $table->enum('jenis', ['masuk', 'keluar']); // Enum untuk jenis stok
-            $table->integer('jumlah'); // Jumlah stok masuk/keluar
-            $table->text('keterangan')->nullable(); // Keterangan (optional)
-            $table->timestamps(); // created_at & updated_at
+
+            $table->foreignId('produk_id')->constrained('produks')->onDelete('cascade');
+
+            // ✅ Diperbaiki: nullable + nullOnDelete()
+            $table->foreignId('satuan_id')->nullable()->constrained('satuans')->nullOnDelete();
+
+            $table->enum('jenis', ['masuk', 'keluar']);
+            $table->decimal('jumlah', 15, 2); // jumlah stok bisa pecahan
+            $table->text('keterangan')->nullable();
+            $table->timestamps();
         });
     }
 

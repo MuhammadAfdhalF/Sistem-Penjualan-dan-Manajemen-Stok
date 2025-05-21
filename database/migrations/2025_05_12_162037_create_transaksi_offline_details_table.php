@@ -15,10 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('transaksi_id')->constrained('transaksi_offline')->onDelete('cascade');
             $table->foreignId('produk_id')->constrained('produks')->onDelete('restrict');
-            $table->integer('jumlah');
-            $table->decimal('harga_normal', 15, 2)->nullable();
-            $table->decimal('harga_grosir', 15, 2)->nullable();
-            $table->decimal('subtotal', 15, 2);
+            $table->foreignId('satuan_id')->nullable()->constrained('satuans')->onDelete('set null');
+            $table->foreignId('harga_id')->constrained('harga_produks')->onDelete('restrict');
+
+            $table->decimal('jumlah', 15, 2); // mendukung penjualan pecahan
+            $table->decimal('harga', 15, 2); // harga yang digunakan pada saat transaksi
+            $table->decimal('subtotal', 15, 2); // jumlah * harga
+
             $table->timestamps();
         });
     }
@@ -28,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transaksi_offline_details');
+        Schema::dropIfExists('transaksi_offline_detail');
     }
 };

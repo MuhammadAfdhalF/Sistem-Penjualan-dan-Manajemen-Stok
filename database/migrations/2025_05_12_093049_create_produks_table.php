@@ -19,7 +19,7 @@ return new class extends Migration
             // stok disimpan dalam satuan terkecil (decimal untuk pecahan stok)
             $table->decimal('stok', 15, 2)->default(0);
 
-            // satuan terkecil (satuan utama), misal: pcs, bungkus, kg
+            // satuan terkecil (utama), misal: pcs, bungkus, kg
             $table->string('satuan_utama');
 
             // satuan besar default (misal: karton, slof, karung) opsional untuk tampilan
@@ -28,18 +28,17 @@ return new class extends Migration
             // konversi satuan besar ke satuan utama, misal: 1 karton = 40 pcs
             $table->decimal('konversi_satuan_besar_ke_utama', 15, 2)->nullable();
 
-            $table->decimal('harga_normal', 15, 2);
-            $table->decimal('harga_grosir', 15, 2)->nullable();
             $table->string('gambar')->nullable();
             $table->string('kategori')->index();
 
+            // Untuk keperluan perhitungan stok otomatis
             $table->integer('lead_time')->default(0);
             $table->decimal('safety_stock', 10, 2)->default(0);
             $table->decimal('daily_usage', 10, 2)->default(0);
+
             $table->timestamps();
         });
     }
-
 
     /**
      * Reverse the migrations.

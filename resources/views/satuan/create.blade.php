@@ -36,6 +36,21 @@
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>
+                    {{-- Level --}}
+                    <div class="col-md-6 mb-3">
+                        <label for="level" class="form-label">Level</label>
+                        <select name="level" id="level" class="form-control @error('level') is-invalid @enderror" required>
+                            <option value="" disabled selected>Pilih Level</option>
+                            @for ($i = 1; $i <= 5; $i++)
+                                <option value="{{ $i }}" {{ old('level') == $i ? 'selected' : '' }}>
+                                {{ $i }}
+                                </option>
+                                @endfor
+                        </select>
+                        @error('level')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
 
                     {{-- Nama Satuan --}}
                     <div class="col-md-6 mb-3">

@@ -14,10 +14,10 @@ class ProdukController extends Controller
 {
     public function index()
     {
-        // Eager load relasi satuans agar data satuan tersedia di view
-        $produk = Produk::with('satuans')->get();
+        // Eager load relasi satuans dan hargaProduks (beserta relasi satuan)
+        $produk = Produk::with(['satuans', 'hargaProduks.satuan'])->get();
 
-        // Filter produk dengan stok <= rop (menggunakan method di model)
+        // Filter produk dengan stok <= ROP
         $produkMenipis = $produk->filter(fn($item) => $item->isStokDiBawahROP());
 
         return view('produk.index', compact('produk', 'produkMenipis'));
@@ -25,94 +25,113 @@ class ProdukController extends Controller
 
     public function create()
     {
-        // Contoh ambil semua satuan bertingkat yang bisa dipilih
-        // Misal kamu buat relasi ke model Satuan, dan kamu ingin ambil semua satuan terkait, atau bisa ambil semua dari tabel satuan
-
-        $satuanBertingkat = \App\Models\Satuan::all();
-
-        return view('produk.create', compact('satuanBertingkat'));
+        $satuans = \App\Models\Satuan::all();  // ganti nama variabel jadi $satuans supaya sesuai dengan di view
+        return view('produk.create', compact('satuans'));
     }
 
     public function store(Request $request)
     {
         Log::info('Request Produk Store:', $request->all());
 
+        // Bersihkan input stok_bertahap hanya jika mode_stok bertahap
+        if ($request->mode_stok === 'bertahap') {
+            $stokBertahapBersih = collect($request->stok_bertahap)->filter(function ($item) {
+                return !empty($item['satuan_id']) && floatval($item['qty']) > 0;
+            })->values()->all();
+            $request->merge(['stok_bertahap' => $stokBertahapBersih]);
+        } else {
+            $request->merge(['stok_bertahap' => []]);
+        }
+
+        // Atur rules validasi dasar
         $rules = [
-            'nama_produk'         => 'required|string|max:255',
-            'deskripsi'           => 'required|string|max:500',
-            'gambar'              => 'required|image|mimes:jpeg,png,jpg',
-            'harga_normal'        => 'required|numeric|min:0',
-            'harga_grosir'        => 'nullable|numeric|min:0',
-            'kategori'            => 'required|string|max:255',
-            'satuan_utama'        => 'required|string|max:50',
-            'lead_time'           => 'required|integer|min:0',
-            'safety_stock'        => 'required|numeric|min:0',
-            'stok_type'           => 'required|in:utama,bertingkat',
+            'nama_produk'    => 'required|string|max:255',
+            'deskripsi'      => 'required|string|max:500',
+            'gambar'         => 'required|image|mimes:jpeg,png,jpg',
+            'kategori'       => 'required|string|max:255',
+            'lead_time'      => 'required|integer|min:0',
+            'safety_stock'   => 'required|numeric|min:0',
+            'mode_stok'      => 'required|in:utama,bertahap',
         ];
 
-        // Validasi berdasarkan mode stok
-        if ($request->stok_type === 'utama') {
+        if ($request->mode_stok === 'utama') {
             $rules['stok'] = 'required|numeric|min:0';
         } else {
-            $rules['stok_utama']           = 'required|numeric|min:0';
-            $rules['stok_bertingkat_qty']  = 'required|numeric|min:0';
-            $rules['satuan_bertingkat']    = 'required|numeric|min:1';
+            $rules['stok_bertahap'] = 'required|array|min:1';
+
+            foreach ($request->stok_bertahap as $index => $item) {
+                $rules["stok_bertahap.$index.satuan_id"] = 'required|exists:satuans,id';
+                $rules["stok_bertahap.$index.qty"] = 'required|numeric|min:0.01';
+            }
         }
 
-        $request->validate($rules);
-
-        if (!$request->hasFile('gambar')) {
-            return back()->with('error', 'Gambar tidak ditemukan dalam permintaan.');
+        // Validasi menggunakan Validator manual (agar pakai data yang sudah dimodifikasi)
+        $validator = \Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $gambar = $request->file('gambar');
-        if (!$gambar->isValid()) {
+        // Cek file gambar
+        if (!$request->hasFile('gambar') || !$request->file('gambar')->isValid()) {
             return back()->with('error', 'File gambar tidak valid.');
         }
 
+        $gambar = $request->file('gambar');
         $slugNama = Str::slug($request->nama_produk) ?: 'produk';
         $fileName = 'produk_' . $slugNama . '_' . time() . '.' . $gambar->getClientOriginalExtension();
 
         try {
             DB::beginTransaction();
+
             $gambar->storeAs('gambar_produk', $fileName, 'public');
 
-            // Hitung stok akhir
-            if ($request->stok_type === 'utama') {
-                $stokFinal = $request->stok;
-            } else {
-                $stokFinal =
-                    ((float) $request->stok_utama) +
-                    (((float) $request->stok_bertingkat_qty) * ((float) $request->satuan_bertingkat));
+            // Hitung stok final
+            $stokFinal = 0;
+
+            if ($request->mode_stok === 'utama') {
+                $stokFinal = $request->stok ?? 0;
+            } elseif ($request->mode_stok === 'bertahap') {
+                $satuanIds = collect($request->stok_bertahap)->pluck('satuan_id')->all();
+                $satuans = \App\Models\Satuan::whereIn('id', $satuanIds)->get()->keyBy('id');
+
+                foreach ($request->stok_bertahap as $item) {
+                    $satuanId = $item['satuan_id'];
+                    $qty = (float) $item['qty'];
+                    $konversi = $satuans[$satuanId]->konversi_ke_satuan_utama ?? 1;
+                    $stokFinal += $qty * $konversi;
+                }
             }
 
-            Produk::create([
+            // Simpan produk
+            $produk = Produk::create([
                 'nama_produk'   => $request->nama_produk,
                 'deskripsi'     => $request->deskripsi,
-                'harga_normal'  => $request->harga_normal,
-                'harga_grosir'  => $request->harga_grosir,
                 'stok'          => $stokFinal,
                 'kategori'      => $request->kategori,
                 'gambar'        => $fileName,
-                'satuan_utama'  => $request->satuan_utama,
                 'lead_time'     => $request->lead_time,
                 'daily_usage'   => 0,
                 'safety_stock'  => $request->safety_stock,
             ]);
 
             DB::commit();
-            Artisan::call('produk:update-dailyusage-rop');
 
-            return redirect()->route('produk.index')->with('success', 'Data produk berhasil disimpan.');
+            return redirect()->route('produk.index', $produk->id)
+                ->with('success', 'Produk berhasil disimpan. Silakan tambahkan harga.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             Log::error('Produk Store Error', [
                 'message' => $e->getMessage(),
                 'trace'   => $e->getTraceAsString(),
             ]);
+
             return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data. ' . $e->getMessage());
         }
     }
+
+
+
 
 
 
@@ -124,66 +143,59 @@ class ProdukController extends Controller
             ->orderByDesc('konversi_ke_satuan_utama')
             ->get();
 
-        // Konversi stok total menjadi pecahan satuan bertingkat
         $stokSisa = (int) $produk->stok;
         $stokBertingkatDefault = [];
 
         foreach ($satuanBertingkat as $satuan) {
             if ($satuan->konversi_ke_satuan_utama <= 0) continue;
-
             $jumlah = intdiv($stokSisa, $satuan->konversi_ke_satuan_utama);
-            $stokSisa = $stokSisa % $satuan->konversi_ke_satuan_utama;
-
+            $stokSisa %= $satuan->konversi_ke_satuan_utama;
             $stokBertingkatDefault[$satuan->id] = $jumlah;
         }
 
-        // Tambah sisa stok sebagai satuan utama
         $stokBertingkatDefault['utama'] = $stokSisa;
 
         return view('produk.edit', compact('produk', 'satuanBertingkat', 'stokBertingkatDefault'));
     }
 
 
-
     public function update(Request $request, $id)
     {
         Log::info('Request Produk Update:', $request->all());
 
+        // Definisikan aturan validasi
         $rules = [
             'nama_produk'    => 'required|string|max:255',
             'deskripsi'      => 'required|string|max:500',
             'gambar'         => 'nullable|image|mimes:jpeg,png,jpg',
-            'harga_normal'   => 'required|numeric|min:0',
-            'harga_grosir'   => 'nullable|numeric|min:0',
             'kategori'       => 'required|string|max:255',
-            'satuan_utama'   => 'required|string|max:50',
             'lead_time'      => 'required|integer|min:0',
             'daily_usage'    => 'required|numeric|min:0',
             'safety_stock'   => 'required|numeric|min:0',
             'mode_stok'      => 'required|in:utama,bertahap',
         ];
 
-        // Validasi stok dan stok_bertahap sesuai mode_stok
+        // Validasi mode stok
         if ($request->mode_stok === 'utama') {
             $rules['stok'] = 'required|numeric|min:0';
             $rules['stok_bertahap'] = 'nullable';
         } else {
             $rules['stok'] = 'nullable';
             $rules['stok_bertahap'] = 'required|array';
-            // opsional: bisa tambahkan validasi tiap elemen stok_bertahap angka min 0
-            // contoh:
             $rules['stok_bertahap.*'] = 'numeric|min:0';
         }
 
+        // Validasi data request
         $request->validate($rules);
 
+        // Cari produk yang akan diperbarui
         $produk = Produk::findOrFail($id);
 
         try {
             DB::beginTransaction();
 
+            // Menyimpan nama file gambar jika ada
             $fileName = $produk->gambar;
-
             if ($request->hasFile('gambar')) {
                 $gambar = $request->file('gambar');
                 $fileName = 'produk_' . Str::slug($request->nama_produk) . '_' . time() . '.' . $gambar->getClientOriginalExtension();
@@ -199,8 +211,6 @@ class ProdukController extends Controller
                     if ($key === 'utama') {
                         $konversi = 1;
                     } else {
-                        // ambil konversi dari database atau input lain
-                        // misal: ambil satuan dari produk dan dapatkan konversi berdasarkan id satuan
                         $satuan = $produk->satuans()->where('id', $key)->first();
                         $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
                     }
@@ -208,22 +218,19 @@ class ProdukController extends Controller
                 }
             }
 
+            // Perbarui data produk
             $produk->update([
                 'nama_produk'   => $request->nama_produk,
                 'deskripsi'     => $request->deskripsi,
-                'harga_normal'  => $request->harga_normal,
-                'harga_grosir'  => $request->harga_grosir,
                 'stok'          => $stokUpdate,
                 'kategori'      => $request->kategori,
                 'gambar'        => $fileName,
-                'satuan_utama'  => $request->satuan_utama,
                 'lead_time'     => $request->lead_time,
                 'daily_usage'   => $request->daily_usage,
                 'safety_stock'  => $request->safety_stock,
             ]);
 
             DB::commit();
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil diperbarui.');
         } catch (\Exception $e) {
@@ -255,4 +262,6 @@ class ProdukController extends Controller
             return redirect()->route('produk.index')->with('error', 'Gagal menghapus data produk. ' . $e->getMessage());
         }
     }
+
+
 }

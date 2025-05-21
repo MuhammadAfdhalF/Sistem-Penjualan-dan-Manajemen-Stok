@@ -9,36 +9,42 @@ class Stok extends Model
 {
     use HasFactory;
 
-    // Menentukan kolom yang dapat diisi (mass assignable)
     protected $fillable = [
         'produk_id',
-        'jenis',  // Masuk atau Keluar
+        'jenis',        // 'masuk' atau 'keluar'
         'jumlah',
-        'keterangan'
+        'keterangan',
+        'satuan_id',    // relasi ke satuan jika ada
     ];
 
+    protected $dates = ['created_at', 'updated_at'];
+
     /**
-     * Relasi dengan model Produk.
-     * Setiap stok milik satu produk.
+     * Relasi ke Produk
      */
     public function produk()
     {
         return $this->belongsTo(Produk::class);
     }
 
-    // Konversi format tanggal (jika ada kolom terkait tanggal seperti created_at dan updated_at)
-    protected $dates = ['created_at', 'updated_at'];
-
+    /**
+     * Relasi ke Satuan (opsional, jika stok masuk/keluar dicatat berdasarkan satuan tertentu)
+     */
     public function satuan()
     {
         return $this->belongsTo(Satuan::class);
     }
 
+    /**
+     * Accessor untuk menampilkan jumlah stok dalam format bertingkat (karton, pcs, dll)
+     *
+     * @return string
+     */
     public function getJumlahBertingkatAttribute(): string
     {
-        $jumlah = (int) $this->jumlah; // jumlah dalam satuan utama (integer)
+        $jumlah = (int) $this->jumlah;
 
-        // Ambil satuan produk terkait (relasi produk->satuans)
+        // Ambil daftar satuan dari produk, urut dari besar ke kecil
         $satuans = $this->produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
 
         if ($satuans->isEmpty()) {
@@ -49,11 +55,11 @@ class Stok extends Model
         foreach ($satuans as $satuan) {
             if ($satuan->konversi_ke_satuan_utama <= 0) continue;
 
-            $jumlah_satuan = intdiv($jumlah, $satuan->konversi_ke_satuan_utama);
+            $jumlahSatuan = intdiv($jumlah, $satuan->konversi_ke_satuan_utama);
             $jumlah = $jumlah % $satuan->konversi_ke_satuan_utama;
 
-            if ($jumlah_satuan > 0) {
-                $result[] = $jumlah_satuan . ' ' . $satuan->nama_satuan;
+            if ($jumlahSatuan > 0) {
+                $result[] = $jumlahSatuan . ' ' . $satuan->nama_satuan;
             }
         }
 
@@ -61,10 +67,8 @@ class Stok extends Model
             $result[] = $jumlah . ' ' . $this->produk->satuan_utama;
         }
 
-        if (empty($result)) {
-            return '0 ' . $this->produk->satuan_utama;
-        }
-
-        return implode(' ', $result);
+        return empty($result)
+            ? '0 ' . $this->produk->satuan_utama
+            : implode(' ', $result);
     }
 }

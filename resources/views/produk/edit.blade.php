@@ -10,6 +10,10 @@
 @endsection
 
 @section('content')
+@php
+$modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' : 'utama');
+@endphp
+
 <div>
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -28,11 +32,8 @@
                         <label for="nama_produk" class="form-label">Nama Produk</label>
                         <input type="text" name="nama_produk" id="nama_produk"
                             class="form-control @error('nama_produk') is-invalid @enderror"
-                            placeholder="Masukkan nama produk"
                             value="{{ old('nama_produk', $produk->nama_produk) }}" required autofocus>
-                        @error('nama_produk')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
+                        @error('nama_produk') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
 
                     {{-- Kategori --}}
@@ -45,38 +46,37 @@
                             <option value="Makanan dan Minuman Kemasan" {{ old('kategori', $produk->kategori) == 'Makanan dan Minuman Kemasan' ? 'selected' : '' }}>Makanan dan Minuman Kemasan</option>
                             <option value="Rokok dan Produk Tembakau" {{ old('kategori', $produk->kategori) == 'Rokok dan Produk Tembakau' ? 'selected' : '' }}>Rokok dan Produk Tembakau</option>
                         </select>
-                        @error('kategori')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
+                        @error('kategori') <small class="text-danger">{{ $message }}</small> @enderror
                     </div>
 
+                    {{-- Input Stok --}}
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Input Stok</label>
 
                         {{-- Pilihan mode --}}
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="mode_stok" id="mode_utama" value="utama"
-                                {{ old('mode_stok', 'utama') === 'utama' ? 'checked' : '' }}>
+                                {{ $modeStok === 'utama' ? 'checked' : '' }}>
                             <label class="form-check-label" for="mode_utama">
-                                Input langsung satuan utama ({{ $produk->satuan_utama }})
+                                Input langsung satuan terkecil
                             </label>
                         </div>
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="radio" name="mode_stok" id="mode_bertahap" value="bertahap"
-                                {{ old('mode_stok') === 'bertahap' ? 'checked' : '' }}>
+                                {{ $modeStok === 'bertahap' ? 'checked' : '' }}>
                             <label class="form-check-label" for="mode_bertahap">
                                 Input stok berdasarkan satuan bertingkat
                             </label>
                         </div>
 
                         {{-- Input stok satuan utama --}}
-                        <input type="number" name="stok" id="stok_utama"
-                            class="form-control @error('stok') is-invalid @enderror mt-2"
+                        <input type="number" id="stok_utama"
+                            class="form-control mt-2"
                             value="{{ old('stok', $produk->stok) }}"
                             min="0">
-                        @error('stok')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
+
+                        {{-- Hidden final stok --}}
+                        <input type="hidden" name="stok" id="stok_final_hidden">
 
                         {{-- Input stok bertingkat --}}
                         <div id="stokBertingkatInputs" class="row mt-2" style="display: none;">
@@ -91,120 +91,57 @@
                                     value="{{ old('stok_bertahap.' . $satuan->id, $stokBertingkatDefault[$satuan->id] ?? 0) }}">
                             </div>
                             @endforeach
-
-                            <div class="col-md-6 mt-2">
-                                <label class="form-label">{{ $produk->satuan_utama }}</label>
-                                <input type="number"
-                                    class="form-control stok-bertahap-input"
-                                    name="stok_bertahap[utama]"
-                                    data-konversi="1"
-                                    min="0"
-                                    value="{{ old('stok_bertahap.utama', $stokBertingkatDefault['utama'] ?? 0) }}">
-                            </div>
                         </div>
+
+
+                        {{-- Lead Time --}}
+                        <div class="col-md-4 mb-3">
+                            <label for="lead_time" class="form-label">Lead Time (hari)</label>
+                            <input type="number" name="lead_time" id="lead_time"
+                                class="form-control @error('lead_time') is-invalid @enderror"
+                                value="{{ old('lead_time', $produk->lead_time) }}" min="0" required>
+                            @error('lead_time') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        {{-- Safety Stock --}}
+                        <div class="col-md-4 mb-3">
+                            <label for="safety_stock" class="form-label">Safety Stock</label>
+                            <input type="number" name="safety_stock" id="safety_stock"
+                                class="form-control @error('safety_stock') is-invalid @enderror"
+                                value="{{ old('safety_stock', $produk->safety_stock) }}" min="0" required>
+                            @error('safety_stock') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        {{-- Deskripsi --}}
+                        <div class="col-12 mb-3">
+                            <label for="deskripsi" class="form-label">Deskripsi</label>
+                            <textarea name="deskripsi" id="deskripsi" rows="4"
+                                class="form-control @error('deskripsi') is-invalid @enderror"
+                                required>{{ old('deskripsi', $produk->deskripsi) }}</textarea>
+                            @error('deskripsi') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        {{-- Gambar --}}
+                        <div class="col-12 mb-3">
+                            <label for="gambar" class="form-label">Gambar Produk</label><br>
+                            @if ($produk->gambar)
+                            <img src="{{ asset('storage/gambar_produk/' . $produk->gambar) }}" width="120" class="mb-2 rounded" alt="Gambar Produk">
+                            @endif
+                            <input type="file" name="gambar" id="gambar" class="form-control @error('gambar') is-invalid @enderror" accept="image/*">
+                            @error('gambar') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        <input type="hidden" name="daily_usage" value="{{ $produk->daily_usage }}">
                     </div>
 
-
-                    {{-- Lead Time --}}
-                    <div class="col-md-4 mb-3">
-                        <label for="lead_time" class="form-label">Lead Time (hari)</label>
-                        <input type="number" name="lead_time" id="lead_time"
-                            class="form-control @error('lead_time') is-invalid @enderror"
-                            placeholder="Masukkan lead time"
-                            value="{{ old('lead_time', $produk->lead_time) }}" min="0" required>
-                        @error('lead_time')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Update</button>
                     </div>
-
-                    {{-- Safety Stock --}}
-                    <div class="col-md-4 mb-3">
-                        <label for="safety_stock" class="form-label">Safety Stock</label>
-                        <input type="number" name="safety_stock" id="safety_stock"
-                            class="form-control @error('safety_stock') is-invalid @enderror"
-                            placeholder="Masukkan safety stock"
-                            value="{{ old('safety_stock', $produk->safety_stock) }}" min="0" required>
-                        @error('safety_stock')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    {{-- Satuan --}}
-                    <div class="col-md-6 mb-3">
-                        <label for="satuan_utama" class="form-label">satuan_utama</label>
-                        <select name="satuan_utama" id="satuan_utama" class="form-control @error('satuan_utama') is-invalid @enderror" required>
-                            <option value="" disabled {{ old('satuan_utama', $produk->satuan_utama) ? '' : 'selected' }}>Pilih satuan_utama</option>
-                            <option value="bks" {{ old('satuan_utama', $produk->satuan_utama) == 'bks' ? 'selected' : '' }}>bks</option>
-                            <option value="pcs" {{ old('satuan_utama', $produk->satuan_utama) == 'pcs' ? 'selected' : '' }}>pcs</option>
-                            <option value="kg" {{ old('satuan_utama', $produk->satuan_utama) == 'kg' ? 'selected' : '' }}>kg</option>
-                            <option value="liter" {{ old('satuan_utama', $produk->satuan_utama) == 'liter' ? 'selected' : '' }}>liter</option>
-                            <option value="box" {{ old('satuan_utama', $produk->satuan_utama) == 'box' ? 'selected' : '' }}>box</option>
-                        </select>
-                        @error('satuan_utama')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    {{-- Harga Normal --}}
-                    <div class="col-md-6 mb-3">
-                        <label for="harga_normal" class="form-label">Harga Normal</label>
-                        <input type="number" name="harga_normal" id="harga_normal"
-                            class="form-control @error('harga_normal') is-invalid @enderror"
-                            placeholder="Masukkan harga normal"
-                            value="{{ old('harga_normal', (int) $produk->harga_normal) }}" min="0" required>
-                        @error('harga_normal')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    {{-- Harga Grosir --}}
-                    <div class="col-md-6 mb-3">
-                        <label for="harga_grosir" class="form-label">Harga Grosir</label>
-                        <input type="number" name="harga_grosir" id="harga_grosir"
-                            class="form-control @error('harga_grosir') is-invalid @enderror"
-                            placeholder="Masukkan harga grosir"
-                            value="{{ old('harga_grosir', (int) ($produk->harga_grosir ?? 0)) }}" min="0" required>
-                        @error('harga_grosir')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    {{-- Deskripsi --}}
-                    <div class="col-12 mb-3">
-                        <label for="deskripsi" class="form-label">Deskripsi</label>
-                        <textarea name="deskripsi" id="deskripsi" rows="4"
-                            class="form-control @error('deskripsi') is-invalid @enderror"
-                            placeholder="Masukkan deskripsi produk" required>{{ old('deskripsi', $produk->deskripsi) }}</textarea>
-                        @error('deskripsi')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    {{-- Gambar Produk --}}
-                    <div class="col-12 mb-3">
-                        <label for="gambar" class="form-label">Gambar Produk</label><br>
-                        @if ($produk->gambar)
-                        <img src="{{ asset('storage/gambar_produk/' . $produk->gambar) }}" width="120" class="mb-2 rounded" alt="Gambar Produk">
-                        @endif
-                        <input type="file" name="gambar" id="gambar" class="form-control @error('gambar') is-invalid @enderror" accept="image/*">
-                        @error('gambar')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-                    {{-- Hidden daily_usage (jika tetap ingin disimpan) --}}
-                    <input type="hidden" name="daily_usage" value="{{ $produk->daily_usage }}">
-                </div>
-
-                <div class="text-end">
-                    <button type="submit" class="btn btn-primary">Update</button>
-                </div>
             </form>
         </div>
     </div>
 </div>
 @endsection
-
 
 @push('scripts')
 <script>
@@ -212,16 +149,17 @@
         const modeUtama = document.getElementById('mode_utama');
         const modeBertahap = document.getElementById('mode_bertahap');
         const stokUtamaInput = document.getElementById('stok_utama');
+        const stokFinalInput = document.getElementById('stok_final_hidden');
         const stokBertingkat = document.getElementById('stokBertingkatInputs');
 
         function hitungTotalStok() {
             let total = 0;
             document.querySelectorAll('.stok-bertahap-input').forEach(input => {
-                const jumlah = parseInt(input.value) || 0;
-                const konversi = parseInt(input.dataset.konversi);
+                const jumlah = parseFloat(input.value) || 0;
+                const konversi = parseFloat(input.dataset.konversi) || 1;
                 total += jumlah * konversi;
             });
-            stokUtamaInput.value = total;
+            stokFinalInput.value = total;
         }
 
         function toggleInput() {
@@ -230,6 +168,7 @@
                 stokUtamaInput.disabled = false;
                 stokBertingkat.style.display = 'none';
                 stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = true);
+                stokFinalInput.value = stokUtamaInput.value;
             } else {
                 stokUtamaInput.style.display = 'none';
                 stokUtamaInput.disabled = true;
@@ -241,11 +180,13 @@
 
         modeUtama.addEventListener('change', toggleInput);
         modeBertahap.addEventListener('change', toggleInput);
+        stokUtamaInput.addEventListener('input', () => stokFinalInput.value = stokUtamaInput.value);
+
         document.querySelectorAll('.stok-bertahap-input').forEach(input => {
             input.addEventListener('input', hitungTotalStok);
         });
 
-        toggleInput(); // Set posisi awal
+        toggleInput(); // initial setup
     });
 </script>
 @endpush

@@ -12,7 +12,9 @@ use App\Models\TransaksiOfflineDetail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HargaProdukController;
 use App\Http\Controllers\SatuanController;
+use App\Models\HargaProduk;
 
 Route::get('/', function () {
     return view('auth/login');
@@ -30,8 +32,13 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     // produk
     Route::resource('produk', ProdukController::class);
 
-        // satuan
+    // satuan
     Route::resource('satuan', SatuanController::class);
+    Route::get('/get-satuan-by-produk/{id}', [SatuanController::class, 'getSatuanByProduk']);
+
+
+    // harga
+    Route::resource('harga_produk', HargaProdukController::class);
 
     // stok
     Route::resource('stok', StokController::class);
