@@ -33,6 +33,8 @@
                     <x-sidebar.links title="Transaksi Offline" icon="ti ti-building-store" route='transaksi_offline.index' />
                     <x-sidebar.links title="Detail Transaksi Offline" icon="ti ti-file-invoice" route='transaksi_offline_detail.index' />
                     <x-sidebar.links title="Manajemen Pelanggan" icon="ti ti-users" route='pelanggan.index' />
+                    <x-sidebar.links title="Keuangan" icon="ti ti-currency-dollar" route="keuangan.index" />
+
                 </ul>
 
                 <!-- Logout di bawah -->

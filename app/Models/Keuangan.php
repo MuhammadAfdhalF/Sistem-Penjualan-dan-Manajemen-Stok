@@ -12,11 +12,12 @@ class Keuangan extends Model
     protected $table = 'keuangans';
 
     protected $fillable = [
+        'transaksi_id',  // nullable, bisa manual
         'tanggal',
-        'jenis',       // 'masuk' atau 'keluar'
+        'jenis',         // 'pemasukan' atau 'pengeluaran'
         'nominal',
         'keterangan',
-        'sumber',      // contoh: 'penjualan offline', 'pengeluaran operasional', dll
+        'sumber',        // contoh: 'offline', 'manual', 'online'
     ];
 
     protected $casts = [
@@ -25,18 +26,26 @@ class Keuangan extends Model
     ];
 
     /**
-     * Scope untuk filter transaksi masuk
+     * Relasi ke transaksi offline (jika ada)
      */
-    public function scopeMasuk($query)
+    public function transaksi()
     {
-        return $query->where('jenis', 'masuk');
+        return $this->belongsTo(TransaksiOffline::class, 'transaksi_id');
     }
 
     /**
-     * Scope untuk filter transaksi keluar
+     * Scope untuk pemasukan saja
      */
-    public function scopeKeluar($query)
+    public function scopePemasukan($query)
     {
-        return $query->where('jenis', 'keluar');
+        return $query->where('jenis', 'pemasukan');
+    }
+
+    /**
+     * Scope untuk pengeluaran saja
+     */
+    public function scopePengeluaran($query)
+    {
+        return $query->where('jenis', 'pengeluaran');
     }
 }

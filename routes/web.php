@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HargaProdukController;
+use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\SatuanController;
 use App\Models\HargaProduk;
 
@@ -54,6 +55,9 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 
     // Pelanggan
     Route::resource('pelanggan', PelangganController::class);
+
+    // keuangan
+    Route::resource('keuangan', KeuanganController::class);
 
     // pegawai
     Route::resource('pegawai', PegawaiController::class);

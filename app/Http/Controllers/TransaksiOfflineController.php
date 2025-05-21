@@ -61,7 +61,7 @@ class TransaksiOfflineController extends Controller
             \DB::beginTransaction();
 
             // Simpan transaksi utama
-            $transaksi = TransaksiOffline::create([
+            $transaksi = \App\Models\TransaksiOffline::create([
                 'kode_transaksi' => $request->kode_transaksi,
                 'tanggal' => $request->tanggal,
                 'jenis_pelanggan' => $request->jenis_pelanggan,
@@ -119,7 +119,19 @@ class TransaksiOfflineController extends Controller
                 ]);
             }
 
-            Artisan::call('produk:update-dailyusage-rop');
+            // Panggil command update ROP
+            \Artisan::call('produk:update-dailyusage-rop');
+
+            // Simpan keuangan otomatis
+            \App\Models\Keuangan::create([
+                'transaksi_id' => $transaksi->id,
+                'tanggal' => $request->tanggal,
+                'jenis' => 'pemasukan',
+                'nominal' => $transaksi->total,
+                'keterangan' => 'Pemasukan dari transaksi #' . $transaksi->kode_transaksi,
+                'sumber' => 'offline',
+            ]);
+
             \DB::commit();
 
             return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil disimpan.');
@@ -234,6 +246,17 @@ class TransaksiOfflineController extends Controller
                 ]);
             }
 
+            // Update data keuangan terkait transaksi ini
+            $keuangan = \App\Models\Keuangan::where('transaksi_id', $transaksi->id)->first();
+            if ($keuangan) {
+                $keuangan->update([
+                    'tanggal' => $request->tanggal,
+                    'nominal' => $transaksi->total,
+                    'keterangan' => 'Pemasukan dari transaksi #' . $transaksi->kode_transaksi,
+                    'sumber' => 'offline',
+                ]);
+            }
+
             \Artisan::call('produk:update-dailyusage-rop');
             \DB::commit();
 
@@ -247,28 +270,39 @@ class TransaksiOfflineController extends Controller
 
 
 
+
     public function destroy($id)
     {
         DB::beginTransaction();
         try {
-            $transaksi = TransaksiOffline::with('detail')->findOrFail($id);
+            $transaksi = \App\Models\TransaksiOffline::with('detail')->findOrFail($id);
 
             foreach ($transaksi->detail as $detail) {
                 $produk = $detail->produk;
                 if ($produk) {
-                    $produk->stok += $detail->jumlah;
+                    $satuan = \App\Models\Satuan::findOrFail($detail->satuan_id);
+                    $konversi = $satuan->konversi_ke_satuan_utama ?? 1;
+                    $jumlahUtama = $detail->jumlah * $konversi;
+
+                    $produk->stok += $jumlahUtama;
                     $produk->save();
 
-                    Stok::create([
+                    \App\Models\Stok::create([
                         'produk_id' => $detail->produk_id,
                         'jenis' => 'masuk',
-                        'jumlah' => $detail->jumlah,
+                        'jumlah' => $jumlahUtama,
                         'keterangan' => 'Transaksi dihapus (' . $transaksi->kode_transaksi . ')',
                     ]);
                 }
             }
 
+            // Hapus detail transaksi
             $transaksi->detail()->delete();
+
+            // Hapus catatan keuangan terkait (jika ada)
+            \App\Models\Keuangan::where('transaksi_id', $transaksi->id)->delete();
+
+            // Hapus transaksi
             $transaksi->delete();
 
             Artisan::call('produk:update-dailyusage-rop');
