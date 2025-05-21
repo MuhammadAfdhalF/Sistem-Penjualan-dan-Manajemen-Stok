@@ -29,5 +29,42 @@ class Stok extends Model
     // Konversi format tanggal (jika ada kolom terkait tanggal seperti created_at dan updated_at)
     protected $dates = ['created_at', 'updated_at'];
 
-    // Validasi tambahan bisa ditambahkan di sini jika perlu
+    public function satuan()
+    {
+        return $this->belongsTo(Satuan::class);
+    }
+
+    public function getJumlahBertingkatAttribute(): string
+    {
+        $jumlah = (int) $this->jumlah; // jumlah dalam satuan utama (integer)
+
+        // Ambil satuan produk terkait (relasi produk->satuans)
+        $satuans = $this->produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
+
+        if ($satuans->isEmpty()) {
+            return $jumlah . ' ' . $this->produk->satuan_utama;
+        }
+
+        $result = [];
+        foreach ($satuans as $satuan) {
+            if ($satuan->konversi_ke_satuan_utama <= 0) continue;
+
+            $jumlah_satuan = intdiv($jumlah, $satuan->konversi_ke_satuan_utama);
+            $jumlah = $jumlah % $satuan->konversi_ke_satuan_utama;
+
+            if ($jumlah_satuan > 0) {
+                $result[] = $jumlah_satuan . ' ' . $satuan->nama_satuan;
+            }
+        }
+
+        if ($jumlah > 0) {
+            $result[] = $jumlah . ' ' . $this->produk->satuan_utama;
+        }
+
+        if (empty($result)) {
+            return '0 ' . $this->produk->satuan_utama;
+        }
+
+        return implode(' ', $result);
+    }
 }

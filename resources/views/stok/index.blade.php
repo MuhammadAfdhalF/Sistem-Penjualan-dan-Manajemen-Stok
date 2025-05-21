@@ -39,7 +39,8 @@ Halaman Stok
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->produk->nama_produk }}</td>
                             <td>{{ $item->jenis }}</td>
-                            <td>{{ $item->jumlah }}</td>
+                            <td>{{ $item->jumlah_bertingkat }}</td>
+
                             <td>{{ $item->keterangan }}</td>
                             <td>{{ $item->created_at->format('d-m-Y H:i') }}</td>
                             <td>
