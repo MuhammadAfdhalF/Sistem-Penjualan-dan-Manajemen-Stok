@@ -14,16 +14,16 @@ class TransaksiOfflineDetail extends Model
     protected $fillable = [
         'transaksi_id',
         'produk_id',
+        'satuan_id',
+        'harga_id',
         'jumlah',
-        'harga_normal',
-        'harga_grosir',
+        'harga',
         'subtotal',
     ];
 
     protected $casts = [
-        'jumlah' => 'integer',
-        'harga_normal' => 'float',
-        'harga_grosir' => 'float',
+        'jumlah' => 'float',
+        'harga' => 'float',
         'subtotal' => 'float',
     ];
 
@@ -32,7 +32,7 @@ class TransaksiOfflineDetail extends Model
      */
     public function transaksi()
     {
-        return $this->belongsTo(TransaksiOffline::class, 'transaksi_id');
+        return $this->belongsTo(TransaksiOffline::class);
     }
 
     /**
@@ -40,11 +40,27 @@ class TransaksiOfflineDetail extends Model
      */
     public function produk()
     {
-        return $this->belongsTo(Produk::class, 'produk_id');
+        return $this->belongsTo(Produk::class);
     }
 
     /**
-     * Mendapatkan total harga per item dengan format satuan bertingkat (opsional)
+     * Relasi ke satuan
+     */
+    public function satuan()
+    {
+        return $this->belongsTo(Satuan::class);
+    }
+
+    /**
+     * Relasi ke harga produk (data harga yang digunakan saat transaksi)
+     */
+    public function hargaProduk()
+    {
+        return $this->belongsTo(HargaProduk::class, 'harga_id');
+    }
+
+    /**
+     * Mendapatkan total jumlah dalam format bertingkat (opsional)
      */
     public function getJumlahBertingkatAttribute()
     {

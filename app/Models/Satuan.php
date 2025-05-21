@@ -37,4 +37,9 @@ class Satuan extends Model
     {
         return $this->belongsTo(Produk::class);
     }
+
+    public function hargaProduk()
+    {
+        return $this->hasMany(\App\Models\HargaProduk::class, 'satuan_id');
+    }
 }

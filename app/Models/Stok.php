@@ -48,7 +48,7 @@ class Stok extends Model
         $satuans = $this->produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
 
         if ($satuans->isEmpty()) {
-            return $jumlah . ' ' . $this->produk->satuan_utama;
+            return $jumlah . ' satuan';
         }
 
         $result = [];
@@ -64,11 +64,11 @@ class Stok extends Model
         }
 
         if ($jumlah > 0) {
-            $result[] = $jumlah . ' ' . $this->produk->satuan_utama;
+            $result[] = $jumlah . ' satuan';
         }
 
         return empty($result)
-            ? '0 ' . $this->produk->satuan_utama
+            ? '0 satuan'
             : implode(' ', $result);
     }
 }

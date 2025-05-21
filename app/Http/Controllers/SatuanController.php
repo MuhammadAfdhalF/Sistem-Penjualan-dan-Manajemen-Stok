@@ -87,11 +87,30 @@ class SatuanController extends Controller
     public function getSatuanByProduk($id)
     {
         try {
-            $satuans = \App\Models\Satuan::where('produk_id', $id)->get();
+            $satuans = \App\Models\Satuan::where('produk_id', $id)->orderByDesc('level')->get();
+
+            $data = $satuans->map(function ($satuan) {
+                $hargaIndividu = \App\Models\HargaProduk::where('produk_id', $satuan->produk_id)
+                    ->where('satuan_id', $satuan->id)
+                    ->where('jenis_pelanggan', 'Individu')
+                    ->value('harga') ?? 0;
+
+                $hargaToko = \App\Models\HargaProduk::where('produk_id', $satuan->produk_id)
+                    ->where('satuan_id', $satuan->id)
+                    ->where('jenis_pelanggan', 'Toko Kecil')
+                    ->value('harga') ?? 0;
+
+                return [
+                    'id' => $satuan->id,
+                    'nama_satuan' => $satuan->nama_satuan,
+                    'harga_individu' => $hargaIndividu,
+                    'harga_toko_kecil' => $hargaToko,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
-                'data' => $satuans
+                'data' => $data
             ]);
         } catch (\Exception $e) {
             \Log::error('Gagal ambil satuan untuk produk ID ' . $id . ': ' . $e->getMessage());

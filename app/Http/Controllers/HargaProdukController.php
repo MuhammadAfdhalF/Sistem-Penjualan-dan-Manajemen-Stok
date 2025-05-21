@@ -13,7 +13,6 @@ class HargaProdukController extends Controller
     {
         $hargaProduk = HargaProduk::with(['produk', 'satuan'])->latest()->get();
         return view('harga_produk.index', compact('hargaProduk'));
-        
     }
 
     public function create()
@@ -67,5 +66,57 @@ class HargaProdukController extends Controller
     {
         $hargaProduk->delete();
         return redirect()->route('harga_produk.index')->with('success', 'Harga produk berhasil dihapus.');
+    }
+
+    public function getHarga(Request $request)
+    {
+        $produkId = $request->produk_id;
+        $satuanId = $request->satuan_id;
+        $jenisPelanggan = $request->jenis_pelanggan;
+
+        $harga = \App\Models\HargaProduk::where('produk_id', $produkId)
+            ->where('satuan_id', $satuanId)
+            ->where('jenis_pelanggan', $jenisPelanggan)
+            ->value('harga');
+
+        if ($harga === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Harga tidak ditemukan.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'harga' => $harga
+        ]);
+    }
+
+    public function getHargaByProduk(Request $request)
+    {
+        $produkId = $request->query('produk_id');
+        $satuanId = $request->query('satuan_id');
+        $jenisPelanggan = $request->query('jenis_pelanggan');
+
+        if (!$produkId || !$satuanId || !$jenisPelanggan) {
+            return response()->json(['success' => false, 'message' => 'Parameter tidak lengkap.'], 400);
+        }
+
+        $harga = \App\Models\HargaProduk::where('produk_id', $produkId)
+            ->where('satuan_id', $satuanId)
+            ->where('jenis_pelanggan', $jenisPelanggan)
+            ->first();
+
+        if ($harga) {
+            return response()->json([
+                'success' => true,
+                'harga' => $harga->harga
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Harga tidak ditemukan.'
+            ]);
+        }
     }
 }

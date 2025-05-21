@@ -13,6 +13,7 @@ class TransaksiOffline extends Model
 
     protected $fillable = [
         'kode_transaksi',
+        'jenis_pelanggan', 
         'tanggal',
         'total',
         'dibayar',

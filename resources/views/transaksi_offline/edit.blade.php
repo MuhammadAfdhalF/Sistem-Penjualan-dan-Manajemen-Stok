@@ -14,18 +14,22 @@
             @csrf
             @method('PUT')
 
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Kode Transaksi</label>
-                        <input type="text" class="form-control" value="{{ $transaksi->kode_transaksi }}" readonly>
-                    </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Kode Transaksi</label>
+                    <input type="text" class="form-control" value="{{ $transaksi->kode_transaksi }}" readonly>
                 </div>
-                <div class="col-12 col-md-6">
-                    <div class="form-group">
-                        <label class="form-label">Tanggal Transaksi</label>
-                        <input type="datetime-local" name="tanggal" id="tanggal" class="form-control" value="{{ \Carbon\Carbon::parse($transaksi->tanggal)->format('Y-m-d\TH:i') }}">
-                    </div>
+                <div class="col-md-4">
+                    <label class="form-label">Tanggal Transaksi</label>
+                    <input type="datetime-local" name="tanggal" class="form-control" value="{{ \Carbon\Carbon::parse($transaksi->tanggal)->format('Y-m-d\TH:i') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Jenis Pelanggan</label>
+                    <select name="jenis_pelanggan" id="jenis_pelanggan" class="form-select" required>
+                        <option value="">-- Pilih Jenis Pelanggan --</option>
+                        <option value="Individu" {{ $transaksi->jenis_pelanggan == 'Individu' ? 'selected' : '' }}>Individu</option>
+                        <option value="Toko Kecil" {{ $transaksi->jenis_pelanggan == 'Toko Kecil' ? 'selected' : '' }}>Toko Kecil</option>
+                    </select>
                 </div>
             </div>
 
@@ -37,13 +41,13 @@
                     <table class="table table-bordered align-middle" id="produkTable">
                         <thead class="table-light">
                             <tr>
-                                <th style="min-width: 180px;">Produk</th>
-                                <th style="min-width: 130px;">Tipe Harga</th>
-                                <th style="min-width: 110px;">Harga</th>
-                                <th style="min-width: 90px;">Jumlah</th>
-                                <th style="min-width: 130px;">Subtotal</th>
-                                <th style="width: 90px;" class="text-center">
-                                    <button type="button" class="btn btn-xs btn-success px-2 py-1" id="addRow" aria-label="Tambah Baris Produk" style="font-size: 0.75rem;">
+                                <th>Produk</th>
+                                <th>Satuan</th>
+                                <th>Harga (Rp)</th>
+                                <th>Jumlah</th>
+                                <th>Subtotal (Rp)</th>
+                                <th class="text-center" style="width: 60px">
+                                    <button type="button" class="btn btn-sm btn-success" id="addRow">
                                         <i class="ti ti-plus"></i>
                                     </button>
                                 </th>
@@ -56,33 +60,29 @@
                                     <select name="produk_id[]" class="form-select produk-select" required>
                                         <option value="">Pilih Produk</option>
                                         @foreach($produk as $p)
-                                        <option
-                                            value="{{ $p->id }}"
-                                            data-harga-normal="{{ $p->harga_normal }}"
-                                            data-harga-grosir="{{ $p->harga_grosir ?? 0 }}"
-                                            {{ $p->id == $item->produk_id ? 'selected' : '' }}>
+                                        <option value="{{ $p->id }}" {{ $p->id == $item->produk_id ? 'selected' : '' }}>
                                             {{ $p->nama_produk }}
                                         </option>
                                         @endforeach
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="tipe_harga[]" class="form-select tipe-harga-select" required>
-                                        <option value="normal" {{ ($item->tipe_harga ?? 'normal') == 'normal' ? 'selected' : '' }}>Harga Normal</option>
-                                        <option value="grosir" {{ ($item->tipe_harga ?? '') == 'grosir' ? 'selected' : '' }}>Harga Grosir</option>
+                                    <select name="satuan_id[]" class="form-select satuan-select" required>
+                                        <option value="{{ $item->satuan_id }}">{{ $item->satuan->nama_satuan ?? '-' }}</option>
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" name="harga[]" class="form-control harga"  value="{{ number_format($item->harga, 0, ',', '.') }}">
+                                    <input type="text" name="harga[]" class="form-control harga text-end" value="{{ number_format($item->harga, 0, ',', '.') }}" readonly>
+                                    <input type="hidden" name="harga_id[]" class="harga-id" value="{{ $item->harga_id }}">
                                 </td>
                                 <td>
                                     <input type="number" name="jumlah[]" class="form-control jumlah" min="1" value="{{ $item->jumlah }}">
                                 </td>
                                 <td>
-                                    <input type="text" name="subtotal[]" class="form-control subtotal" readonly value="{{ number_format($item->subtotal, 0, ',', '.') }}">
+                                    <input type="text" name="subtotal[]" class="form-control subtotal text-end" readonly value="{{ number_format($item->subtotal, 0, ',', '.') }}">
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-danger removeRow" aria-label="Hapus Baris Produk">
+                                    <button type="button" class="btn btn-sm btn-danger removeRow">
                                         <i class="ti ti-trash"></i>
                                     </button>
                                 </td>
@@ -96,34 +96,28 @@
             <hr>
 
             <div class="row justify-content-end g-3">
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="form-group mb-3">
-                        <label class="form-label">Total</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="text" name="total" id="total" class="form-control" readonly value="{{ number_format($transaksi->total, 0, ',', '.') }}">
-                        </div>
+                <div class="col-md-4">
+                    <label class="form-label">Total</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" name="total" id="total" class="form-control text-end" readonly value="{{ number_format($transaksi->total, 0, ',', '.') }}">
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label class="form-label">Dibayar</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="text" name="dibayar" id="dibayar" class="form-control" value="{{ number_format($transaksi->dibayar, 0, ',', '.') }}">
-                        </div>
+                    <label class="form-label mt-3">Dibayar</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" name="dibayar" id="dibayar" class="form-control text-end" value="{{ number_format($transaksi->dibayar, 0, ',', '.') }}">
                     </div>
 
-                    <div class="form-group mb-3">
-                        <label class="form-label">Kembalian</label>
-                        <div class="input-group">
-                            <span class="input-group-text">Rp</span>
-                            <input type="text" name="kembalian" id="kembalian" class="form-control" readonly value="{{ number_format($transaksi->kembalian, 0, ',', '.') }}">
-                        </div>
+                    <label class="form-label mt-3">Kembalian</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Rp</span>
+                        <input type="text" name="kembalian" id="kembalian" class="form-control text-end" readonly value="{{ number_format($transaksi->kembalian, 0, ',', '.') }}">
                     </div>
                 </div>
             </div>
 
-            <div class="form-group text-end mt-4">
+            <div class="text-end mt-4">
                 <button type="submit" class="btn btn-primary">
                     <i class="ti ti-device-floppy me-1"></i> Update Transaksi
                 </button>

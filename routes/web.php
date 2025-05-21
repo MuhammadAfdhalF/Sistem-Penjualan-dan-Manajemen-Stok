@@ -39,6 +39,9 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 
     // harga
     Route::resource('harga_produk', HargaProdukController::class);
+    Route::get('/get-harga-produk', [\App\Http\Controllers\HargaProdukController::class, 'getHarga']);
+    Route::get('/get-harga-produk', [HargaProdukController::class, 'getHargaByProduk']);
+
 
     // stok
     Route::resource('stok', StokController::class);

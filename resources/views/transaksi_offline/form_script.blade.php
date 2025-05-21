@@ -8,26 +8,40 @@
             return parseInt(str.replace(/[^0-9]/g, '')) || 0;
         }
 
-        function updateRowCalculations(row) {
-            const selectProduk = row.querySelector('.produk-select');
-            const tipeHargaSelect = row.querySelector('.tipe-harga-select');
-            const selectedOption = selectProduk.options[selectProduk.selectedIndex];
-            if (!selectedOption) return;
+        function updateHargaFromServer(row) {
+            const produkId = row.querySelector('.produk-select')?.value;
+            const satuanId = row.querySelector('.satuan-select')?.value;
+            const jenisPelanggan = document.getElementById('jenis_pelanggan')?.value;
 
-            let harga = 0;
-            if (tipeHargaSelect.value === 'normal') {
-                harga = parseFloat(selectedOption.getAttribute('data-harga-normal')) || 0;
-            } else if (tipeHargaSelect.value === 'grosir') {
-                harga = parseFloat(selectedOption.getAttribute('data-harga-grosir')) || 0;
+            if (!produkId || !satuanId || !jenisPelanggan) {
+                row.querySelector('.harga').value = '';
+                row.querySelector('.subtotal').value = '';
+                calculateGrandTotal();
+                return;
             }
 
-            const jumlah = parseInt(row.querySelector('.jumlah').value) || 0;
-            const subtotal = harga * jumlah;
+            const hargaInput = row.querySelector('.harga');
+            hargaInput.value = '...'; // loading indicator sementara
 
-            row.querySelector('.harga').value = formatCurrency(harga);
-            row.querySelector('.subtotal').value = formatCurrency(subtotal);
+            fetch(`/get-harga-produk?produk_id=${produkId}&satuan_id=${satuanId}&jenis_pelanggan=${encodeURIComponent(jenisPelanggan)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.harga !== null && !isNaN(data.harga)) {
+                        const harga = parseFloat(data.harga);
+                        const jumlah = parseFloat(row.querySelector('.jumlah').value) || 0;
 
-            calculateGrandTotal();
+                        row.querySelector('.harga').value = formatCurrency(harga);
+                        row.querySelector('.subtotal').value = formatCurrency(harga * jumlah);
+                        calculateGrandTotal();
+                    } else {
+                        hargaInput.value = '';
+                        row.querySelector('.subtotal').value = '';
+                    }
+                })
+                .catch(() => {
+                    hargaInput.value = '';
+                    row.querySelector('.subtotal').value = '';
+                });
         }
 
         function calculateGrandTotal() {
@@ -45,19 +59,35 @@
 
         function attachEvents(row) {
             row.querySelector('.produk-select').addEventListener('change', function() {
-                updateRowCalculations(row);
+                const produkId = this.value;
+                const satuanSelect = row.querySelector('.satuan-select');
+                satuanSelect.innerHTML = '<option value="">Pilih Satuan</option>';
+
+                fetch(`/get-satuan-by-produk/${produkId}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res?.data?.length) {
+                            res.data.forEach(item => {
+                                satuanSelect.innerHTML += `<option value="${item.id}">${item.nama_satuan}</option>`;
+                            });
+                            row.querySelector('.jumlah').value = 1;
+                            updateHargaFromServer(row);
+                        }
+                    });
             });
 
-            row.querySelector('.tipe-harga-select').addEventListener('change', function() {
-                updateRowCalculations(row);
+            row.querySelector('.satuan-select').addEventListener('change', function() {
+                row.querySelector('.jumlah').value = 1;
+                updateHargaFromServer(row);
             });
 
             row.querySelector('.jumlah').addEventListener('input', function() {
-                updateRowCalculations(row);
+                updateHargaFromServer(row);
             });
 
             row.querySelector('.removeRow').addEventListener('click', function() {
-                if (document.querySelectorAll('#produkTable tbody tr').length > 1) {
+                const rows = document.querySelectorAll('#produkTable tbody tr');
+                if (rows.length > 1) {
                     this.closest('tr').remove();
                     calculateGrandTotal();
                 } else {
@@ -66,39 +96,45 @@
             });
         }
 
-        // Inisialisasi event pada baris yang sudah ada
-        document.querySelectorAll('.product-row').forEach(function(row) {
-            attachEvents(row);
-            updateRowCalculations(row);
+        // Event global: jenis pelanggan diubah → refresh semua harga
+        document.getElementById('jenis_pelanggan')?.addEventListener('change', function() {
+            document.querySelectorAll('.product-row').forEach(row => {
+                updateHargaFromServer(row);
+            });
         });
 
-        // Tombol tambah baris produk
+        // Inisialisasi baris awal
+        document.querySelectorAll('.product-row').forEach(row => {
+            attachEvents(row);
+        });
+
+        // Tambah baris
         document.getElementById('addRow').addEventListener('click', function() {
             const tbody = document.querySelector('#produkTable tbody');
-            const newRow = tbody.querySelector('tr').cloneNode(true);
+            const template = tbody.querySelector('tr');
+            const newRow = template.cloneNode(true);
 
             newRow.querySelector('.produk-select').selectedIndex = 0;
-            newRow.querySelector('.tipe-harga-select').value = 'normal';
-            newRow.querySelector('.harga').value = '';
+            newRow.querySelector('.satuan-select').innerHTML = '<option value="">Pilih Satuan</option>';
             newRow.querySelector('.jumlah').value = 1;
+            newRow.querySelector('.harga').value = '';
             newRow.querySelector('.subtotal').value = '';
 
-            attachEvents(newRow);
-
             tbody.appendChild(newRow);
+            attachEvents(newRow);
         });
 
-        // Event untuk input dibayar (format currency dan hitung kembali total)
+        // Event format input dibayar
         document.getElementById('dibayar').addEventListener('input', function() {
             this.value = formatCurrency(parseCurrency(this.value));
             calculateGrandTotal();
         });
 
-        // Validasi form submit
+        // Validasi submit
         document.getElementById('formTransaksi').addEventListener('submit', function(e) {
             let isValid = true;
 
-            document.querySelectorAll('.produk-select').forEach(function(select) {
+            document.querySelectorAll('.produk-select').forEach(select => {
                 if (select.selectedIndex === 0) {
                     alert('Harap pilih produk untuk semua baris');
                     isValid = false;

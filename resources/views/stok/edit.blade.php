@@ -29,9 +29,9 @@ Halaman Edit Stok
                         <label for="produk_id" class="form-label">Produk</label>
                         <select name="produk_id" id="produk_id" class="form-control @error('produk_id') is-invalid @enderror">
                             <option value="" disabled {{ old('produk_id', $stok->produk_id) == '' ? 'selected' : '' }}>Pilih Produk</option>
-                            @foreach ($produk as $produk)
-                            <option value="{{ $produk->id }}" {{ old('produk_id', $stok->produk_id) == $produk->id ? 'selected' : '' }}>
-                                {{ $produk->nama_produk }}
+                            @foreach ($produk as $item)
+                            <option value="{{ $item->id }}" {{ old('produk_id', $stok->produk_id) == $item->id ? 'selected' : '' }}>
+                                {{ $item->nama_produk }}
                             </option>
                             @endforeach
                         </select>
@@ -49,12 +49,10 @@ Halaman Edit Stok
                         <input type="hidden" name="jenis" value="{{ $stok->jenis }}">
                     </div>
 
-
                     <div class="col-md-12 mb-3">
                         <label class="form-label">Jumlah Stok (Bertingkat)</label>
-
                         <div id="stokBertingkatInputs" class="row">
-                            @foreach($satuanBertingkat as $satuan)
+                            @foreach($satuanBertingkat->sortByDesc('level') as $satuan)
                             <div class="col-md-4 mb-2">
                                 <label class="form-label">{{ $satuan->nama_satuan }}</label>
                                 <input type="number"
@@ -69,21 +67,6 @@ Halaman Edit Stok
                                 @enderror
                             </div>
                             @endforeach
-
-                            {{-- Input satuan utama --}}
-                            <div class="col-md-4 mb-2">
-                                <label class="form-label">{{ $produk->satuan_utama }}</label>
-                                <input type="number"
-                                    class="form-control stok-bertahap-input @error('stok_bertahap.utama') is-invalid @enderror"
-                                    name="stok_bertahap[utama]"
-                                    data-konversi="1"
-                                    min="0"
-                                    step="0.01"
-                                    value="{{ old('stok_bertahap.utama', $stokBertingkatDefault['utama'] ?? 0) }}">
-                                @error('stok_bertahap.utama')
-                                <small class="text-danger">{{ $message }}</small>
-                                @enderror
-                            </div>
                         </div>
                     </div>
 
@@ -108,51 +91,41 @@ Halaman Edit Stok
 @push('scripts')
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const modeUtama = document.getElementById('mode_utama');
-        const modeBertahap = document.getElementById('mode_bertahap');
-        const stokUtamaInput = document.getElementById('stok_utama');
-        const stokBertingkat = document.getElementById('stokBertingkatInputs');
+        const produkSelect = document.getElementById('produk_id');
+        const stokInputsWrapper = document.getElementById('stokBertingkatInputs');
 
-        if (!modeUtama || !modeBertahap || !stokUtamaInput || !stokBertingkat) return;
+        produkSelect.addEventListener('change', function() {
+            const produkId = this.value;
+            stokInputsWrapper.innerHTML = '<div class="text-muted">Memuat satuan...</div>';
 
-        function hitungTotalStok() {
-            let total = 0;
-            document.querySelectorAll('.stok-bertahap-input').forEach(input => {
-                const jumlah = parseInt(input.value) || 0;
-                const konversi = parseFloat(input.dataset.konversi) || 0;
-                total += jumlah * konversi;
-            });
-            stokUtamaInput.value = total;
-        }
+            fetch(`/get-satuan-by-produk/${produkId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        stokInputsWrapper.innerHTML = '';
+                        data.data.sort((a, b) => b.level - a.level); // dari tinggi ke rendah
 
-        function toggleInput() {
-            if (modeUtama.checked) {
-                stokUtamaInput.style.display = 'block';
-                stokUtamaInput.disabled = false;
-
-                stokBertingkat.style.display = 'none';
-                stokBertingkat.querySelectorAll('input').forEach(input => {
-                    input.disabled = true;
-                    input.value = ''; // reset input bertahap supaya bersih
+                        data.data.forEach(satuan => {
+                            const div = document.createElement('div');
+                            div.classList.add('col-md-4', 'mb-2');
+                            div.innerHTML = `
+                                <label class="form-label">${satuan.nama_satuan}</label>
+                                <input type="number" class="form-control stok-bertahap-input" 
+                                       name="stok_bertahap[${satuan.id}]" 
+                                       data-konversi="${satuan.konversi_ke_satuan_utama}" 
+                                       min="0" step="0.01" value="0">
+                            `;
+                            stokInputsWrapper.appendChild(div);
+                        });
+                    } else {
+                        stokInputsWrapper.innerHTML = '<div class="text-danger">Tidak ada satuan tersedia untuk produk ini.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Gagal memuat satuan:', error);
+                    stokInputsWrapper.innerHTML = '<div class="text-danger">Terjadi kesalahan saat memuat satuan.</div>';
                 });
-            } else {
-                stokUtamaInput.style.display = 'none';
-                stokUtamaInput.disabled = true;
-
-                stokBertingkat.style.display = 'flex';
-                stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = false);
-                hitungTotalStok();
-            }
-        }
-
-        modeUtama.addEventListener('change', toggleInput);
-        modeBertahap.addEventListener('change', toggleInput);
-
-        document.querySelectorAll('.stok-bertahap-input').forEach(input => {
-            input.addEventListener('input', hitungTotalStok);
         });
-
-        toggleInput(); // Set posisi awal
     });
 </script>
 @endpush

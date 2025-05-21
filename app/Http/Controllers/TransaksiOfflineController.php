@@ -45,71 +45,91 @@ class TransaksiOfflineController extends Controller
         $request->validate([
             'kode_transaksi' => 'required|unique:transaksi_offline,kode_transaksi',
             'tanggal' => 'required|date',
+            'jenis_pelanggan' => 'required|in:Individu,Toko Kecil',
             'total' => 'required',
             'dibayar' => 'required',
             'kembalian' => 'required',
             'produk_id.*' => 'required|exists:produks,id',
-            'jumlah.*' => 'required|integer|min:1',
-            'harga.*' => 'required',
+            'satuan_id.*' => 'required|exists:satuans,id',
+            'jumlah.*' => 'required|numeric|min:0.01',
+            'harga.*' => 'required|numeric|min:0',
         ]);
 
-        // Fungsi bantu untuk membersihkan format uang
-        $sanitizeMoney = function ($value) {
-            return floatval(str_replace(['.', ','], ['', '.'], $value));
-        };
+        $sanitizeMoney = fn($val) => floatval(str_replace(['.', ','], ['', '.'], $val));
 
         try {
-            DB::beginTransaction();
+            \DB::beginTransaction();
 
-            // Buat transaksi
+            // Simpan transaksi utama
             $transaksi = TransaksiOffline::create([
                 'kode_transaksi' => $request->kode_transaksi,
                 'tanggal' => $request->tanggal,
+                'jenis_pelanggan' => $request->jenis_pelanggan,
                 'total' => $sanitizeMoney($request->total),
                 'dibayar' => $sanitizeMoney($request->dibayar),
                 'kembalian' => $sanitizeMoney($request->kembalian),
             ]);
 
             foreach ($request->produk_id as $i => $produkId) {
+                $satuanId = $request->satuan_id[$i];
+                $jumlah = (float) $request->jumlah[$i];
                 $harga = $sanitizeMoney($request->harga[$i]);
-                $jumlah = $request->jumlah[$i];
 
-                TransaksiOfflineDetail::create([
+                // Cari harga_id dari harga_produks
+                $hargaModel = \App\Models\HargaProduk::where('produk_id', $produkId)
+                    ->where('satuan_id', $satuanId)
+                    ->where('jenis_pelanggan', $request->jenis_pelanggan)
+                    ->first();
+
+                if (!$hargaModel) {
+                    \DB::rollBack();
+                    return redirect()->back()->with('error', "Harga belum tersedia untuk produk, satuan, dan jenis pelanggan ini.");
+                }
+
+                // Simpan detail transaksi
+                \App\Models\TransaksiOfflineDetail::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produkId,
+                    'satuan_id' => $satuanId,
+                    'harga_id' => $hargaModel->id,
                     'jumlah' => $jumlah,
                     'harga' => $harga,
                     'subtotal' => $harga * $jumlah,
                 ]);
 
-                $produk = Produk::find($produkId);
-                if ($produk && $produk->stok >= $jumlah) {
-                    $produk->stok -= $jumlah;
-                    $produk->save();
+                // Hitung jumlah satuan utama dan kurangi stok
+                $satuan = \App\Models\Satuan::findOrFail($satuanId);
+                $konversi = $satuan->konversi_ke_satuan_utama ?? 1;
+                $jumlahDalamSatuanUtama = $jumlah * $konversi;
 
-                    Stok::create([
-                        'produk_id' => $produkId,
-                        'jenis' => 'keluar',
-                        'jumlah' => $jumlah,
-                        'keterangan' => 'Transaksi penjualan ' . $transaksi->kode_transaksi,
-                    ]);
-                } else {
-                    DB::rollBack();
-                    return redirect()->back()->with('error', 'Stok produk tidak cukup.');
+                $produk = \App\Models\Produk::findOrFail($produkId);
+                if ($produk->stok < $jumlahDalamSatuanUtama) {
+                    \DB::rollBack();
+                    return redirect()->back()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
                 }
+
+                $produk->stok -= $jumlahDalamSatuanUtama;
+                $produk->save();
+
+                \App\Models\Stok::create([
+                    'produk_id' => $produkId,
+                    'jenis' => 'keluar',
+                    'jumlah' => $jumlahDalamSatuanUtama,
+                    'keterangan' => 'Transaksi penjualan ' . $transaksi->kode_transaksi,
+                ]);
             }
 
-            DB::commit();
-
-            // Panggil command update daily_usage dan rop setelah transaksi berhasil
             Artisan::call('produk:update-dailyusage-rop');
+            \DB::commit();
 
-            return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil disimpan dan ROP diperbarui.');
+            return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil disimpan.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            \DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
     }
+
+
 
 
 
@@ -123,110 +143,140 @@ class TransaksiOfflineController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'tanggal' => 'required|date',
-            'total' => 'required',
-            'dibayar' => 'required',
-            'kembalian' => 'required',
-            'produk_id.*' => 'required|exists:produks,id',
-            'jumlah.*' => 'required|integer|min:1',
-            'harga.*' => 'required',
+            'tanggal'       => 'required|date',
+            'total'         => 'required',
+            'dibayar'       => 'required',
+            'kembalian'     => 'required',
+            'produk_id.*'   => 'required|exists:produks,id',
+            'satuan_id.*'   => 'required|exists:satuans,id',
+            'jumlah.*'      => 'required|numeric|min:0.01',
+            'harga.*'       => 'required|numeric|min:0',
         ]);
 
-        // Fungsi bantu untuk membersihkan format uang
-        $sanitizeMoney = function ($value) {
-            return floatval(str_replace(['.', ','], ['', '.'], $value));
-        };
+        $sanitizeMoney = fn($val) => floatval(str_replace(['.', ','], ['', '.'], $val));
 
+        \DB::beginTransaction();
         try {
-            $transaksi = TransaksiOffline::findOrFail($id);
+            $transaksi = \App\Models\TransaksiOffline::with('detail')->findOrFail($id);
 
-            // Kembalikan stok lama (rollback stok)
-            $oldDetails = TransaksiOfflineDetail::where('transaksi_id', $transaksi->id)->get();
-            foreach ($oldDetails as $detail) {
-                $produk = Produk::find($detail->produk_id);
-                if ($produk) {
-                    $produk->stok += $detail->jumlah;
-                    $produk->save();
-                }
-            }
+            // Rollback stok lama
+            foreach ($transaksi->detail as $detail) {
+                $satuan = \App\Models\Satuan::findOrFail($detail->satuan_id);
+                $konversi = $satuan->konversi_ke_satuan_utama ?? 1;
+                $jumlahUtama = $detail->jumlah * $konversi;
 
-            // Update transaksi utama
-            $transaksi->update([
-                'tanggal' => $request->tanggal,
-                'total' => $sanitizeMoney($request->total),
-                'dibayar' => $sanitizeMoney($request->dibayar),
-                'kembalian' => $sanitizeMoney($request->kembalian),
-            ]);
+                $produk = \App\Models\Produk::findOrFail($detail->produk_id);
+                $produk->stok += $jumlahUtama;
+                $produk->save();
 
-            // Hapus detail transaksi lama
-            TransaksiOfflineDetail::where('transaksi_id', $transaksi->id)->delete();
-
-            // Tambahkan ulang detail + update stok
-            foreach ($request->produk_id as $i => $produkId) {
-                $jumlah = $request->jumlah[$i];
-                $harga = $sanitizeMoney($request->harga[$i]);
-
-                $produk = Produk::find($produkId);
-                if ($produk) {
-                    $produk->stok -= $jumlah;
-                    $produk->save();
-                }
-
-                TransaksiOfflineDetail::create([
-                    'transaksi_id' => $transaksi->id,
-                    'produk_id' => $produkId,
-                    'jumlah' => $jumlah,
-                    'harga' => $harga,
-                    'subtotal' => $harga * $jumlah,
+                \App\Models\Stok::create([
+                    'produk_id' => $detail->produk_id,
+                    'jenis' => 'masuk',
+                    'jumlah' => $jumlahUtama,
+                    'keterangan' => 'Rollback transaksi ' . $transaksi->kode_transaksi,
                 ]);
             }
 
-            DB::commit();
+            // Hapus detail lama
+            $transaksi->detail()->delete();
 
-            // Panggil command update daily_usage dan rop setelah transaksi berhasil
-            Artisan::call('produk:update-dailyusage-rop');
+            // Update transaksi utama
+            $transaksi->update([
+                'tanggal'   => $request->tanggal,
+                'total'     => $sanitizeMoney($request->total),
+                'dibayar'   => $sanitizeMoney($request->dibayar),
+                'kembalian' => $sanitizeMoney($request->kembalian),
+            ]);
+
+            // Simpan ulang detail
+            foreach ($request->produk_id as $i => $produkId) {
+                $satuanId = $request->satuan_id[$i];
+                $jumlah = (float) $request->jumlah[$i];
+                $harga = $sanitizeMoney($request->harga[$i]);
+
+                $hargaModel = \App\Models\HargaProduk::where('produk_id', $produkId)
+                    ->where('satuan_id', $satuanId)
+                    ->where('jenis_pelanggan', $transaksi->jenis_pelanggan)
+                    ->first();
+
+                if (!$hargaModel) {
+                    \DB::rollBack();
+                    return redirect()->back()->with('error', "Harga tidak ditemukan untuk kombinasi produk, satuan, dan jenis pelanggan.");
+                }
+
+                \App\Models\TransaksiOfflineDetail::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id'    => $produkId,
+                    'satuan_id'    => $satuanId,
+                    'harga_id'     => $hargaModel->id,
+                    'jumlah'       => $jumlah,
+                    'harga'        => $harga,
+                    'subtotal'     => $harga * $jumlah,
+                ]);
+
+                $produk = \App\Models\Produk::findOrFail($produkId);
+                $satuan = \App\Models\Satuan::findOrFail($satuanId);
+                $jumlahUtama = $jumlah * $satuan->konversi_ke_satuan_utama;
+
+                if ($produk->stok < $jumlahUtama) {
+                    \DB::rollBack();
+                    return redirect()->back()->with('error', 'Stok tidak mencukupi untuk produk: ' . $produk->nama_produk);
+                }
+
+                $produk->stok -= $jumlahUtama;
+                $produk->save();
+
+                \App\Models\Stok::create([
+                    'produk_id' => $produkId,
+                    'jenis'     => 'keluar',
+                    'jumlah'    => $jumlahUtama,
+                    'keterangan' => 'Update transaksi ' . $transaksi->kode_transaksi,
+                ]);
+            }
+
+            \Artisan::call('produk:update-dailyusage-rop');
+            \DB::commit();
 
             return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil diperbarui.');
         } catch (\Exception $e) {
+            \DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memperbarui transaksi: ' . $e->getMessage());
         }
     }
 
 
+
+
     public function destroy($id)
     {
+        DB::beginTransaction();
         try {
-            $transaksi = TransaksiOffline::findOrFail($id);
-            $details = TransaksiOfflineDetail::where('transaksi_id', $id)->get();
+            $transaksi = TransaksiOffline::with('detail')->findOrFail($id);
 
-            // Mengembalikan stok produk yang digunakan dalam transaksi
-            foreach ($details as $detail) {
-                $produk = Produk::find($detail->produk_id);
+            foreach ($transaksi->detail as $detail) {
+                $produk = $detail->produk;
+                if ($produk) {
+                    $produk->stok += $detail->jumlah;
+                    $produk->save();
 
-                // Mengurangi stok produk di tabel produk
-                $produk->stok += $detail->jumlah;
-                $produk->save();
-
-                // Menyimpan perubahan stok di tabel stok
-                \App\Models\Stok::create([
-                    'produk_id' => $detail->produk_id,
-                    'jenis' => 'masuk', // Barang kembali masuk ke stok
-                    'jumlah' => $detail->jumlah,
-                    'keterangan' => 'Transaksi dihapus, stok dikembalikan',
-                ]);
+                    Stok::create([
+                        'produk_id' => $detail->produk_id,
+                        'jenis' => 'masuk',
+                        'jumlah' => $detail->jumlah,
+                        'keterangan' => 'Transaksi dihapus (' . $transaksi->kode_transaksi . ')',
+                    ]);
+                }
             }
 
-            // Hapus detail transaksi
-            TransaksiOfflineDetail::where('transaksi_id', $id)->delete();
-
-            // Hapus transaksi
+            $transaksi->detail()->delete();
             $transaksi->delete();
+
+            Artisan::call('produk:update-dailyusage-rop');
             DB::commit();
 
-            // Panggil command update daily_usage dan rop setelah transaksi berhasil
-            Artisan::call('produk:update-dailyusage-rop');
-            return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil dihapus dan stok dikembalikan.');
+            return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil dihapus.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
         }
     }
