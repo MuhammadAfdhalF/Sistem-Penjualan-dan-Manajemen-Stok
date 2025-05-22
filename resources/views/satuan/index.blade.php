@@ -21,7 +21,7 @@
             @endif
 
             <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle">
+                <table class="table table-bordered table-striped align-middle" id="table">
                     <thead class="table-light">
                         <tr>
                             <th>No</th>

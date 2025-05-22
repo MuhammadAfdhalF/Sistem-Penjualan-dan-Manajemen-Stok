@@ -34,7 +34,6 @@
     @vite(['resources/js/app.js'])
 
     <style>
-        
         /* SEMBUNYIKAN SEMUA ELEMEN LARAVEL DEBUGBAR */
         .phpdebugbar,
         .phpdebugbar-open-btn,
@@ -112,6 +111,13 @@
         .pc-container.collapsed {
             margin-left: 70px;
         }
+
+        .dataTables_filter input {
+            font-size: 0.85rem;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <!-- [Head] end -->
@@ -136,6 +142,7 @@
     <!-- [ Header ] end -->
 
     <!-- [ Main Content ] start -->
+
     <div class="pc-container">
         <div class="pc-content">
             <!-- [ breadcrumb ] start -->
@@ -180,6 +187,26 @@
 
     <script>
         $(document).ready(function() {
+
+
+            $('#table').DataTable({
+                language: {
+                    search: "🔍",
+                    searchPlaceholder: "Search here...",
+                },
+                dom: '<"row mb-3"' +
+                    '<"col-md-6"l>' +
+                    '<"col-md-6 text-end"f>' +
+                    '>' +
+                    '<"row"' +
+                    '<"col-sm-12"tr>' +
+                    '>' +
+                    '<"row mt-3"' +
+                    '<"col-md-6"i>' +
+                    '<"col-md-6 text-end custom-pagination"p>' +
+                    '>',
+            });
+
             // ... kode DataTables dan alert...
 
             const sidebar = document.getElementById('pc-sidebar');
