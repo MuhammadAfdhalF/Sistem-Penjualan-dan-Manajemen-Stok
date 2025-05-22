@@ -13,9 +13,10 @@ class KeuanganController extends Controller
      */
     public function index()
     {
-        $keuangans = Keuangan::with('transaksi')->latest()->get();
+        $keuangans = \App\Models\Keuangan::with(['transaksiOffline', 'transaksiOnline'])->latest()->get();
         return view('keuangan.index', compact('keuangans'));
     }
+
 
     /**
      * Tampilkan form tambah data keuangan (manual).

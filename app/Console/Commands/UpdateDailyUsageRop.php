@@ -7,6 +7,7 @@ use App\Models\Produk;
 use App\Models\TransaksiOfflineDetail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Models\TransaksiOnlineDetail;
 
 class UpdateDailyUsageRop extends Command
 {
@@ -21,27 +22,33 @@ class UpdateDailyUsageRop extends Command
         $produkList = Produk::all();
 
         foreach ($produkList as $produk) {
-            // Hitung total produk terjual dalam 30 hari terakhir
-            $jumlahTerjual = TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
+            // Hitung total produk terjual dari transaksi offline
+            $jumlahOffline = TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
                 $q->where('tanggal', '>=', $tanggalMulai);
             })->where('produk_id', $produk->id)->sum('jumlah');
+
+            // Hitung total produk terjual dari transaksi online
+            $jumlahOnline = TransaksiOnlineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
+                $q->where('tanggal', '>=', $tanggalMulai);
+            })->where('produk_id', $produk->id)->sum('jumlah');
+
+            $jumlahTerjual = $jumlahOffline + $jumlahOnline;
 
             // Hitung daily usage
             $dailyUsage = $jumlahTerjual / $periodeHari;
 
-            // Hitung ROP, hanya untuk log
+            // Hitung ROP (Reorder Point)
             $rop = ($produk->lead_time * $dailyUsage) + $produk->safety_stock;
 
-            // Simpan ke database hanya daily_usage
+            // Simpan hanya daily_usage
             $produk->update([
                 'daily_usage' => $dailyUsage,
             ]);
 
-            // Tampilkan ke console
+            // Log dan info ke console
             $this->info("Produk ID {$produk->id} updated: daily_usage = {$dailyUsage}, rop = {$rop}");
 
-            // Tulis log untuk debug
-            Log::info("UpdateDailyUsageRop | Produk ID: {$produk->id} | Jumlah Terjual: {$jumlahTerjual} | Lead Time: {$produk->lead_time} | Safety Stock: {$produk->safety_stock} | Daily Usage: {$dailyUsage} | ROP: {$rop}");
+            Log::info("UpdateDailyUsageRop | Produk ID: {$produk->id} | Offline: {$jumlahOffline} | Online: {$jumlahOnline} | Lead Time: {$produk->lead_time} | Safety Stock: {$produk->safety_stock} | Daily Usage: {$dailyUsage} | ROP: {$rop}");
         }
 
         $this->info("Update daily usage selesai.");

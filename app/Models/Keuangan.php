@@ -48,4 +48,15 @@ class Keuangan extends Model
     {
         return $query->where('jenis', 'pengeluaran');
     }
+
+
+    public function transaksiOffline()
+    {
+        return $this->belongsTo(\App\Models\TransaksiOffline::class, 'transaksi_id');
+    }
+
+    public function transaksiOnline()
+    {
+        return $this->belongsTo(\App\Models\TransaksiOnline::class, 'transaksi_id');
+    }
 }

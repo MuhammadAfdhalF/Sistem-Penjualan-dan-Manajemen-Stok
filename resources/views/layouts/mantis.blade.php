@@ -34,6 +34,16 @@
     @vite(['resources/js/app.js'])
 
     <style>
+        
+        /* SEMBUNYIKAN SEMUA ELEMEN LARAVEL DEBUGBAR */
+        .phpdebugbar,
+        .phpdebugbar-open-btn,
+        .phpdebugbar-minimize-btn,
+        .phpdebugbar-restore-btn {
+            display: none !important;
+        }
+
+
         .custom-pagination .dataTables_paginate {
             margin-right: 10px;
         }

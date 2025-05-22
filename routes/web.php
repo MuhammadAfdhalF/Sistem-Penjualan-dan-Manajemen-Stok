@@ -15,6 +15,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HargaProdukController;
 use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\SatuanController;
+use App\Http\Controllers\TransaksiOnlineController;
+use App\Http\Controllers\TransaksiOnlineDetailController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -52,6 +54,12 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 
     // transaksi offline detail
     Route::resource('transaksi_offline_detail', TransaksiOfflineDetailController::class);
+
+        // transaksi online
+    Route::resource('transaksi_online', TransaksiOnlineController::class);
+
+    // transaksi online detail
+    Route::resource('transaksi_online_detail', TransaksiOnlineDetailController::class);
 
     // Pelanggan
     Route::resource('pelanggan', PelangganController::class);

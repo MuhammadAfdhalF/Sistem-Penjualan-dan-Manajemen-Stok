@@ -70,13 +70,11 @@ $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' 
                         </div>
 
                         {{-- Input stok satuan utama --}}
-                        <input type="number" id="stok_utama"
-                            class="form-control mt-2"
-                            value="{{ old('stok', $produk->stok) }}"
-                            min="0">
+                        <input type="number" id="stok_utama" class="form-control mt-2"
+                            value="{{ old('stok', $produk->stok) }}" min="0">
 
                         {{-- Hidden final stok --}}
-                        <input type="hidden" name="stok" id="stok_final_hidden">
+                        <input type="hidden" id="stok_final_hidden">
 
                         {{-- Input stok bertingkat --}}
                         <div id="stokBertingkatInputs" class="row mt-2" style="display: none;">
@@ -94,6 +92,7 @@ $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' 
                         </div>
 
 
+
                         {{-- Lead Time --}}
                         <div class="col-md-4 mb-3">
                             <label for="lead_time" class="form-label">Lead Time (hari)</label>
@@ -103,13 +102,32 @@ $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' 
                             @error('lead_time') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
 
-                        {{-- Safety Stock --}}
-                        <div class="col-md-4 mb-3">
+                        {{-- Safety Stock - Utama --}}
+                        <div id="safetyStockUtamaWrapper" class="col-md-6 mb-3">
                             <label for="safety_stock" class="form-label">Safety Stock</label>
-                            <input type="number" name="safety_stock" id="safety_stock"
+                            <input type="number" id="safety_stock"
                                 class="form-control @error('safety_stock') is-invalid @enderror"
-                                value="{{ old('safety_stock', $produk->safety_stock) }}" min="0" required>
+                                value="{{ old('safety_stock', $produk->safety_stock) }}" min="0">
                             @error('safety_stock') <small class="text-danger">{{ $message }}</small> @enderror
+                        </div>
+
+                        {{-- Safety Stock - Bertingkat --}}
+                        <div id="safetyStockBertingkatWrapper" class="col-md-12 mb-3" style="display: none;">
+                            <label class="form-label">Safety Stock Bertingkat</label>
+                            <div class="row">
+                                @foreach($satuanBertingkat as $satuan)
+                                <div class="col-md-6 mt-2">
+                                    <label class="form-label">{{ $satuan->nama_satuan }}</label>
+                                    <input type="number"
+                                        class="form-control safety-stock-bertahap-input"
+                                        name="safety_stock_bertahap[{{ $satuan->id }}]"
+                                        data-konversi="{{ $satuan->konversi_ke_satuan_utama }}"
+                                        min="0"
+                                        value="{{ old('safety_stock_bertahap.' . $satuan->id, $safetyStockBertingkatDefault[$satuan->id] ?? 0) }}">
+                                </div>
+                                @endforeach
+                            </div>
+                            <input type="hidden" id="safety_stock_final_hidden">
                         </div>
 
                         {{-- Deskripsi --}}
@@ -148,9 +166,15 @@ $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' 
     document.addEventListener("DOMContentLoaded", function() {
         const modeUtama = document.getElementById('mode_utama');
         const modeBertahap = document.getElementById('mode_bertahap');
+
         const stokUtamaInput = document.getElementById('stok_utama');
         const stokFinalInput = document.getElementById('stok_final_hidden');
         const stokBertingkat = document.getElementById('stokBertingkatInputs');
+
+        const safetyStockUtamaInput = document.getElementById('safety_stock');
+        const safetyStockFinalInput = document.getElementById('safety_stock_final_hidden');
+        const safetyStockUtamaWrapper = document.getElementById('safetyStockUtamaWrapper');
+        const safetyStockBertingkatWrapper = document.getElementById('safetyStockBertingkatWrapper');
 
         function hitungTotalStok() {
             let total = 0;
@@ -159,34 +183,78 @@ $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' 
                 const konversi = parseFloat(input.dataset.konversi) || 1;
                 total += jumlah * konversi;
             });
-            stokFinalInput.value = total;
+            if (stokFinalInput) {
+                stokFinalInput.value = total.toFixed(2);
+            }
+        }
+
+        function hitungTotalSafetyStock() {
+            let total = 0;
+            document.querySelectorAll('.safety-stock-bertahap-input').forEach(input => {
+                const jumlah = parseFloat(input.value) || 0;
+                const konversi = parseFloat(input.dataset.konversi) || 1;
+                total += jumlah * konversi;
+            });
+            if (safetyStockFinalInput) {
+                safetyStockFinalInput.value = total.toFixed(2);
+            }
         }
 
         function toggleInput() {
-            if (modeUtama.checked) {
-                stokUtamaInput.style.display = 'block';
-                stokUtamaInput.disabled = false;
-                stokBertingkat.style.display = 'none';
-                stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = true);
-                stokFinalInput.value = stokUtamaInput.value;
+            const isUtama = modeUtama.checked;
+
+            // Stok
+            stokUtamaInput.style.display = isUtama ? 'block' : 'none';
+            stokUtamaInput.disabled = !isUtama;
+            stokUtamaInput.name = isUtama ? 'stok' : '';
+            stokBertingkat.style.display = isUtama ? 'none' : 'flex';
+            stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = isUtama);
+            stokFinalInput.name = isUtama ? '' : 'stok';
+            if (isUtama) {
+                stokFinalInput.value = parseFloat(stokUtamaInput.value || 0).toFixed(2);
             } else {
-                stokUtamaInput.style.display = 'none';
-                stokUtamaInput.disabled = true;
-                stokBertingkat.style.display = 'flex';
-                stokBertingkat.querySelectorAll('input').forEach(input => input.disabled = false);
                 hitungTotalStok();
+            }
+
+            // Safety stock
+            safetyStockUtamaWrapper.style.display = isUtama ? 'block' : 'none';
+            safetyStockUtamaInput.disabled = !isUtama;
+            safetyStockUtamaInput.name = isUtama ? 'safety_stock' : '';
+            safetyStockBertingkatWrapper.style.display = isUtama ? 'none' : 'block';
+            document.querySelectorAll('.safety-stock-bertahap-input').forEach(input => input.disabled = isUtama);
+            safetyStockFinalInput.name = isUtama ? '' : 'safety_stock';
+            if (isUtama) {
+                safetyStockFinalInput.value = parseFloat(safetyStockUtamaInput.value || 0).toFixed(2);
+            } else {
+                hitungTotalSafetyStock();
             }
         }
 
         modeUtama.addEventListener('change', toggleInput);
         modeBertahap.addEventListener('change', toggleInput);
-        stokUtamaInput.addEventListener('input', () => stokFinalInput.value = stokUtamaInput.value);
+
+        stokUtamaInput.addEventListener('input', () => {
+            if (modeUtama.checked) {
+                stokFinalInput.value = parseFloat(stokUtamaInput.value || 0).toFixed(2);
+            }
+        });
+
+        safetyStockUtamaInput.addEventListener('input', () => {
+            if (modeUtama.checked) {
+                safetyStockFinalInput.value = parseFloat(safetyStockUtamaInput.value || 0).toFixed(2);
+            }
+        });
 
         document.querySelectorAll('.stok-bertahap-input').forEach(input => {
             input.addEventListener('input', hitungTotalStok);
         });
 
-        toggleInput(); // initial setup
+        document.querySelectorAll('.safety-stock-bertahap-input').forEach(input => {
+            input.addEventListener('input', hitungTotalSafetyStock);
+        });
+
+        toggleInput(); // initial
     });
 </script>
+
 @endpush

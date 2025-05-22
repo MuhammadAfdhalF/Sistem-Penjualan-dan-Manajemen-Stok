@@ -24,18 +24,39 @@
             <div class="navbar-content flex-grow-1 d-flex flex-column justify-content-between">
                 <!-- Menu -->
                 <ul class="pc-navbar">
-                    <x-sidebar.links title="Dashboard" icon="ti ti-dashboard" route='dashboard.index' />
-                    <x-sidebar.links title="Produk" icon="ti ti-package" route='produk.index' />
-                    <x-sidebar.links title="Satuan" icon="ti ti-basket" route="satuan.index" />
-                    <x-sidebar.links title="Harga Produk" icon="ti ti-currency-dollar" route="harga_produk.index" />
 
-                    <x-sidebar.links title="Stok" icon="ti ti-stack" route='stok.index' />
+                    <x-sidebar.links title="Dashboard" icon="ti ti-dashboard" route='dashboard.index' />
+
+                    <li class="pc-caption text-uppercase mt-0 mb-1 ps-3 fw-semibold" style="font-size: 0.65rem;">
+                        Sistem Penjualan Offline
+                    </li>
                     <x-sidebar.links title="Transaksi Offline" icon="ti ti-building-store" route='transaksi_offline.index' />
                     <x-sidebar.links title="Detail Transaksi Offline" icon="ti ti-file-invoice" route='transaksi_offline_detail.index' />
+
+                    <li class="pc-caption text-uppercase mt-0 mb-1 ps-3 fw-semibold" style="font-size: 0.65rem;">
+                        Sistem Penjualan Online
+                    </li>
+                    <x-sidebar.links title="Transaksi Online" icon="ti ti-shopping-cart" route='transaksi_online.index' />
+                    <x-sidebar.links title="Detail Transaksi Online" icon="ti ti-file-text" route='transaksi_online_detail.index' />
+
+                    <li class="pc-caption text-uppercase mt-0 mb-1 ps-3 fw-semibold" style="font-size: 0.65rem;">
+                        Manajemen Stok
+                    </li>
+                    <x-sidebar.links title="Produk" icon="ti ti-package" route='produk.index' />
+                    <x-sidebar.links title="Satuan" icon="ti ti-basket" route='satuan.index' />
+                    <x-sidebar.links title="Harga Produk" icon="ti ti-currency-dollar" route='harga_produk.index' />
+                    <x-sidebar.links title="Stok" icon="ti ti-stack" route='stok.index' />
+
+                    <li class="pc-caption text-uppercase mt-0 mb-1 ps-3 fw-semibold" style="font-size: 0.65rem;">
+                        Lain-lain
+                    </li>
                     <x-sidebar.links title="Manajemen Pelanggan" icon="ti ti-users" route='pelanggan.index' />
-                    <x-sidebar.links title="Keuangan" icon="ti ti-currency-dollar" route="keuangan.index" />
+                    <x-sidebar.links title="Keuangan" icon="ti ti-currency-dollar" route='keuangan.index' />
 
                 </ul>
+
+
+
 
                 <!-- Logout di bawah -->
                 <ul class="pc-navbar mt-auto">
@@ -55,6 +76,23 @@
 </div>
 
 <style>
+
+    .pc-navbar .pc-item .pc-link {
+        padding-top: 2px;
+        padding-bottom: 2px;
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+
+    .pc-caption {
+        
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+        font-size: 0.65rem !important;
+        letter-spacing: 0.02em;
+    }
+
+
     /* Set background untuk sidebar */
     .pc-sidebar {
         background-color: rgb(125, 191, 217);

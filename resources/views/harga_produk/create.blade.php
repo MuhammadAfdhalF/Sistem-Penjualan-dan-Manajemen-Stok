@@ -93,7 +93,11 @@
                     if (res.success && res.data.length > 0) {
                         $satuanSelect.empty().append('<option value="">-- Pilih Satuan --</option>');
                         res.data.forEach(item => {
-                            $satuanSelect.append(`<option value="${item.id}">${item.nama_satuan} (${item.konversi_ke_satuan_utama})</option>`);
+                            const konversi = item.konversi_ke_satuan_utama;
+                            const label = konversi ?
+                                `${item.nama_satuan} (${konversi})` :
+                                `${item.nama_satuan}`;
+                            $satuanSelect.append(`<option value="${item.id}">${label}</option>`);
                         });
                     } else {
                         $satuanSelect.html('<option value="">Tidak ada satuan tersedia</option>');
@@ -105,6 +109,7 @@
             });
         });
 
+        // Trigger otomatis jika sudah ada nilai sebelumnya
         if ($('#produk_id').val()) {
             $('#produk_id').trigger('change');
         }
@@ -121,7 +126,7 @@
             return str.replace(/\./g, "");
         }
 
-        // Set awal
+        // Set awal tampilan harga
         if ($hargaHidden.val()) {
             $displayHarga.val(formatRupiah($hargaHidden.val()));
         }
@@ -133,4 +138,5 @@
         });
     });
 </script>
+
 @endpush

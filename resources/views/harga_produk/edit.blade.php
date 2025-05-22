@@ -77,7 +77,7 @@
         // Load satuan berdasarkan produk yang dipilih
         $('#produk_id').on('change', function() {
             const produkId = $(this).val();
-            const satuanIdTerpilih = `{{ old('satuan_id', $hargaProduk->satuan_id) }}`;
+            const satuanIdTerpilih = `{{ old('satuan_id', $hargaProduk->satuan_id ?? '') }}`;
             const $satuanSelect = $('#satuan_id');
 
             $satuanSelect.empty().append('<option value="">Memuat...</option>');
@@ -94,8 +94,12 @@
                     if (res.success && res.data.length > 0) {
                         $satuanSelect.empty().append('<option value="">-- Pilih Satuan --</option>');
                         res.data.forEach(item => {
+                            const konversi = item.konversi_ke_satuan_utama;
+                            const label = konversi ?
+                                `${item.nama_satuan} (${konversi})` :
+                                `${item.nama_satuan}`;
                             const selected = item.id == satuanIdTerpilih ? 'selected' : '';
-                            $satuanSelect.append(`<option value="${item.id}" ${selected}>${item.nama_satuan} (${item.konversi_ke_satuan_utama})</option>`);
+                            $satuanSelect.append(`<option value="${item.id}" ${selected}>${label}</option>`);
                         });
                     } else {
                         $satuanSelect.html('<option value="">Tidak ada satuan tersedia</option>');
@@ -107,7 +111,7 @@
             });
         });
 
-        // Trigger load awal
+        // Trigger load awal (untuk edit mode)
         $('#produk_id').trigger('change');
 
         // Format harga display

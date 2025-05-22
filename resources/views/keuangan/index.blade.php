@@ -25,7 +25,6 @@
                             <th>Jenis</th>
                             <th>Nominal</th>
                             <th>Keterangan</th>
-                            <th>Relasi Transaksi</th>
                             <th>Sumber</th>
                             <th>Opsi</th>
                         </tr>
@@ -43,15 +42,15 @@
                             <td>Rp{{ number_format($item->nominal, 0, ',', '.') }}</td>
                             <td>{{ $item->keterangan ?? '-' }}</td>
                             <td>
-                                @if($item->transaksi)
-                                <span class="badge bg-info text-dark">#{{ $item->transaksi->kode_transaksi }}</span>
+                                @if($item->sumber === 'offline')
+                                <span class="badge bg-primary text-capitalize">{{ $item->sumber }}</span>
+                                @elseif($item->sumber === 'online')
+                                <span class="badge bg-success text-dark text-capitalize">{{ $item->sumber }}</span>
                                 @else
-                                <span class="text-muted">Manual Input</span>
+                                <span class="badge bg-secondary text-capitalize">{{ $item->sumber }}</span>
                                 @endif
                             </td>
-                            <td>
-                                <span class="badge bg-secondary text-capitalize">{{ $item->sumber }}</span>
-                            </td>
+
                             <td>
                                 @if($item->sumber === 'manual')
                                 <a href="{{ route('keuangan.edit', $item->id) }}" class="btn btn-warning btn-sm">Edit</a>
