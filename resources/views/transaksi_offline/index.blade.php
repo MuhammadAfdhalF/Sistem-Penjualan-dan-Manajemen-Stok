@@ -26,6 +26,7 @@ Halaman Transaksi Offline
                             <th>No</th>
                             <th>Kode Transaksi</th>
                             <th>Tanggal</th>
+                            <th>Nama Pelanggan</th>
                             <th>Total</th>
                             <th>Dibayar</th>
                             <th>Kembalian</th>
@@ -38,6 +39,8 @@ Halaman Transaksi Offline
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->kode_transaksi }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y H:i') }}</td>
+                            <td>{{ $item->pelanggan?->nama ?? 'Bukan Member' }}</td> {{-- ✅ Ambil relasi nama pelanggan --}}
+
                             <td>Rp {{ number_format($item->total, 0, ',', '.') }}</td>
                             <td>Rp {{ number_format($item->dibayar, 0, ',', '.') }}</td>
                             <td>Rp {{ number_format($item->kembalian, 0, ',', '.') }}</td>

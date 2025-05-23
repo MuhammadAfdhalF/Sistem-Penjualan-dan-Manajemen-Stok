@@ -30,6 +30,17 @@
                     <label class="form-label">Tanggal Transaksi</label>
                     <input type="datetime-local" name="tanggal" class="form-control" value="{{ $tanggal->format('Y-m-d\TH:i') }}" readonly>
                 </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Pilih Pelanggan (Opsional)</label>
+                    <select name="pelanggan_id" class="form-select" id="pelanggan_id">
+                        <option value="">-- Tanpa Pelanggan --</option>
+                        @foreach ($pelanggans as $pel)
+                        <option value="{{ $pel->id }}" data-jenis="{{ $pel->jenis_pelanggan }}">{{ $pel->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="col-md-4">
                     <label class="form-label">Jenis Pelanggan</label>
                     <select name="jenis_pelanggan" id="jenis_pelanggan" class="form-select" required>
@@ -133,4 +144,6 @@
 
 @section('scripts')
 @include('transaksi_offline.form_script')
+
+
 @endsection

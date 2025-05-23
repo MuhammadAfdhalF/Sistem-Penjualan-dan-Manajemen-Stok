@@ -39,4 +39,6 @@ class TransaksiOnline extends Model
     {
         return $this->hasMany(TransaksiOnlineDetail::class, 'transaksi_id');
     }
+
+    
 }

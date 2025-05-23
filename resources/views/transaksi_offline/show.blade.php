@@ -12,6 +12,8 @@ Detail Transaksi Offline
     </div>
     <div class="card-body">
         <h5><strong>Kode Transaksi:</strong> {{ $transaksi->kode_transaksi }}</h5>
+        <p><strong>Nama Pelanggan:</strong> {{ $transaksi->pelanggan?->nama ?? 'Bukan Member' }}</p>
+
         <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($transaksi->tanggal)->format('d-m-Y H:i') }}</p>
         <p><strong>Total:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</p>
         <p><strong>Dibayar:</strong> Rp {{ number_format($transaksi->dibayar, 0, ',', '.') }}</p>

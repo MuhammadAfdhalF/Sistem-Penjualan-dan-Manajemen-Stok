@@ -13,15 +13,23 @@ class TransaksiOffline extends Model
 
     protected $fillable = [
         'kode_transaksi',
-        'jenis_pelanggan', 
+        'jenis_pelanggan',
         'tanggal',
         'total',
         'dibayar',
         'kembalian',
+        'pelanggan_id', 
+
     ];
 
     public function detail()
     {
         return $this->hasMany(TransaksiOfflineDetail::class, 'transaksi_id');
+    }
+
+    // TransaksiOffline.php
+    public function pelanggan()
+    {
+        return $this->belongsTo(User::class, 'pelanggan_id');
     }
 }

@@ -21,7 +21,7 @@
             }
 
             const hargaInput = row.querySelector('.harga');
-            hargaInput.value = '...'; // loading indicator sementara
+            hargaInput.value = '...';
 
             fetch(`/get-harga-produk?produk_id=${produkId}&satuan_id=${satuanId}&jenis_pelanggan=${encodeURIComponent(jenisPelanggan)}`)
                 .then(res => res.json())
@@ -96,19 +96,16 @@
             });
         }
 
-        // Event global: jenis pelanggan diubah → refresh semua harga
         document.getElementById('jenis_pelanggan')?.addEventListener('change', function() {
             document.querySelectorAll('.product-row').forEach(row => {
                 updateHargaFromServer(row);
             });
         });
 
-        // Inisialisasi baris awal
         document.querySelectorAll('.product-row').forEach(row => {
             attachEvents(row);
         });
 
-        // Tambah baris
         document.getElementById('addRow').addEventListener('click', function() {
             const tbody = document.querySelector('#produkTable tbody');
             const template = tbody.querySelector('tr');
@@ -124,13 +121,11 @@
             attachEvents(newRow);
         });
 
-        // Event format input dibayar
         document.getElementById('dibayar').addEventListener('input', function() {
             this.value = formatCurrency(parseCurrency(this.value));
             calculateGrandTotal();
         });
 
-        // Validasi submit
         document.getElementById('formTransaksi').addEventListener('submit', function(e) {
             let isValid = true;
 
@@ -151,6 +146,17 @@
 
             if (!isValid) {
                 e.preventDefault();
+            }
+        });
+
+        // Auto-update jenis pelanggan saat pelanggan dipilih
+        document.getElementById('pelanggan_id')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const jenis = selectedOption.getAttribute('data-jenis');
+
+            if (jenis) {
+                document.getElementById('jenis_pelanggan').value = jenis;
+                document.getElementById('jenis_pelanggan').dispatchEvent(new Event('change'));
             }
         });
     });

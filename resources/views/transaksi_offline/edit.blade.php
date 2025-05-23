@@ -15,20 +15,31 @@
             @method('PUT')
 
             <div class="row g-3 mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Kode Transaksi</label>
                     <input type="text" class="form-control" value="{{ $transaksi->kode_transaksi }}" readonly>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Tanggal Transaksi</label>
-                    <input type="datetime-local" name="tanggal" class="form-control" value="{{ \Carbon\Carbon::parse($transaksi->tanggal)->format('Y-m-d\TH:i') }}">
+                    <input type="datetime-local" name="tanggal" class="form-control" value="{{ \Carbon\Carbon::parse($transaksi->tanggal)->format('Y-m-d\\TH:i') }}">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Jenis Pelanggan</label>
                     <select name="jenis_pelanggan" id="jenis_pelanggan" class="form-select" required>
                         <option value="">-- Pilih Jenis Pelanggan --</option>
                         <option value="Individu" {{ $transaksi->jenis_pelanggan == 'Individu' ? 'selected' : '' }}>Individu</option>
                         <option value="Toko Kecil" {{ $transaksi->jenis_pelanggan == 'Toko Kecil' ? 'selected' : '' }}>Toko Kecil</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Nama Pelanggan</label>
+                    <select name="pelanggan_id" id="pelanggan_id" class="form-select">
+                        <option value="">-- Opsional --</option>
+                        @foreach($pelanggans as $p)
+                        <option value="{{ $p->id }}" {{ $transaksi->pelanggan_id == $p->id ? 'selected' : '' }} data-jenis="{{ $p->jenis_pelanggan }}">
+                            {{ $p->nama }}
+                        </option>
+                        @endforeach
                     </select>
                 </div>
             </div>

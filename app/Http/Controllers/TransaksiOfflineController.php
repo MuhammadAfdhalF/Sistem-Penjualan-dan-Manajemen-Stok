@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use App\Models\Stok;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
+use App\Models\User;
+
 
 
 
@@ -25,23 +27,30 @@ class TransaksiOfflineController extends Controller
 
     public function show($id)
     {
-        $transaksi = TransaksiOffline::with('detail.produk')->findOrFail($id);
+        $transaksi = \App\Models\TransaksiOffline::with([
+            'pelanggan',              // ✅ relasi ke user pelanggan
+            'detail.produk',          // sudah ada
+            'detail.satuan',          // opsional: agar bisa tampil nama satuan di detail
+        ])->findOrFail($id);
+
         return view('transaksi_offline.show', compact('transaksi'));
     }
-
 
     public function create()
     {
         $produk = Produk::all();
-        $kode_transaksi = 'TRX-' . strtoupper(Str::random(6));
-        $tanggal = Carbon::now(); // tidak pakai ->format()
+        $pelanggans = User::where('role', 'pelanggan')->get();
+        $kode_transaksi = 'TX-' . now()->format('YmdHis');
+        $tanggal = now();
 
-        return view('transaksi_offline.create', compact('produk', 'kode_transaksi', 'tanggal'));
+        return view('transaksi_offline.create', compact('produk', 'pelanggans', 'kode_transaksi', 'tanggal'));
     }
 
 
     public function store(Request $request)
     {
+
+
         $request->validate([
             'kode_transaksi' => 'required|unique:transaksi_offline,kode_transaksi',
             'tanggal' => 'required|date',
@@ -49,6 +58,7 @@ class TransaksiOfflineController extends Controller
             'total' => 'required',
             'dibayar' => 'required',
             'kembalian' => 'required',
+            'pelanggan_id' => 'nullable|exists:users,id', // ✅ ditambahkan
             'produk_id.*' => 'required|exists:produks,id',
             'satuan_id.*' => 'required|exists:satuans,id',
             'jumlah.*' => 'required|numeric|min:0.01',
@@ -68,6 +78,7 @@ class TransaksiOfflineController extends Controller
                 'total' => $sanitizeMoney($request->total),
                 'dibayar' => $sanitizeMoney($request->dibayar),
                 'kembalian' => $sanitizeMoney($request->kembalian),
+                'pelanggan_id' => $request->pelanggan_id ?? null, // ✅ ditambahkan
             ]);
 
             foreach ($request->produk_id as $i => $produkId) {
@@ -120,7 +131,7 @@ class TransaksiOfflineController extends Controller
             }
 
             // Panggil command update ROP
-            \Artisan::call('produk:update-dailyusage-rop');
+            Artisan::call('produk:update-dailyusage-rop');
 
             // Simpan keuangan otomatis
             \App\Models\Keuangan::create([
@@ -141,15 +152,12 @@ class TransaksiOfflineController extends Controller
         }
     }
 
-
-
-
-
     public function edit($id)
     {
         $transaksi = TransaksiOffline::with('detail')->findOrFail($id);
         $produk = Produk::all();
-        return view('transaksi_offline.edit', compact('transaksi', 'produk'));
+        $pelanggans = User::where('role', 'pelanggan')->get();
+        return view('transaksi_offline.edit', compact('transaksi', 'produk', 'pelanggans'));
     }
 
     public function update(Request $request, $id)
@@ -159,6 +167,7 @@ class TransaksiOfflineController extends Controller
             'total'         => 'required',
             'dibayar'       => 'required',
             'kembalian'     => 'required',
+            'pelanggan_id'  => 'nullable|exists:users,id', // ✅ validasi pelanggan opsional
             'produk_id.*'   => 'required|exists:produks,id',
             'satuan_id.*'   => 'required|exists:satuans,id',
             'jumlah.*'      => 'required|numeric|min:0.01',
@@ -194,10 +203,11 @@ class TransaksiOfflineController extends Controller
 
             // Update transaksi utama
             $transaksi->update([
-                'tanggal'   => $request->tanggal,
-                'total'     => $sanitizeMoney($request->total),
-                'dibayar'   => $sanitizeMoney($request->dibayar),
-                'kembalian' => $sanitizeMoney($request->kembalian),
+                'tanggal'       => $request->tanggal,
+                'total'         => $sanitizeMoney($request->total),
+                'dibayar'       => $sanitizeMoney($request->dibayar),
+                'kembalian'     => $sanitizeMoney($request->kembalian),
+                'pelanggan_id'  => $request->pelanggan_id ?? null, // ✅ update pelanggan
             ]);
 
             // Simpan ulang detail
@@ -250,10 +260,10 @@ class TransaksiOfflineController extends Controller
             $keuangan = \App\Models\Keuangan::where('transaksi_id', $transaksi->id)->first();
             if ($keuangan) {
                 $keuangan->update([
-                    'tanggal' => $request->tanggal,
-                    'nominal' => $transaksi->total,
-                    'keterangan' => 'Pemasukan dari transaksi #' . $transaksi->kode_transaksi,
-                    'sumber' => 'offline',
+                    'tanggal'     => $request->tanggal,
+                    'nominal'     => $transaksi->total,
+                    'keterangan'  => 'Pemasukan dari transaksi #' . $transaksi->kode_transaksi,
+                    'sumber'      => 'offline',
                 ]);
             }
 

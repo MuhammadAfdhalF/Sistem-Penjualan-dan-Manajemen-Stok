@@ -26,6 +26,8 @@ Halaman Transaksi Online
                             <th>No</th>
                             <th>Kode</th>
                             <th>Tanggal</th>
+                            <th>Nama Pelanggan</th>
+
                             <th>Total</th>
                             <th>Pembayaran</th>
                             <th>Status Transaksi</th>
@@ -38,6 +40,10 @@ Halaman Transaksi Online
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->kode_transaksi }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y H:i') }}</td>
+                            <td>
+                                {{ $item->user ? $item->user->nama . ' (' . $item->user->jenis_pelanggan . ')' : '-' }}
+                            </td>
+
                             <td>Rp {{ number_format($item->total, 0, ',', '.') }}</td>
                             <td>
                                 <span class="badge bg-{{ $item->status_pembayaran == 'lunas' ? 'success' : ($item->status_pembayaran == 'gagal' ? 'danger' : 'warning') }}">
