@@ -25,13 +25,7 @@ class Keuangan extends Model
         'nominal' => 'float',
     ];
 
-    /**
-     * Relasi ke transaksi offline (jika ada)
-     */
-    public function transaksi()
-    {
-        return $this->belongsTo(TransaksiOffline::class, 'transaksi_id');
-    }
+
 
     /**
      * Scope untuk pemasukan saja
@@ -48,7 +42,6 @@ class Keuangan extends Model
     {
         return $query->where('jenis', 'pengeluaran');
     }
-
 
     public function transaksiOffline()
     {

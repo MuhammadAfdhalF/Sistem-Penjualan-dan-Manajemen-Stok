@@ -8,14 +8,44 @@ use Illuminate\Http\Request;
 
 class KeuanganController extends Controller
 {
-    /**
-     * Tampilkan daftar semua catatan keuangan.
-     */
-    public function index()
+
+    public function index(Request $request)
     {
-        $keuangans = \App\Models\Keuangan::with(['transaksiOffline', 'transaksiOnline'])->latest()->get();
-        return view('keuangan.index', compact('keuangans'));
+        $query = Keuangan::query();
+
+        if ($request->filled('date')) {
+            $query->whereDate('tanggal', $request->date);
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('tanggal', $request->month);
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('tanggal', $request->year);
+        }
+
+
+        $keuangans = $query->latest()->get();
+
+        // Hitung total pemasukan dan pengeluaran setelah filter
+        $totalPemasukan = $keuangans->where('jenis', 'pemasukan')->sum('nominal');
+        $totalPengeluaran = $keuangans->where('jenis', 'pengeluaran')->sum('nominal');
+        $totalPemasukanOffline = $keuangans->where('jenis', 'pemasukan')->where('sumber', 'offline')->sum('nominal');
+        $totalPemasukanOnline = $keuangans->where('jenis', 'pemasukan')->where('sumber', 'online')->sum('nominal');
+        $pemasukanBersih = $totalPemasukan - $totalPengeluaran;
+
+        return view('keuangan.index', compact(
+            'keuangans',
+            'totalPemasukan',
+            'totalPengeluaran',
+            'totalPemasukanOffline',
+            'totalPemasukanOnline',
+            'pemasukanBersih'
+        ));
     }
+
+
 
 
     /**

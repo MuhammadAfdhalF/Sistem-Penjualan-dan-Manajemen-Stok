@@ -40,7 +40,7 @@ class TransaksiOfflineController extends Controller
     {
         $produk = Produk::all();
         $pelanggans = User::where('role', 'pelanggan')->get();
-        $kode_transaksi = 'TX-' . now()->format('YmdHis');
+        $kode_transaksi = 'TX-' . now()->format('ymd-His');
         $tanggal = now();
 
         return view('transaksi_offline.create', compact('produk', 'pelanggans', 'kode_transaksi', 'tanggal'));

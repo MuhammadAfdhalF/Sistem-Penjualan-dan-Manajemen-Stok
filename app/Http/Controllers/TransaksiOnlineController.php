@@ -55,7 +55,8 @@ class TransaksiOnlineController extends Controller
         DB::beginTransaction();
         try {
             $total = 0;
-            $kode = 'TRX-ONLINE-' . strtoupper(Str::random(6));
+            $randomOnline = strtoupper(Str::random(4));
+            $kode = 'TX-ON-' . now()->format('ymd') . '-' . $randomOnline;
 
             $transaksi = TransaksiOnline::create([
                 'user_id' => $request->user_id,
