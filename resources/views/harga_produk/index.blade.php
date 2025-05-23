@@ -44,13 +44,14 @@
                             <td>Rp {{ number_format($harga->harga, 0, ',', '.') }}</td>
 
                             <td>
-                                <a href="{{ route('harga_produk.edit', $harga->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                <button type="button" class="btn btn-danger btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#confirmDeleteModal{{ $harga->id }}">
-                                    Hapus
+                                <a href="{{ route('harga_produk.edit', $harga->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                    <i class="ti ti-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ $harga->id }}" title="Hapus">
+                                    <i class="ti ti-trash"></i>
                                 </button>
                             </td>
+
                         </tr>
 
                         <!-- Modal Konfirmasi Hapus -->

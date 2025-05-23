@@ -17,7 +17,7 @@
 
         <div class="card-body">
             @if(session('success'))
-                <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success">{{ session('success') }}</div>
             @endif
 
             <div class="table-responsive">
@@ -39,15 +39,20 @@
                             <td>{{ $satuan->nama_satuan }}</td>
                             <td>{{ $satuan->konversi_ke_satuan_utama }}</td>
                             <td>
-                                <a href="{{ route('satuan.edit', $satuan->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                                <a href="{{ route('satuan.edit', $satuan->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                    <i class="ti ti-edit"></i>
+                                </a>
 
                                 <form action="{{ route('satuan.destroy', $satuan->id) }}" method="POST" class="d-inline"
                                     onsubmit="return confirm('Yakin ingin menghapus satuan ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="btn btn-danger btn-sm">Hapus</button>
+                                    <button class="btn btn-danger btn-sm" title="Hapus" type="submit">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
                                 </form>
                             </td>
+
                         </tr>
                         @empty
                         <tr>

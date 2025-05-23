@@ -68,13 +68,14 @@
                             </td>
 
                             <td>
-                                <a href="{{ route('produk.edit', $item->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                <button type="button" class="btn btn-danger btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#confirmDeleteModal{{ $item->id }}">
-                                    Hapus
+                                <a href="{{ route('produk.edit', $item->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                    <i class="ti ti-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ $item->id }}" title="Hapus">
+                                    <i class="ti ti-trash"></i>
                                 </button>
                             </td>
+
                         </tr>
 
                         <!-- Modal Konfirmasi Hapus -->

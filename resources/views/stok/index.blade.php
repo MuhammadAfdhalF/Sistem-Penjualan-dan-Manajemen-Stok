@@ -44,13 +44,14 @@ Halaman Stok
                             <td>{{ $item->keterangan }}</td>
                             <td>{{ $item->created_at->format('d-m-Y H:i') }}</td>
                             <td>
-                                <a href="{{ route('stok.edit', $item->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                <button type="button" class="btn btn-danger btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#confirmDeleteModal{{ $item->id }}">
-                                    Hapus
+                                <a href="{{ route('stok.edit', $item->id) }}" class="btn btn-warning btn-sm" title="Edit">
+                                    <i class="ti ti-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal{{ $item->id }}" title="Hapus">
+                                    <i class="ti ti-trash"></i>
                                 </button>
                             </td>
+
                         </tr>
 
                         <!-- Modal Konfirmasi Hapus -->

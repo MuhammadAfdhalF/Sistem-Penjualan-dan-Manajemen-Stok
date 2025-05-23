@@ -118,6 +118,19 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+
+        .dashboard-section {
+            border: 2px solid #5a9bd8;
+            /* Biru muda */
+            padding: 1rem;
+            /* Padding sekitar 16px */
+            margin-bottom: 1.5rem;
+            /* Jarak bawah antar section */
+            border-radius: 0.5rem;
+            /* Sudut melengkung */
+            background-color: #f9fbff;
+            /* Latar belakang sangat terang */
+        }
     </style>
 </head>
 <!-- [Head] end -->
