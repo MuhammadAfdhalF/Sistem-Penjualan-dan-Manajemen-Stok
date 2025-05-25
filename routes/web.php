@@ -31,6 +31,9 @@ Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name
 Route::middleware(['auth', 'adminonly'])->group(function () {
     //dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    Route::get('/dashboard/keuangan-bulanan/{tahun?}', [DashboardController::class, 'getRingkasanKeuanganBulanan']);
+    Route::get('/api/grafik/keuangan/{tipe}/{tahun}', [DashboardController::class, 'getChartData']);
+
 
     // produk
     Route::resource('produk', ProdukController::class);
@@ -55,7 +58,7 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     // transaksi offline detail
     Route::resource('transaksi_offline_detail', TransaksiOfflineDetailController::class);
 
-        // transaksi online
+    // transaksi online
     Route::resource('transaksi_online', TransaksiOnlineController::class);
 
     // transaksi online detail
