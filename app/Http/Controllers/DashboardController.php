@@ -76,8 +76,8 @@ class DashboardController extends Controller
         $tahunMulai = 2022;
 
 
-        // Gabungkan dua query manual dengan Query Builder
-        $gabung = DB::table('transaksi_offline_detail')
+        // ====== PRODUK TERLARIS (Gabungan online + offline) ======
+        $gabungProduk = DB::table('transaksi_offline_detail')
             ->select('produk_id', DB::raw('SUM(jumlah) as total'))
             ->groupBy('produk_id')
             ->unionAll(
@@ -86,21 +86,60 @@ class DashboardController extends Controller
                     ->groupBy('produk_id')
             );
 
-        // Bungkus dalam subquery agar bisa diolah
-        $produkTerlaris = DB::table(DB::raw("({$gabung->toSql()}) as gabungan"))
-            ->mergeBindings($gabung) // penting: agar binding parameter tetap valid
+        $produkTerlaris = DB::table(DB::raw("({$gabungProduk->toSql()}) as gabungan"))
+            ->mergeBindings($gabungProduk)
             ->select('produk_id', DB::raw('SUM(total) as total_terjual'))
             ->groupBy('produk_id')
             ->orderByDesc('total_terjual')
             ->limit(5)
             ->get()
             ->map(function ($item) {
-                $produk = Produk::with('satuans')->find($item->produk_id);
+                $produk = \App\Models\Produk::with('satuans')->find($item->produk_id);
                 return [
                     'nama' => $produk?->nama_produk ?? 'Produk Tidak Ditemukan',
-                    'total' => $produk?->tampilkanStok3Tingkatan($item->total_terjual) ?? $item->total_terjual
+                    'total' => $produk?->tampilkanStok3Tingkatan($item->total_terjual) ?? (int) $item->total_terjual
                 ];
             });
+
+
+        // ====== PELANGGAN TERROYAL (Gabungan online + offline) ======
+        $gabungUser = DB::table('transaksi_offline')
+            ->select('pelanggan_id as user_id', DB::raw('SUM(total) as total'))
+            ->whereNotNull('pelanggan_id')
+            ->groupBy('pelanggan_id')
+            ->unionAll(
+                DB::table('transaksi_online')
+                    ->select('user_id', DB::raw('SUM(total) as total'))
+                    ->whereNotNull('user_id')
+                    ->groupBy('user_id')
+            );
+
+        $pelangganTerroyalGabung = DB::table(DB::raw("({$gabungUser->toSql()}) as gabungan"))
+            ->mergeBindings($gabungUser)
+            ->select('user_id', DB::raw('SUM(total) as total_belanja'))
+            ->groupBy('user_id');
+
+        $pelanggan = DB::table('users')
+            ->joinSub($pelangganTerroyalGabung, 'total_belanja', function ($join) {
+                $join->on('users.id', '=', 'total_belanja.user_id');
+            })
+            ->where('users.role', 'pelanggan')
+            ->select('users.id', 'users.nama', 'users.jenis_pelanggan', 'total_belanja.total_belanja')
+            ->get();
+
+        // Bagi dua: individu dan toko kecil
+        $terroyalIndividu = $pelanggan->where('jenis_pelanggan', 'Individu')
+            ->sortByDesc('total_belanja')
+            ->take(5)
+            ->values();
+
+        $terroyalToko = $pelanggan->where('jenis_pelanggan', 'Toko Kecil')
+            ->sortByDesc('total_belanja')
+            ->take(5)
+            ->values();
+
+
+
 
         return view('dashboard.index', compact(
             'produk',
@@ -116,7 +155,10 @@ class DashboardController extends Controller
             'produkTerlaris',
             'pemasukanHariIni',
             'pengeluaranHariIni',
-            'pendapatanBersihHariIni'
+            'pendapatanBersihHariIni',
+            'terroyalIndividu',
+            'terroyalToko'
+
         ));
     }
 

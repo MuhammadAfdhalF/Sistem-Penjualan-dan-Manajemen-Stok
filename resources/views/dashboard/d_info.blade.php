@@ -140,6 +140,54 @@
                 @endif
             </div>
         </div>
+
+        <div class="row mt-4">
+            <!-- Pelanggan Terroyal: Individu -->
+            <div class="col-md-6 mb-3">
+                <div class="border rounded p-3 shadow-sm bg-white h-100">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="font-size: 24px; margin-right: 10px;">👤</div>
+                        <h5 class="mb-0 fw-bold">Top 5 Individu Terroyal</h5>
+                    </div>
+
+                    @if($terroyalIndividu->count())
+                    <ul class="mb-0 ps-3" style="font-size: 14px; line-height: 1.5;">
+                        @foreach($terroyalIndividu as $item)
+                        <li>
+                            <strong>{{ $item->nama }}</strong> → Rp {{ number_format($item->total_belanja, 0, ',', '.') }}
+                        </li>
+                        @endforeach
+                    </ul>
+                    @else
+                    <div class="text-muted" style="font-size: 14px;">Belum ada transaksi individu</div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Pelanggan Terroyal: Toko Kecil -->
+            <div class="col-md-6 mb-3">
+                <div class="border rounded p-3 shadow-sm bg-white h-100">
+                    <div class="d-flex align-items-center mb-2">
+                        <div style="font-size: 24px; margin-right: 10px;">🏪</div>
+                        <h5 class="mb-0 fw-bold">Top 5 Toko Kecil Terroyal</h5>
+                    </div>
+
+                    @if($terroyalToko->count())
+                    <ul class="mb-0 ps-3" style="font-size: 14px; line-height: 1.5;">
+                        @foreach($terroyalToko as $item)
+                        <li>
+                            <strong>{{ $item->nama }}</strong> → Rp {{ number_format($item->total_belanja, 0, ',', '.') }}
+                        </li>
+                        @endforeach
+                    </ul>
+                    @else
+                    <div class="text-muted" style="font-size: 14px;">Belum ada transaksi toko kecil</div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+
     </div>
 
 </div>
