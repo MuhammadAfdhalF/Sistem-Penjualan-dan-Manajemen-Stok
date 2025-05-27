@@ -139,11 +139,25 @@ class KeranjangController extends Controller
 
         $keranjang = Keranjang::where('user_id', $user->id)->findOrFail($id);
 
-        // Validasi dan update: jumlah_json harus array
-        $request->validate([
-            'jumlah_json' => 'required|array',
-        ]);
-        $keranjang->jumlah_json = $request->jumlah_json;
+        // Validasi: harus array atau bisa string json (biar lebih fleksibel)
+        $input = $request->input('jumlah_json');
+        if (is_string($input)) {
+            $jumlahJson = json_decode($input, true);
+        } else {
+            $jumlahJson = $input;
+        }
+        // Filter & pastikan associative array, semua key satuan_id => jumlah
+        if (!is_array($jumlahJson)) {
+            return redirect()->back()->with('error', 'Format jumlah tidak valid.');
+        }
+        // Hilangkan yang jumlah <= 0
+        $jumlahJson = collect($jumlahJson)
+            ->filter(function ($qty) {
+                return is_numeric($qty) && $qty > 0;
+            })
+            ->toArray();
+
+        $keranjang->jumlah_json = $jumlahJson;
         $keranjang->save();
 
         return redirect()->route('keranjang.index')->with('success', 'Jumlah item di keranjang berhasil diperbarui.');
