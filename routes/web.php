@@ -17,6 +17,8 @@ use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\TransaksiOnlineController;
 use App\Http\Controllers\TransaksiOnlineDetailController;
+use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\PaymentLogController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -26,6 +28,7 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
 
 // Group routes yang harus admin only
 Route::middleware(['auth', 'adminonly'])->group(function () {
@@ -82,4 +85,15 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 // fallback
 Route::fallback(function () {
     return "Halaman tidak ada, akses halaman yang benar ya dek !!!";
+});
+
+// Routes yang harus login, untuk pelanggan dan admin
+Route::middleware(['auth'])->group(function () {
+    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
+    Route::get('/keranjang/create', [KeranjangController::class, 'create'])->name('keranjang.create');
+    Route::post('/keranjang', [KeranjangController::class, 'store'])->name('keranjang.store');
+    Route::put('/keranjang/{id}', [KeranjangController::class, 'update'])->name('keranjang.update');
+    Route::delete('/keranjang/{id}', [KeranjangController::class, 'destroy'])->name('keranjang.destroy');
+
+    Route::resource('payment_logs', PaymentLogController::class)->only(['index', 'show']);
 });
