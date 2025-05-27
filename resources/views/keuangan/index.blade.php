@@ -13,7 +13,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title">Data Keuangan</h4>
-            <a href="{{ route('keuangan.create') }}" class="btn btn-primary">Tambah Catatan</a>
+            <a href="{{ route('keuangan.create') }}" class="btn btn-primary">Tambah Keuangan</a>
         </div>
 
         <form method="GET" action="{{ route('keuangan.index') }}" class="row gx-2 gy-1 align-items-center">
