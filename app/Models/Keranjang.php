@@ -14,14 +14,14 @@ class Keranjang extends Model
     protected $fillable = [
         'user_id',
         'produk_id',
-        'satuan_id',
-        'jumlah',
+        'jumlah_json',
     ];
 
     protected $casts = [
-        'jumlah' => 'float',
+        'jumlah_json' => 'array', // Otomatis decode/encode JSON saat akses lewat Eloquent!
     ];
 
+    // RELASI
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -32,8 +32,22 @@ class Keranjang extends Model
         return $this->belongsTo(Produk::class);
     }
 
-    public function satuan()
+    // ------ UTILITY METHODS UNTUK JUMLAH ------
+    /**
+     * Ambil jumlah total (akumulasi semua satuan)
+     * Return float
+     */
+    public function totalJumlah()
     {
-        return $this->belongsTo(Satuan::class);
+        // asumsikan value-nya array satuan_id => jumlah
+        return collect($this->jumlah_json)->sum();
+    }
+
+    /**
+     * Ambil jumlah per satuan dalam bentuk array [satuan_id => jumlah]
+     */
+    public function daftarJumlah()
+    {
+        return $this->jumlah_json ?? [];
     }
 }

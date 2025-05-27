@@ -32,21 +32,35 @@ Keranjang Saya
                     <tbody>
                         @foreach ($keranjangs as $index => $item)
                         @php
-                            // Ambil satuan dari produk
-                            $satuanMap = $item->produk->satuans->keyBy('id');
-                            // Ambil harga per satuan
-                            $hargaMap = $item->produk->hargaProduks->pluck('harga','satuan_id');
-                            // Decode jumlah_json
-                            $jumlahArr = is_array($item->jumlah_json) ? $item->jumlah_json : json_decode($item->jumlah_json, true);
-                            // String untuk tampilan jumlah bertingkat
-                            $jumlahString = collect($jumlahArr)
-                                ->filter(fn($j) => ($j['jumlah'] ?? 0) > 0)
-                                ->map(fn($j) => ($j['jumlah'] ?? 0) . ' ' . ($satuanMap[$j['satuan_id']]->nama_satuan ?? ''))
-                                ->join(', ');
-                            // Subtotal
-                            $subtotal = collect($jumlahArr)
-                                ->map(fn($j) => ($j['jumlah'] ?? 0) * ($hargaMap[$j['satuan_id']] ?? 0))
-                                ->sum();
+                        // Ambil mapping satuan & harga sesuai jenis pelanggan
+                        $satuanMap = $item->produk->satuans->keyBy('id');
+                        $hargaMap = $item->produk->hargaProduks
+                        ->where('jenis_pelanggan', $jenis)
+                        ->pluck('harga', 'satuan_id');
+                        // Parse jumlah_json
+                        $jumlahArr = is_array($item->jumlah_json) ? $item->jumlah_json : json_decode($item->jumlah_json, true);
+                        if (!is_array($jumlahArr)) $jumlahArr = [];
+                        if (is_int($jumlahArr)) $jumlahArr = [];
+                        // Fallback legacy jika numerik
+                        if (array_values($jumlahArr) === $jumlahArr) {
+                        $newArr = [];
+                        foreach ($jumlahArr as $val) {
+                        if (is_array($val) && isset($val['satuan_id']) && isset($val['jumlah'])) {
+                        $newArr[$val['satuan_id']] = $val['jumlah'];
+                        }
+                        }
+                        $jumlahArr = $newArr;
+                        }
+                        // String jumlah
+                        $jumlahString = collect($jumlahArr)
+                        ->filter(fn($qty, $sid) => is_numeric($qty) && $qty > 0)
+                        ->map(fn($qty, $sid) => $qty . ' ' . ($satuanMap[$sid]->nama_satuan ?? ''))
+                        ->join(', ');
+                        // Subtotal sesuai harga jenis pelanggan
+                        $subtotal = collect($jumlahArr)
+                        ->filter(fn($qty, $sid) => is_numeric($qty) && $qty > 0)
+                        ->map(fn($qty, $sid) => floatval($qty) * (floatval($hargaMap[$sid] ?? 0)))
+                        ->sum();
                         @endphp
                         <tr>
                             <td>{{ $index + 1 }}</td>
