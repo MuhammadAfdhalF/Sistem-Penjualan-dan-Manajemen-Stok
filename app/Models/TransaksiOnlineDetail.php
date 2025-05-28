@@ -14,17 +14,13 @@ class TransaksiOnlineDetail extends Model
     protected $fillable = [
         'transaksi_id',
         'produk_id',
-        'satuan_id',
-        'harga_id',
-        'jumlah',
-        'harga',
-        'subtotal',
+        'jumlah_json',
+        // (opsional: 'subtotal')
     ];
 
     protected $casts = [
-        'jumlah' => 'float',
-        'harga' => 'float',
-        'subtotal' => 'float',
+        'jumlah_json' => 'array', // auto decode/encode JSON
+        // 'subtotal' => 'float', // jika tetap ingin subtotal total per produk
     ];
 
     public function transaksi()
@@ -37,13 +33,15 @@ class TransaksiOnlineDetail extends Model
         return $this->belongsTo(Produk::class);
     }
 
-    public function satuan()
+    // Helper: ambil jumlah total semua satuan
+    public function totalJumlah()
     {
-        return $this->belongsTo(Satuan::class);
+        return collect($this->jumlah_json)->sum();
     }
 
-    public function hargaProduk()
+    // Helper: daftar jumlah per satuan
+    public function daftarJumlah()
     {
-        return $this->belongsTo(HargaProduk::class, 'harga_id');
+        return $this->jumlah_json ?? [];
     }
 }

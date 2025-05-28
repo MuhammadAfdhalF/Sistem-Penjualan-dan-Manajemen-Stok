@@ -1,14 +1,14 @@
-<?php
+    <?php
 
-namespace App\Http\Controllers;
+    namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+    use Illuminate\Http\Request;
 
-class TransaksiOnlineDetailController extends Controller
-{
-    public function index()
+    class TransaksiOnlineDetailController extends Controller
     {
-        $detail = \App\Models\TransaksiOnlineDetail::with('produk', 'transaksi')->latest()->get();
-        return view('transaksi_online_detail.index', compact('detail'));
+        public function index()
+        {
+            $detail = \App\Models\TransaksiOnlineDetail::with('produk', 'transaksi')->latest()->get();
+            return view('transaksi_online_detail.index', compact('detail'));
+        }
     }
-}

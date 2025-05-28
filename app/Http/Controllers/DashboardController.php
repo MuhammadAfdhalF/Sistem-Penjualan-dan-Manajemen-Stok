@@ -9,6 +9,8 @@ use App\Models\Keuangan;
 use Carbon\Carbon;
 use App\Models\TransaksiOfflineDetail;
 use App\Models\TransaksiOnlineDetail;
+use App\Models\Satuan;
+
 use Illuminate\Support\Facades\DB;
 
 
@@ -76,30 +78,57 @@ class DashboardController extends Controller
         $tahunMulai = 2022;
 
 
-        // ====== PRODUK TERLARIS (Gabungan online + offline) ======
-        $gabungProduk = DB::table('transaksi_offline_detail')
-            ->select('produk_id', DB::raw('SUM(jumlah) as total'))
-            ->groupBy('produk_id')
-            ->unionAll(
-                DB::table('transaksi_online_detail')
-                    ->select('produk_id', DB::raw('SUM(jumlah) as total'))
-                    ->groupBy('produk_id')
-            );
+        // Ambil data produk terjual gabungan offline + online
+        $produkTerjual = [];
 
-        $produkTerlaris = DB::table(DB::raw("({$gabungProduk->toSql()}) as gabungan"))
-            ->mergeBindings($gabungProduk)
-            ->select('produk_id', DB::raw('SUM(total) as total_terjual'))
-            ->groupBy('produk_id')
-            ->orderByDesc('total_terjual')
-            ->limit(5)
-            ->get()
-            ->map(function ($item) {
-                $produk = \App\Models\Produk::with('satuans')->find($item->produk_id);
+        // Hitung produk terjual dari transaksi offline (jumlah biasa dengan satuan)
+        $offlineDetails = TransaksiOfflineDetail::all();
+        foreach ($offlineDetails as $detail) {
+            $produkId = $detail->produk_id;
+            $satuan = Satuan::find($detail->satuan_id);
+            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+            $qtyUtama = floatval($detail->jumlah) * $konversi;
+
+            if (!isset($produkTerjual[$produkId])) {
+                $produkTerjual[$produkId] = 0;
+            }
+            $produkTerjual[$produkId] += $qtyUtama;
+        }
+
+        // Hitung produk terjual dari transaksi online (jumlah bertingkat JSON)
+        $onlineDetails = TransaksiOnlineDetail::all();
+        foreach ($onlineDetails as $detail) {
+            $produkId = $detail->produk_id;
+            $jumlahJson = is_array($detail->jumlah_json) ? $detail->jumlah_json : json_decode($detail->jumlah_json, true);
+
+            $totalQtyUtama = 0;
+            foreach ($jumlahJson as $satuanId => $qty) {
+                $satuan = Satuan::find($satuanId);
+                $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                $totalQtyUtama += $qty * $konversi;
+            }
+
+            if (!isset($produkTerjual[$produkId])) {
+                $produkTerjual[$produkId] = 0;
+            }
+            $produkTerjual[$produkId] += $totalQtyUtama;
+        }
+
+        // Urutkan produk terlaris berdasarkan total qty satuan utama
+        arsort($produkTerjual);
+
+        // Ambil 5 produk terlaris dan format tampilannya
+        $produkTerlaris = collect($produkTerjual)
+            ->take(5)
+            ->map(function ($total, $produkId) {
+                $produk = \App\Models\Produk::with('satuans')->find($produkId);
                 return [
                     'nama' => $produk?->nama_produk ?? 'Produk Tidak Ditemukan',
-                    'total' => $produk?->tampilkanStok3Tingkatan($item->total_terjual) ?? (int) $item->total_terjual
+                    // Fungsi tampilkanStok3Tingkatan harus mengubah jumlah utama ke string bertingkat, misal "1 slof 4 bks"
+                    'total' => $produk?->tampilkanStok3Tingkatan($total) ?? (int) $total,
                 ];
-            });
+            })
+            ->values();
 
 
         // ====== PELANGGAN TERROYAL (Gabungan online + offline) ======

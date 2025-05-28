@@ -23,10 +23,10 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
                     <label class="form-label">Pelanggan</label>
-                    <select name="user_id" class="form-select" required>
+                    <select name="user_id" class="form-select" required id="selectPelanggan">
                         <option value="">-- Pilih Pelanggan --</option>
                         @foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->nama }}</option>
+                        <option value="{{ $user->id }}" data-jenis="{{ $user->jenis_pelanggan }}">{{ $user->nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -86,9 +86,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>Produk</th>
-                                <th>Satuan</th>
-                                <th>Harga (Rp)</th>
-                                <th>Jumlah</th>
+                                <th>Jumlah Bertingkat</th>
                                 <th>Subtotal (Rp)</th>
                                 <th class="text-center" style="width: 60px">
                                     <button type="button" class="btn btn-sm btn-success" id="addRow">
@@ -102,28 +100,23 @@
                                 <td>
                                     <select name="produk_id[]" class="form-select produk-select" required>
                                         <option value="">Pilih Produk</option>
-                                        @foreach ($produks as $item)
-                                        <option value="{{ $item->id }}"
-                                            data-satuan='@json($item->satuans)'
-                                            data-harga='@json($item->hargaProduks->pluck("harga", "satuan_id"))'>
-                                            {{ $item->nama_produk }}
+                                        @foreach ($produkOptions as $item)
+                                        <option
+                                            value="{{ $item['id'] }}"
+                                            data-satuan='@json($item['satuans'])'
+                                            data-harga='@json($item['harga'])'>
+                                            {{ $item['nama_produk'] }}
                                         </option>
                                         @endforeach
                                     </select>
+
                                 </td>
                                 <td>
-                                    <select name="satuan_id[]" class="form-select satuan-select" required>
-                                        <option value="">Pilih Satuan</option>
-                                    </select>
+                                    <div class="satuan-jumlah-list"></div>
+                                    <input type="hidden" name="jumlah_json[]" class="jumlah-json">
                                 </td>
                                 <td>
-                                    <input type="text" name="harga[]" class="form-control harga text-end" readonly>
-                                </td>
-                                <td>
-                                    <input type="number" name="jumlah[]" class="form-control jumlah" min="0.01" step="0.01" value="1" required>
-                                </td>
-                                <td>
-                                    <input type="text" name="subtotal[]" class="form-control subtotal text-end" readonly>
+                                    <input type="text" class="form-control subtotal" readonly>
                                 </td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-danger removeRow">

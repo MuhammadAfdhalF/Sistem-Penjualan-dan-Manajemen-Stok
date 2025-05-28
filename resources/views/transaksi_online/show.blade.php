@@ -14,7 +14,6 @@ Detail Transaksi Online
         <h5><strong>Kode Transaksi:</strong> {{ $transaksiOnline->kode_transaksi }}</h5>
         <p><strong>Pelanggan:</strong> {{ $transaksiOnline->user->nama ?? '-' }}</p>
         <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($transaksiOnline->tanggal)->format('d-m-Y H:i') }}</p>
-        <p><strong>Total:</strong> Rp {{ number_format($transaksiOnline->total, 0, ',', '.') }}</p>
         <p><strong>Metode Pembayaran:</strong> {{ ucfirst(str_replace('_', ' ', $transaksiOnline->metode_pembayaran)) }}</p>
         <p><strong>Status Pembayaran:</strong> {{ ucfirst($transaksiOnline->status_pembayaran) }}</p>
         <p><strong>Status Transaksi:</strong> {{ ucfirst($transaksiOnline->status_transaksi) }}</p>
@@ -27,26 +26,49 @@ Detail Transaksi Online
             <table class="table table-bordered mt-2">
                 <thead>
                     <tr>
-                        <th>No</th>
                         <th>Nama Produk</th>
-                        <th>Satuan</th>
-                        <th>Harga</th>
                         <th>Jumlah</th>
                         <th>Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($transaksiOnline->detail as $index => $item)
+                    @php
+                    use App\Models\Satuan;
+                    use App\Models\HargaProduk;
+                    $totalTransaksi = 0;
+                    @endphp
+                    @foreach ($transaksiOnline->detail as $item)
+                    @php
+                    $jumlahLabel = [];
+                    $subtotalProduk = 0;
+                    foreach (($item->jumlah_json ?? []) as $satuanId => $jumlah) {
+                    $satuan = Satuan::find($satuanId);
+                    $namaSatuan = $satuan->nama_satuan ?? '-';
+                    if ($jumlah > 0) {
+                    $jumlahLabel[] = $jumlah . ' ' . $namaSatuan;
+                    }
+                    // Hitung subtotal per satuan
+                    $harga = HargaProduk::where('produk_id', $item->produk_id)
+                    ->where('satuan_id', $satuanId)
+                    ->where('jenis_pelanggan', $transaksiOnline->user->jenis_pelanggan ?? 'Individu')
+                    ->value('harga') ?? 0;
+                    $subtotalProduk += $harga * $jumlah;
+                    }
+                    $totalTransaksi += $subtotalProduk;
+                    @endphp
                     <tr>
-                        <td>{{ $index + 1 }}</td>
                         <td>{{ $item->produk->nama_produk ?? '-' }}</td>
-                        <td>{{ $item->satuan->nama_satuan ?? '-' }}</td>
-                        <td>Rp {{ number_format($item->harga, 0, ',', '.') }}</td>
-                        <td>{{ $item->jumlah }}</td>
-                        <td>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                        <td>{{ implode(' ', $jumlahLabel) }}</td>
+                        <td>Rp {{ number_format($subtotalProduk, 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="2" class="text-end">Total</th>
+                        <th>Rp {{ number_format($totalTransaksi, 0, ',', '.') }}</th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>

@@ -12,12 +12,13 @@ class Keuangan extends Model
     protected $table = 'keuangans';
 
     protected $fillable = [
-        'transaksi_id',  // nullable, bisa manual
+        'transaksi_id',          // untuk transaksi offline
+        'transaksi_online_id',   // untuk transaksi online
         'tanggal',
-        'jenis',         // 'pemasukan' atau 'pengeluaran'
+        'jenis',
         'nominal',
         'keterangan',
-        'sumber',        // contoh: 'offline', 'manual', 'online'
+        'sumber',
     ];
 
     protected $casts = [
@@ -50,6 +51,6 @@ class Keuangan extends Model
 
     public function transaksiOnline()
     {
-        return $this->belongsTo(\App\Models\TransaksiOnline::class, 'transaksi_id');
+        return $this->belongsTo(\App\Models\TransaksiOnline::class, 'transaksi_online_id');
     }
 }
