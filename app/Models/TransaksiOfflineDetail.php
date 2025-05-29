@@ -14,15 +14,14 @@ class TransaksiOfflineDetail extends Model
     protected $fillable = [
         'transaksi_id',
         'produk_id',
-        'satuan_id',
         'harga_id',
-        'jumlah',
+        'jumlah_json',   // ubah dari 'jumlah' jadi 'jumlah_json'
         'harga',
         'subtotal',
     ];
 
     protected $casts = [
-        'jumlah' => 'float',
+        'jumlah_json' => 'array',  // cast JSON ke array otomatis
         'harga' => 'float',
         'subtotal' => 'float',
     ];
@@ -44,14 +43,6 @@ class TransaksiOfflineDetail extends Model
     }
 
     /**
-     * Relasi ke satuan
-     */
-    public function satuan()
-    {
-        return $this->belongsTo(Satuan::class);
-    }
-
-    /**
      * Relasi ke harga produk (data harga yang digunakan saat transaksi)
      */
     public function hargaProduk()
@@ -61,9 +52,19 @@ class TransaksiOfflineDetail extends Model
 
     /**
      * Mendapatkan total jumlah dalam format bertingkat (opsional)
+     * Jumlah JSON akan dijumlahkan dan dikonversi ke stok utama.
      */
     public function getJumlahBertingkatAttribute()
     {
-        return $this->produk?->tampilkanStok3Tingkatan($this->jumlah);
+        if (!$this->jumlah_json || !is_array($this->jumlah_json)) {
+            return 0;
+        }
+        // Jika ada fungsi tampilkanStok3Tingkatan pada produk, bisa panggil di sini
+        $total = 0;
+        foreach ($this->jumlah_json as $satuanId => $qty) {
+            $konversi = $this->produk->satuans->firstWhere('id', $satuanId)?->konversi_ke_satuan_utama ?? 1;
+            $total += $qty * $konversi;
+        }
+        return $total;
     }
 }
