@@ -15,12 +15,14 @@ class TransaksiOnlineDetail extends Model
         'transaksi_id',
         'produk_id',
         'jumlah_json',
-        // (opsional: 'subtotal')
+        'harga_json',    // harga per satuan (JSON, nullable)
+        'subtotal',      // total harga item (decimal, nullable)
     ];
 
     protected $casts = [
-        'jumlah_json' => 'array', // auto decode/encode JSON
-        // 'subtotal' => 'float', // jika tetap ingin subtotal total per produk
+        'jumlah_json' => 'array',
+        'harga_json' => 'array',
+        'subtotal' => 'float',
     ];
 
     public function transaksi()
@@ -30,18 +32,25 @@ class TransaksiOnlineDetail extends Model
 
     public function produk()
     {
-        return $this->belongsTo(Produk::class);
+        return $this->belongsTo(Produk::class, 'produk_id');
     }
 
-    // Helper: ambil jumlah total semua satuan
-    public function totalJumlah()
+    /**
+     * Menghitung jumlah total satuan utama (bertumpuk) dari jumlah_json.
+     * Bisa digunakan untuk laporan stok real.
+     */
+    public function getJumlahBertingkatAttribute()
     {
-        return collect($this->jumlah_json)->sum();
-    }
+        if (!is_array($this->jumlah_json) || !$this->produk || !$this->produk->satuans) {
+            return 0;
+        }
 
-    // Helper: daftar jumlah per satuan
-    public function daftarJumlah()
-    {
-        return $this->jumlah_json ?? [];
+        $total = 0;
+        foreach ($this->jumlah_json as $satuanId => $qty) {
+            $satuanId = (int) $satuanId;
+            $konversi = $this->produk->satuans->firstWhere('id', $satuanId)?->konversi_ke_satuan_utama ?? 1;
+            $total += floatval($qty) * $konversi;
+        }
+        return $total;
     }
 }

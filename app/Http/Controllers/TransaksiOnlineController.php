@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\TransaksiOnline;
 use App\Models\TransaksiOnlineDetail;
 use App\Models\Produk;
-use App\Models\Satuan;
 use App\Models\HargaProduk;
+use App\Models\Satuan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,43 +24,20 @@ class TransaksiOnlineController extends Controller
 
     public function create()
     {
+        $users = User::where('role', 'pelanggan')->get();
+        $produk = Produk::with('satuans')->get(); // penting!
 
-        $users = \App\Models\User::where('role', 'pelanggan')->get();
-
-        // Build daftar produk, satuan, harga dalam bentuk array siap pakai
-        $produks = \App\Models\Produk::with(['satuans', 'hargaProduks'])->get();
-
-        $produkOptions = $produks->map(function ($produk) {
-            return [
-                'id' => $produk->id,
-                'nama_produk' => $produk->nama_produk,
-                'satuans' => $produk->satuans->map(function ($s) {
-                    return [
-                        'id' => $s->id,
-                        'nama_satuan' => $s->nama_satuan,
-                    ];
-                })->values(),
-                'harga' => $produk->hargaProduks
-                    ->groupBy('satuan_id')
-                    ->mapWithKeys(function ($h) {
-                        $satuanId = $h->first()->satuan_id;
-                        $individu = optional($h->firstWhere('jenis_pelanggan', 'Individu'))->harga;
-                        $toko_kecil = optional($h->firstWhere('jenis_pelanggan', 'Toko Kecil'))->harga;
-                        return [
-                            $satuanId => [
-                                "Individu" => $individu,
-                                "Toko Kecil" => $toko_kecil,
-                            ]
-                        ];
-                    }),
-            ];
-        })->values();
+        // Cek isi produk & satuans
+        foreach ($produk as $prod) {
+            \Log::info('Produk: ' . $prod->nama_produk . ' | Satuans: ' . json_encode($prod->satuans));
+        }
 
         return view('transaksi_online.create', [
             'users' => $users,
-            'produkOptions' => $produkOptions,
+            'produk' => $produk
         ]);
     }
+
 
 
     public function store(Request $request)
@@ -99,11 +77,11 @@ class TransaksiOnlineController extends Controller
 
             foreach ($request->produk_id as $i => $produkId) {
                 $jumlahJson = $request->jumlah_json[$i] ?? '{}';
-                // Parse jumlah bertingkat
                 $jumlahArr = is_array($jumlahJson) ? $jumlahJson : json_decode($jumlahJson, true);
                 if (!is_array($jumlahArr) || empty($jumlahArr)) continue;
 
                 $subtotalProduk = 0;
+                $hargaArr = []; // harga per satuan
                 $produk = Produk::findOrFail($produkId);
 
                 foreach ($jumlahArr as $satuanId => $qty) {
@@ -111,16 +89,16 @@ class TransaksiOnlineController extends Controller
                     if ($qty <= 0) continue;
                     $satuan = Satuan::findOrFail($satuanId);
 
-                    // Cari harga sesuai jenis pelanggan
+                    // Ambil harga fix dari master harga_produk sesuai jenis pelanggan
                     $harga = HargaProduk::where('produk_id', $produkId)
                         ->where('satuan_id', $satuanId)
                         ->where('jenis_pelanggan', $jenisPelanggan)
                         ->value('harga') ?? 0;
 
-                    // Subtotal per satuan
+                    $hargaArr[$satuanId] = $harga; // simpan harga per satuan
                     $subtotalProduk += $harga * $qty;
 
-                    // Konversi & Update stok produk
+                    // Konversi jumlah ke satuan utama untuk update stok
                     $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
                     $jumlahUtama = $qty * $konversi;
                     if ($produk->stok < $jumlahUtama) {
@@ -130,7 +108,7 @@ class TransaksiOnlineController extends Controller
                     $produk->stok -= $jumlahUtama;
                     $produk->save();
 
-                    // Catat log stok
+                    // Catat log stok keluar
                     \App\Models\Stok::create([
                         'produk_id' => $produkId,
                         'satuan_id' => $satuanId,
@@ -140,12 +118,13 @@ class TransaksiOnlineController extends Controller
                     ]);
                 }
 
-                // Simpan detail
+                // Simpan detail transaksi (sudah mirip offline)
                 TransaksiOnlineDetail::create([
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $produkId,
                     'jumlah_json' => $jumlahArr,
-                    // 'subtotal' => $subtotalProduk, // jika tambah kolom subtotal
+                    'harga_json' => $hargaArr,
+                    'subtotal' => $subtotalProduk,
                 ]);
 
                 $total += $subtotalProduk;
@@ -156,7 +135,7 @@ class TransaksiOnlineController extends Controller
             // Simpan keuangan hanya jika status pembayaran lunas
             if ($request->status_pembayaran === 'lunas') {
                 \App\Models\Keuangan::create([
-                    'transaksi_online_id' => $transaksi->id, // ini harus kolom transaksi_online_id untuk transaksi online
+                    'transaksi_online_id' => $transaksi->id,
                     'tanggal' => $request->tanggal,
                     'jenis' => 'pemasukan',
                     'nominal' => $total,
@@ -176,55 +155,30 @@ class TransaksiOnlineController extends Controller
     }
 
 
-
-
-
-    public function show(TransaksiOnline $transaksiOnline)
+    public function show($id)
     {
-        $transaksiOnline->load(['detail.produk']);
+        $transaksiOnline = \App\Models\TransaksiOnline::with([
+            'user',
+            'detail.produk',
+        ])->findOrFail($id);
+
         return view('transaksi_online.show', compact('transaksiOnline'));
     }
 
-    public function edit(TransaksiOnline $transaksiOnline)
+
+    public function edit($id)
     {
         $users = \App\Models\User::where('role', 'pelanggan')->get();
+        $produk = \App\Models\Produk::with('satuans')->get();
+        $transaksiOnline = \App\Models\TransaksiOnline::with(['detail.produk', 'detail.produk.satuans', 'user'])->findOrFail($id);
 
-        $produks = \App\Models\Produk::with(['satuans', 'hargaProduks'])->get();
-
-        // Bangun produkOptions seperti di method create
-        $produkOptions = $produks->map(function ($produk) {
-            return [
-                'id' => $produk->id,
-                'nama_produk' => $produk->nama_produk,
-                'satuans' => $produk->satuans->map(function ($s) {
-                    return [
-                        'id' => $s->id,
-                        'nama_satuan' => $s->nama_satuan,
-                    ];
-                })->values(),
-                'harga' => $produk->hargaProduks
-                    ->groupBy('satuan_id')
-                    ->mapWithKeys(function ($h) {
-                        $satuanId = $h->first()->satuan_id;
-                        $individu = optional($h->firstWhere('jenis_pelanggan', 'Individu'))->harga;
-                        $toko_kecil = optional($h->firstWhere('jenis_pelanggan', 'Toko Kecil'))->harga;
-                        return [
-                            $satuanId => [
-                                "Individu" => $individu,
-                                "Toko Kecil" => $toko_kecil,
-                            ]
-                        ];
-                    }),
-            ];
-        })->values();
-
-        $transaksiOnline->load(['detail']);
-
-        return view('transaksi_online.edit', compact('transaksiOnline', 'users', 'produkOptions'));
+        return view('transaksi_online.edit', compact('transaksiOnline', 'users', 'produk'));
     }
 
 
-    public function update(Request $request, TransaksiOnline $transaksiOnline)
+
+
+    public function update(Request $request, $id)
     {
         $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -236,21 +190,25 @@ class TransaksiOnlineController extends Controller
             'jumlah_json.*' => 'required|string',
         ]);
 
-        DB::beginTransaction();
+        \DB::beginTransaction();
         try {
-            // Rollback stok lama
+            $transaksiOnline = \App\Models\TransaksiOnline::with('detail.produk')->findOrFail($id);
+
+            // Rollback stok lama dari detail lama
             foreach ($transaksiOnline->detail as $detail) {
-                $produk = $detail->produk;
                 $jumlahArr = is_array($detail->jumlah_json) ? $detail->jumlah_json : json_decode($detail->jumlah_json, true);
-                if (!$produk || !is_array($jumlahArr)) continue;
+                if (!$jumlahArr) $jumlahArr = [];
+                $produk = $detail->produk;
+                if (!$produk) continue;
                 foreach ($jumlahArr as $satuanId => $qty) {
-                    $satuan = Satuan::find($satuanId);
+                    $satuan = \App\Models\Satuan::find($satuanId);
                     $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
                     $jumlahUtama = floatval($qty) * $konversi;
                     $produk->stok += $jumlahUtama;
                     $produk->save();
+
                     \App\Models\Stok::create([
-                        'produk_id' => $produk->id,
+                        'produk_id' => $detail->produk_id,
                         'satuan_id' => $satuan?->id,
                         'jenis' => 'masuk',
                         'jumlah' => $jumlahUtama,
@@ -277,26 +235,25 @@ class TransaksiOnlineController extends Controller
             // Hapus data keuangan lama yang terkait transaksi ini
             \App\Models\Keuangan::where('transaksi_online_id', $transaksiOnline->id)->delete();
 
-            // Ambil jenis pelanggan baru
+            // Jenis pelanggan baru (untuk harga)
             $user = \App\Models\User::findOrFail($request->user_id);
             $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
 
             $total = 0;
 
             foreach ($request->produk_id as $i => $produkId) {
-                $jumlahJson = $request->jumlah_json[$i] ?? '{}';
-                $jumlahArr = is_array($jumlahJson) ? $jumlahJson : json_decode($jumlahJson, true);
+                $jumlahArr = json_decode($request->jumlah_json[$i], true);
                 if (!is_array($jumlahArr) || empty($jumlahArr)) continue;
 
                 $subtotalProduk = 0;
-                $produk = Produk::findOrFail($produkId);
+                $produk = \App\Models\Produk::findOrFail($produkId);
 
                 foreach ($jumlahArr as $satuanId => $qty) {
                     $qty = floatval($qty);
                     if ($qty <= 0) continue;
-                    $satuan = Satuan::findOrFail($satuanId);
+                    $satuan = \App\Models\Satuan::findOrFail($satuanId);
 
-                    $harga = HargaProduk::where('produk_id', $produkId)
+                    $harga = \App\Models\HargaProduk::where('produk_id', $produkId)
                         ->where('satuan_id', $satuanId)
                         ->where('jenis_pelanggan', $jenisPelanggan)
                         ->value('harga') ?? 0;
@@ -306,7 +263,7 @@ class TransaksiOnlineController extends Controller
                     $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
                     $jumlahUtama = $qty * $konversi;
                     if ($produk->stok < $jumlahUtama) {
-                        DB::rollBack();
+                        \DB::rollBack();
                         return redirect()->back()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
                     }
                     $produk->stok -= $jumlahUtama;
@@ -321,10 +278,11 @@ class TransaksiOnlineController extends Controller
                     ]);
                 }
 
-                TransaksiOnlineDetail::create([
+                \App\Models\TransaksiOnlineDetail::create([
                     'transaksi_id' => $transaksiOnline->id,
                     'produk_id' => $produkId,
                     'jumlah_json' => $jumlahArr,
+                    'subtotal' => $subtotalProduk, // <-- Fix: Tambahkan field subtotal!
                 ]);
 
                 $total += $subtotalProduk;
@@ -332,10 +290,10 @@ class TransaksiOnlineController extends Controller
 
             $transaksiOnline->update(['total' => $total]);
 
-            // Simpan data keuangan baru jika status pembayaran lunas
+            // Simpan keuangan baru jika pembayaran lunas
             if ($request->status_pembayaran === 'lunas') {
                 \App\Models\Keuangan::create([
-                    'transaksi_online_id' => $transaksiOnline->id, // Ganti dari 'transaksi_id' ke 'transaksi_online_id'
+                    'transaksi_online_id' => $transaksiOnline->id,
                     'tanggal' => $request->tanggal,
                     'jenis' => 'pemasukan',
                     'nominal' => $total,
@@ -344,34 +302,44 @@ class TransaksiOnlineController extends Controller
                 ]);
             }
 
-            Artisan::call('produk:update-dailyusage-rop');
-            DB::commit();
+            \Artisan::call('produk:update-dailyusage-rop');
+            \DB::commit();
 
             return redirect()->route('transaksi_online.index')->with('success', 'Transaksi berhasil diperbarui.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            \DB::rollBack();
             return redirect()->back()->with('error', 'Gagal memperbarui transaksi: ' . $e->getMessage());
         }
     }
 
 
+
     public function destroy(TransaksiOnline $transaksiOnline)
     {
-        DB::beginTransaction();
+        \DB::beginTransaction();
         try {
+            // Pastikan eager load detail + produk biar efisien
+            $transaksiOnline->load('detail.produk');
+
+            // Rollback stok produk untuk setiap detail
             foreach ($transaksiOnline->detail as $detail) {
-                $produk = $detail->produk;
                 $jumlahArr = is_array($detail->jumlah_json) ? $detail->jumlah_json : json_decode($detail->jumlah_json, true);
-                if (!$produk || !is_array($jumlahArr)) continue;
+                if (!$jumlahArr) $jumlahArr = [];
+                $produk = $detail->produk;
+                if (!$produk) continue;
+
                 foreach ($jumlahArr as $satuanId => $qty) {
-                    $satuan = Satuan::find($satuanId);
-                    $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                    $satuan = \App\Models\Satuan::find($satuanId);
+                    if (!$satuan) continue;
+
+                    $konversi = $satuan->konversi_ke_satuan_utama ?? 1;
                     $jumlahUtama = floatval($qty) * $konversi;
                     $produk->stok += $jumlahUtama;
                     $produk->save();
+
                     \App\Models\Stok::create([
                         'produk_id' => $detail->produk_id,
-                        'satuan_id' => $satuan?->id,
+                        'satuan_id' => $satuan->id,
                         'jenis' => 'masuk',
                         'jumlah' => $jumlahUtama,
                         'keterangan' => 'Transaksi online dihapus (#' . $transaksiOnline->kode_transaksi . ')',
@@ -379,21 +347,21 @@ class TransaksiOnlineController extends Controller
                 }
             }
 
+            // Hapus semua detail transaksi online
             $transaksiOnline->detail()->delete();
 
-            // Hapus catatan keuangan yang terkait dengan transaksi online ini
+            // Hapus catatan keuangan terkait (transaksi_online_id)
             \App\Models\Keuangan::where('transaksi_online_id', $transaksiOnline->id)->delete();
 
-            // Hapus transaksi online
+            // Hapus transaksi online utama
             $transaksiOnline->delete();
 
-            Artisan::call('produk:update-dailyusage-rop');
-
-            DB::commit();
+            \Artisan::call('produk:update-dailyusage-rop');
+            \DB::commit();
 
             return redirect()->route('transaksi_online.index')->with('success', 'Transaksi berhasil dihapus.');
         } catch (\Exception $e) {
-            DB::rollBack();
+            \DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
         }
     }

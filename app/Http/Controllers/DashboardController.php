@@ -87,12 +87,13 @@ class DashboardController extends Controller
         }
 
 
-        // Hitung produk terjual dari transaksi online (jumlah bertingkat JSON)
-        $onlineDetails = TransaksiOnlineDetail::all();
+        $onlineDetails = TransaksiOnlineDetail::with('produk')->get();
 
         foreach ($onlineDetails as $detail) {
             $produkId = $detail->produk_id;
+            // Handle jika jumlah_json null/kosong, tetap array kosong
             $jumlahJson = is_array($detail->jumlah_json) ? $detail->jumlah_json : json_decode($detail->jumlah_json, true);
+            if (!is_array($jumlahJson)) $jumlahJson = [];
 
             $totalQtyUtama = 0;
             foreach ($jumlahJson as $satuanId => $qty) {
@@ -106,6 +107,7 @@ class DashboardController extends Controller
             }
             $produkTerjual[$produkId] += $totalQtyUtama;
         }
+
 
         arsort($produkTerjual);
 

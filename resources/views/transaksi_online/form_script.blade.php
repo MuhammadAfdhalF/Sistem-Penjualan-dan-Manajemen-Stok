@@ -1,28 +1,17 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        let jenisPelanggan = getJenisPelangganAktif();
+        const formatter = new Intl.NumberFormat('id-ID');
 
-        // Helper: Ambil harga dari attribute option
-        function getHargaMap(option) {
-            if (!option) return {};
-            try {
-                return JSON.parse(option.dataset.harga);
-            } catch {
-                return {};
-            }
+        function formatCurrency(num) {
+            if (typeof num !== 'number') num = parseFloat(num) || 0;
+            return formatter.format(num);
         }
 
-        // Helper: Ambil satuan dari attribute option
-        function getSatuanList(option) {
-            if (!option) return [];
-            try {
-                return JSON.parse(option.dataset.satuan);
-            } catch {
-                return [];
-            }
+        function parseCurrency(str) {
+            if (!str) return 0;
+            return parseInt(str.toString().replace(/[^0-9]/g, '')) || 0;
         }
 
-        // Helper: Jenis pelanggan aktif
         function getJenisPelangganAktif() {
             const pelangganSelect = document.getElementById('selectPelanggan');
             if (!pelangganSelect) return 'Individu';
@@ -30,131 +19,152 @@
             return selected?.dataset.jenis || 'Individu';
         }
 
-        // Render input jumlah per satuan saat produk dipilih
-        function handleProdukChange(row) {
+        function renderJumlahBertingkatInputs(row) {
             const produkSelect = row.querySelector('.produk-select');
-            const satuanJumlahList = row.querySelector('.satuan-jumlah-list');
-            satuanJumlahList.innerHTML = '';
-
-            const satuans = getSatuanList(produkSelect.options[produkSelect.selectedIndex]);
-
-            // Ambil data jumlah_json dari hidden input di baris ini
-            const jumlahJsonInput = row.querySelector('.jumlah-json');
-            let jumlahData = {};
+            const satuansJSON = produkSelect.selectedOptions[0]?.dataset.satuans || '[]';
+            let satuanArr = [];
             try {
-                jumlahData = JSON.parse(jumlahJsonInput.value);
+                satuanArr = JSON.parse(satuansJSON);
             } catch {
-                jumlahData = {};
+                satuanArr = [];
             }
-
-            satuans.forEach(satuan => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'input-group input-group-sm mb-1 satuan-jumlah-row';
-
-                // Isi nilai jumlah dari jumlahData, jika ada
-                const jumlahNilai = jumlahData[satuan.id] ?? 0;
-
-                wrapper.innerHTML = `
-                <label class="input-group-text" style="min-width:80px">${satuan.nama_satuan}</label>
-                <input type="number" class="form-control jumlah-per-satuan" data-satuan-id="${satuan.id}" min="0" step="0.01" value="${jumlahNilai}">
-            `;
-                satuanJumlahList.appendChild(wrapper);
+            let jumlahJsonInput = row.querySelector('.jumlah-json-input');
+            let hargaJsonInput = row.querySelector('.harga-json-input');
+            let jumlahData = {};
+            let hargaData = {};
+            try {
+                jumlahData = jumlahJsonInput ? JSON.parse(jumlahJsonInput.value) : {};
+                hargaData = hargaJsonInput ? JSON.parse(hargaJsonInput.value) : {};
+            } catch {}
+            const container = row.querySelector('.jumlah-bertingkat-container');
+            container.innerHTML = '';
+            satuanArr.forEach(satuan => {
+                const qty = jumlahData[satuan.id] ?? 0;
+                const div = document.createElement('div');
+                div.className = 'input-group input-group-sm mb-1 satuan-jumlah-row';
+                div.innerHTML = `
+                <label class="input-group-text" style="min-width: 100px;">${satuan.nama_satuan}</label>
+                <input type="number" class="form-control jumlah-per-satuan" min="0" step="0.01" value="${qty}" data-satuan-id="${satuan.id}">
+                `;
+                container.appendChild(div);
             });
-
             updateSubtotal(row);
         }
 
-        // Hitung subtotal satu row (mengacu jenis pelanggan aktif)
         function updateSubtotal(row) {
-            const produkSelect = row.querySelector('.produk-select');
-            const satuanInputs = row.querySelectorAll('.jumlah-per-satuan');
-            const hargaMap = getHargaMap(produkSelect.options[produkSelect.selectedIndex]);
-            const jenis = jenisPelanggan || getJenisPelangganAktif();
-            let subtotal = 0;
-            satuanInputs.forEach(input => {
-                const satuanId = input.dataset.satuanId;
-                const jumlah = parseFloat(input.value) || 0;
-                const hargaObj = hargaMap[satuanId] || {};
-                const harga = parseFloat(hargaObj[jenis]) || 0;
-                subtotal += jumlah * harga;
-            });
-            row.querySelector('.subtotal').value = subtotal ? 'Rp ' + subtotal.toLocaleString('id-ID') : '';
-            updateTotal();
+            const produkId = row.querySelector('.produk-select').value;
+            const jenisPelanggan = getJenisPelangganAktif();
+            const jumlahInputs = row.querySelectorAll('.jumlah-per-satuan');
+            if (!produkId || !jenisPelanggan) {
+                row.querySelector('.subtotal').value = '';
+                row.querySelector('.harga-input').value = '';
+                row.querySelector('.harga-json-input').value = '';
+                row.querySelector('.jumlah-json-input').value = '';
+                calculateGrandTotal();
+                return;
+            }
+            fetch(`/get-harga-produk-all?produk_id=${produkId}&jenis_pelanggan=${encodeURIComponent(jenisPelanggan)}`)
+                .then(res => res.ok ? res.json() : Promise.reject(res.status))
+                .then(data => {
+                    if (!data.success) {
+                        row.querySelector('.subtotal').value = '';
+                        row.querySelector('.harga-input').value = '';
+                        row.querySelector('.harga-json-input').value = '';
+                        row.querySelector('.jumlah-json-input').value = '';
+                        calculateGrandTotal();
+                        return;
+                    }
+                    let subtotal = 0;
+                    const hargaMap = data.hargaMap || {};
+                    const jumlahObj = {};
+                    const hargaObj = {};
+                    jumlahInputs.forEach(input => {
+                        const satuanId = input.dataset.satuanId;
+                        const qty = parseFloat(input.value) || 0;
+                        jumlahObj[satuanId] = qty;
+                        const hargaSatuan = hargaMap[satuanId] ?? 0;
+                        hargaObj[satuanId] = hargaSatuan;
+                        subtotal += hargaSatuan * qty;
+                    });
+                    row.querySelector('.subtotal').value = subtotal ? formatCurrency(subtotal) : '';
+                    row.querySelector('.jumlah-json-input').value = JSON.stringify(jumlahObj);
+                    row.querySelector('.harga-json-input').value = JSON.stringify(hargaObj);
+                    const hargaInput = row.querySelector('.harga-input');
+                    const hargaUtama = Object.values(hargaObj).reduce((max, h) => h > max ? h : max, 0);
+                    if (hargaInput) hargaInput.value = hargaUtama;
+                    calculateGrandTotal();
+                })
+                .catch(() => {
+                    row.querySelector('.subtotal').value = '';
+                    row.querySelector('.harga-input').value = '';
+                    row.querySelector('.harga-json-input').value = '';
+                    row.querySelector('.jumlah-json-input').value = '';
+                    calculateGrandTotal();
+                });
         }
 
-        // Hitung total semua baris
-        function updateTotal() {
+        function calculateGrandTotal() {
             let total = 0;
             document.querySelectorAll('.subtotal').forEach(input => {
-                const val = parseFloat((input.value || '').replace(/[^\d]/g, '')) || 0;
-                total += val;
+                const val = parseCurrency(input.value);
+                if (!isNaN(val)) total += val;
             });
-            const totalDisplay = document.querySelector('#totalDisplay');
-            if (totalDisplay) totalDisplay.innerText = 'Rp ' + total.toLocaleString('id-ID');
+            document.getElementById('totalDisplay').innerText = 'Rp ' + formatCurrency(total);
         }
 
-        // Serialize ke jumlah_json sebelum submit
-        document.getElementById('formTransaksiOnline').addEventListener('submit', function() {
+        function attachEvents(row) {
+            row.querySelector('.produk-select').addEventListener('change', function() {
+                renderJumlahBertingkatInputs(row);
+            });
+            row.addEventListener('input', function(e) {
+                if (e.target.classList.contains('jumlah-per-satuan')) {
+                    updateSubtotal(row);
+                }
+            });
+            row.querySelector('.removeRow').addEventListener('click', function() {
+                const rows = document.querySelectorAll('#produkTable tbody tr');
+                if (rows.length > 1) {
+                    row.remove();
+                    calculateGrandTotal();
+                } else {
+                    alert('Minimal harus ada satu baris produk');
+                }
+            });
+        }
+        document.getElementById('selectPelanggan').addEventListener('change', function() {
             document.querySelectorAll('.product-row').forEach(row => {
-                let jumlahObj = {};
-                row.querySelectorAll('.jumlah-per-satuan').forEach(input => {
-                    const satuanId = input.dataset.satuanId;
-                    const jumlah = parseFloat(input.value) || 0;
-                    if (jumlah > 0) jumlahObj[satuanId] = jumlah;
-                });
-                row.querySelector('.jumlah-json').value = JSON.stringify(jumlahObj);
+                renderJumlahBertingkatInputs(row);
             });
         });
-
-        // Tambah baris produk
-        document.getElementById('addRow')?.addEventListener('click', function() {
+        document.getElementById('addRow').addEventListener('click', function() {
             const tbody = document.querySelector('#produkTable tbody');
-            const row = tbody.querySelector('tr');
-            const clone = row.cloneNode(true);
-
-            // Reset semua select & input di baris baru
-            clone.querySelectorAll('select, input').forEach(el => {
-                if (el.tagName === 'SELECT') el.selectedIndex = 0;
-                else if (el.type === 'number') el.value = 0;
-                else el.value = '';
+            const template = tbody.querySelector('tr');
+            const newRow = template.cloneNode(true);
+            newRow.querySelector('.produk-select').selectedIndex = 0;
+            newRow.querySelector('.jumlah-bertingkat-container').innerHTML = '';
+            newRow.querySelector('.subtotal').value = '';
+            newRow.querySelector('.jumlah-json-input').value = '';
+            newRow.querySelector('.harga-json-input').value = '';
+            newRow.querySelector('.harga-input').value = '';
+            tbody.appendChild(newRow);
+            attachEvents(newRow);
+        });
+        document.getElementById('formTransaksiOnline').addEventListener('submit', function(e) {
+            document.querySelectorAll('.product-row').forEach(row => {
+                const jumlahInputs = row.querySelectorAll('.jumlah-per-satuan');
+                let jumlahObj = {},
+                    hargaObj = {};
+                jumlahInputs.forEach(input => {
+                    const satuanId = input.dataset.satuanId;
+                    const qty = parseFloat(input.value) || 0;
+                    jumlahObj[satuanId] = qty;
+                });
+                row.querySelector('.jumlah-json-input').value = JSON.stringify(jumlahObj);
             });
-            clone.querySelector('.satuan-jumlah-list').innerHTML = '';
-            tbody.appendChild(clone);
         });
-
-        // Hapus baris, minimal 1 row
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.removeRow')) {
-                const row = e.target.closest('tr');
-                const tbody = row.parentNode;
-                if (tbody.querySelectorAll('tr').length > 1) row.remove();
-                updateTotal();
-            }
-        });
-
-        // Produk berubah: render input jumlah per satuan
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('produk-select')) {
-                handleProdukChange(e.target.closest('tr'));
-            }
-        });
-
-        // Jumlah per satuan berubah: update subtotal
-        document.addEventListener('input', function(e) {
-            if (e.target.classList.contains('jumlah-per-satuan')) {
-                updateSubtotal(e.target.closest('tr'));
-            }
-        });
-
-        // Jika pelanggan berubah: update semua subtotal produk
-        document.getElementById('selectPelanggan')?.addEventListener('change', function() {
-            jenisPelanggan = getJenisPelangganAktif();
-            document.querySelectorAll('.product-row').forEach(row => updateSubtotal(row));
-        });
-
-        // On load: populate jumlah bertingkat jika sudah ada produk terisi
-        document.querySelectorAll('.produk-select').forEach(function(select) {
-            if (select.value) handleProdukChange(select.closest('tr'));
+        document.querySelectorAll('.product-row').forEach(row => {
+            attachEvents(row);
+            renderJumlahBertingkatInputs(row); // Render saat load (untuk edit)
         });
     });
 </script>

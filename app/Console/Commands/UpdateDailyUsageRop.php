@@ -47,9 +47,18 @@ class UpdateDailyUsageRop extends Command
                 ->where('produk_id', $produk->id)
                 ->get()
                 ->reduce(function ($carry, $detail) {
-                    // jumlah_json bisa array kosong/null, pastikan tetap 0 kalau kosong
-                    return $carry + collect($detail->jumlah_json ?: [])->sum();
+                    $jumlahArr = $detail->jumlah_json;
+                    if (!is_array($jumlahArr)) return $carry;
+
+                    $total = 0;
+                    foreach ($jumlahArr as $satuanId => $qty) {
+                        $satuan = \App\Models\Satuan::find($satuanId);
+                        $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                        $total += $qty * $konversi;
+                    }
+                    return $carry + $total;
                 }, 0);
+
 
 
             $jumlahTerjual = $jumlahOffline + $jumlahOnline;

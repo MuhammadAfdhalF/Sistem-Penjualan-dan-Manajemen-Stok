@@ -11,7 +11,7 @@ Detail Transaksi Online
         <a href="{{ route('transaksi_online.index') }}" class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card-body">
-        <h5><strong>Kode Transaksi:</strong> {{ $transaksiOnline->kode_transaksi }}</h5>
+        <p><strong>Kode Transaksi:</strong> {{ $transaksiOnline->kode_transaksi }}</p>
         <p><strong>Pelanggan:</strong> {{ $transaksiOnline->user->nama ?? '-' }}</p>
         <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($transaksiOnline->tanggal)->format('d-m-Y H:i') }}</p>
         <p><strong>Metode Pembayaran:</strong> {{ ucfirst(str_replace('_', ' ', $transaksiOnline->metode_pembayaran)) }}</p>
@@ -23,12 +23,14 @@ Detail Transaksi Online
 
         <h5 class="mt-4">Detail Produk</h5>
         <div class="table-responsive">
-            <table class="table table-bordered mt-2">
+            <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>Nama Produk</th>
-                        <th>Jumlah</th>
-                        <th>Subtotal</th>
+                        <th style="width: 5%;">No</th>
+                        <th style="width: 30%;">Nama Produk</th>
+                        <th style="width: 20%;">Jumlah Bertingkat (per satuan)</th>
+                        <th style="width: 20%;">Harga per Satuan</th>
+                        <th style="width: 25%;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,36 +39,57 @@ Detail Transaksi Online
                     use App\Models\HargaProduk;
                     $totalTransaksi = 0;
                     @endphp
-                    @foreach ($transaksiOnline->detail as $item)
+                    @foreach ($transaksiOnline->detail as $index => $item)
                     @php
-                    $jumlahLabel = [];
-                    $subtotalProduk = 0;
-                    foreach (($item->jumlah_json ?? []) as $satuanId => $jumlah) {
+                    $jumlahArr = is_array($item->jumlah_json) ? $item->jumlah_json : json_decode($item->jumlah_json, true);
+                    $filteredJumlahArr = collect($jumlahArr)->filter(fn($qty) => $qty > 0)->toArray();
+                    $jumlahCount = count($filteredJumlahArr);
+                    $firstRow = true;
+                    $subtotalItem = 0;
+                    @endphp
+
+                    @if($jumlahCount > 0)
+                    @foreach ($filteredJumlahArr as $satuanId => $qty)
+                    @php
                     $satuan = Satuan::find($satuanId);
-                    $namaSatuan = $satuan->nama_satuan ?? '-';
-                    if ($jumlah > 0) {
-                    $jumlahLabel[] = $jumlah . ' ' . $namaSatuan;
-                    }
-                    // Hitung subtotal per satuan
-                    $harga = HargaProduk::where('produk_id', $item->produk_id)
+                    $hargaSatuan = HargaProduk::where('produk_id', $item->produk_id)
                     ->where('satuan_id', $satuanId)
                     ->where('jenis_pelanggan', $transaksiOnline->user->jenis_pelanggan ?? 'Individu')
                     ->value('harga') ?? 0;
-                    $subtotalProduk += $harga * $jumlah;
-                    }
-                    $totalTransaksi += $subtotalProduk;
+                    $subtotalSatuan = $hargaSatuan * $qty;
+                    $subtotalItem += $subtotalSatuan;
                     @endphp
                     <tr>
-                        <td>{{ $item->produk->nama_produk ?? '-' }}</td>
-                        <td>{{ implode(' ', $jumlahLabel) }}</td>
-                        <td>Rp {{ number_format($subtotalProduk, 0, ',', '.') }}</td>
+                        @if($firstRow)
+                        <td rowspan="{{ $jumlahCount }}">{{ $index + 1 }}</td>
+                        <td rowspan="{{ $jumlahCount }}">{{ $item->produk->nama_produk ?? '-' }}</td>
+                        @endif
+
+                        <td>{{ $qty }} {{ $satuan?->nama_satuan ?? 'Satuan tidak ditemukan' }}</td>
+                        <td>Rp {{ number_format($hargaSatuan, 0, ',', '.') }}</td>
+
+                        @if($firstRow)
+                        <td rowspan="{{ $jumlahCount }}">Rp {{ number_format($subtotalItem, 0, ',', '.') }}</td>
+                        @endif
                     </tr>
+                    @php $firstRow = false; @endphp
+                    @endforeach
+                    @php $totalTransaksi += $subtotalItem; @endphp
+                    @else
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $item->produk->nama_produk ?? '-' }}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>Rp 0</td>
+                    </tr>
+                    @endif
                     @endforeach
                 </tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="2" class="text-end">Total</th>
-                        <th>Rp {{ number_format($totalTransaksi, 0, ',', '.') }}</th>
+                        <td colspan="4" class="text-end"><strong>Total</strong></td>
+                        <td><strong>Rp {{ number_format($totalTransaksi, 0, ',', '.') }}</strong></td>
                     </tr>
                 </tfoot>
             </table>
