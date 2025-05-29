@@ -119,4 +119,31 @@ class HargaProdukController extends Controller
             ]);
         }
     }
+
+    public function getHargaAllByProduk(Request $request)
+    {
+        $produkId = $request->produk_id;
+        $jenisPelanggan = $request->jenis_pelanggan;
+
+        if (!$produkId || !$jenisPelanggan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter produk_id dan jenis_pelanggan harus diisi',
+            ]);
+        }
+
+        $hargaRecords = HargaProduk::where('produk_id', $produkId)
+            ->where('jenis_pelanggan', $jenisPelanggan)
+            ->get();
+
+        $hargaMap = [];
+        foreach ($hargaRecords as $hr) {
+            $hargaMap[$hr->satuan_id] = floatval($hr->harga);
+        }
+
+        return response()->json([
+            'success' => true,
+            'hargaMap' => $hargaMap,
+        ]);
+    }
 }

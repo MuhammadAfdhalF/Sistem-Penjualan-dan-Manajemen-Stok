@@ -50,6 +50,8 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     Route::resource('harga_produk', HargaProdukController::class);
     Route::get('/get-harga-produk', [\App\Http\Controllers\HargaProdukController::class, 'getHarga']);
     Route::get('/get-harga-produk', [HargaProdukController::class, 'getHargaByProduk']);
+    Route::get('/get-harga-produk-all', [\App\Http\Controllers\HargaProdukController::class, 'getHargaAllByProduk']);
+
 
 
     // stok

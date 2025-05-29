@@ -1,8 +1,6 @@
 @extends('layouts.mantis')
 
-@section('title')
-Detail Transaksi Offline
-@endsection
+@section('title', 'Detail Transaksi Offline')
 
 @section('content')
 <div class="card">
@@ -11,50 +9,78 @@ Detail Transaksi Offline
         <a href="{{ route('transaksi_offline.index') }}" class="btn btn-secondary">Kembali</a>
     </div>
     <div class="card-body">
-        <h5><strong>Kode Transaksi:</strong> {{ $transaksi->kode_transaksi }}</h5>
+        <p><strong>Kode Transaksi:</strong> {{ $transaksi->kode_transaksi }}</p>
         <p><strong>Nama Pelanggan:</strong> {{ $transaksi->pelanggan?->nama ?? 'Bukan Member' }}</p>
-
         <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($transaksi->tanggal)->format('d-m-Y H:i') }}</p>
-        <p><strong>Total:</strong> Rp {{ number_format($transaksi->total, 0, ',', '.') }}</p>
-        <p><strong>Dibayar:</strong> Rp {{ number_format($transaksi->dibayar, 0, ',', '.') }}</p>
-        <p><strong>Kembalian:</strong> Rp {{ number_format($transaksi->kembalian, 0, ',', '.') }}</p>
 
         <h5 class="mt-4">Detail Produk</h5>
-        <div class="table-responsive">
-            <table class="table table-bordered mt-2">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Nama Produk</th>
-                        <th>Harga</th>
-                        <th>Jumlah</th>
-                        <th>Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($transaksi->detail as $index => $item)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $item->produk->nama_produk ?? $item->produk->nama }}</td>
-                        <td>
-                            @php
-                            // Tentukan harga sesuai tipe_harga yang tersimpan
-                            $harga = $item->tipe_harga === 'grosir'
-                            ? $item->produk->harga_grosir
-                            : $item->produk->harga_normal;
-                            // Jika harga pada detail sudah ada override, bisa ganti $item->harga
-                            // Jika mau tetap yang ada di transaksi detail (misal sudah disimpan), gunakan:
-                            // $harga = $item->harga;
-                            @endphp
-                            Rp {{ number_format($harga, 0, ',', '.') }}
-                        </td>
-                        <td>{{ $item->jumlah }}</td>
-                        <td>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 30%;">Nama Produk</th>
+                    <th style="width: 20%;">Jumlah Bertingkat (per satuan)</th>
+                    <th style="width: 20%;">Harga per Satuan</th>
+                    <th style="width: 25%;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($transaksi->detail as $index => $item)
+                @php
+                $jumlahArr = is_array($item->jumlah_json) ? $item->jumlah_json : json_decode($item->jumlah_json, true);
+                $hargaArr = is_array($item->harga_json) ? $item->harga_json : json_decode($item->harga_json, true);
+                $filteredJumlahArr = collect($jumlahArr)->filter(fn($qty) => $qty > 0)->toArray();
+                $jumlahCount = count($filteredJumlahArr);
+                $firstRow = true;
+                @endphp
+
+                @if($jumlahCount > 0)
+                @foreach ($filteredJumlahArr as $satuanId => $qty)
+                @php
+                $satuan = \App\Models\Satuan::find($satuanId);
+                $hargaSatuan = $hargaArr[$satuanId] ?? 0;
+                @endphp
+                <tr>
+                    @if($firstRow)
+                    <td rowspan="{{ $jumlahCount }}">{{ $index + 1 }}</td>
+                    <td rowspan="{{ $jumlahCount }}">{{ $item->produk->nama_produk ?? '-' }}</td>
+                    @endif
+
+                    <td>{{ $qty }} {{ $satuan?->nama_satuan ?? 'Satuan tidak ditemukan' }}</td>
+                    <td>Rp {{ number_format($hargaSatuan, 0, ',', '.') }}</td>
+
+                    @if($firstRow)
+                    <td rowspan="{{ $jumlahCount }}">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                    @endif
+                </tr>
+                @php $firstRow = false; @endphp
+                @endforeach
+                @else
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $item->produk->nama_produk ?? '-' }}</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
+                </tr>
+                @endif
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-end"><strong>Total</strong></td>
+                    <td><strong>Rp {{ number_format($transaksi->total, 0, ',', '.') }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="text-end"><strong>Dibayar</strong></td>
+                    <td><strong>Rp {{ number_format($transaksi->dibayar, 0, ',', '.') }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="text-end"><strong>Kembalian</strong></td>
+                    <td><strong>Rp {{ number_format($transaksi->kembalian, 0, ',', '.') }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 </div>
 @endsection

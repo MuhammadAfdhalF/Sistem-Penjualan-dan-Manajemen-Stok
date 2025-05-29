@@ -18,41 +18,26 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Ambil semua produk
-        $produk = Produk::all();
-        Log::info('Memulai proses view produk ID: ' . $produk);
+        // Ambil semua produk dengan eager load satuan
+        $produk = Produk::with('satuans')->get();
 
-        // Pisahkan produk berdasarkan status stok vs ROP
-        $produkMenipis = $produk->filter(function ($item) {
-            return $item->stok <= $item->rop;
-        });
+        // Produk dengan stok menipis (stok <= ROP)
+        $produkMenipis = $produk->filter(fn($item) => $item->stok <= $item->rop);
 
         // Hitung pelanggan berdasarkan jenis
-        $totalIndividu = User::where('role', 'pelanggan')
-            ->where('jenis_pelanggan', 'Individu')
-            ->count();
+        $totalIndividu = User::where('role', 'pelanggan')->where('jenis_pelanggan', 'Individu')->count();
+        $totalToko = User::where('role', 'pelanggan')->where('jenis_pelanggan', 'Toko Kecil')->count();
 
-        $totalToko = User::where('role', 'pelanggan')
-            ->where('jenis_pelanggan', 'Toko Kecil')
-            ->count();
-
-        // Data keuangan hari ini (box)
+        // Data keuangan hari ini
         $hariIni = Carbon::today();
 
-        $pemasukanHariIni = Keuangan::where('jenis', 'pemasukan')
-            ->whereDate('tanggal', $hariIni)
-            ->sum('nominal');
-
-        $pengeluaranHariIni = Keuangan::where('jenis', 'pengeluaran')
-            ->whereDate('tanggal', $hariIni)
-            ->sum('nominal');
-
+        $pemasukanHariIni = Keuangan::where('jenis', 'pemasukan')->whereDate('tanggal', $hariIni)->sum('nominal');
+        $pengeluaranHariIni = Keuangan::where('jenis', 'pengeluaran')->whereDate('tanggal', $hariIni)->sum('nominal');
         $pendapatanBersihHariIni = $pemasukanHariIni - $pengeluaranHariIni;
 
-        //total produk
-        $totalProduk = Produk::count();
+        $totalProduk = $produk->count();
 
-        //keuangan
+        // Keuangan bulan ini
         $bulanIni = Carbon::now()->month;
         $tahunIni = Carbon::now()->year;
 
@@ -68,35 +53,43 @@ class DashboardController extends Controller
 
         $totalPendapatanBersih = $totalPemasukanBulanIni - $totalPengeluaranBulanIni;
 
-        //stok kurang
-        $produkMenipis = Produk::with('satuans')
-            ->get()
-            ->filter(fn($item) => $item->stok <= $item->rop);
+        // Produk menipis (sudah eager load satuan)
+        // $produkMenipis sudah didefinisikan di atas
 
-        // Tambahkan variabel tahun
+        // Tahun sekarang dan mulai
         $tahunSekarang = date('Y');
         $tahunMulai = 2022;
 
+        // Hitung produk terjual gabungan offline + online
 
-        // Ambil data produk terjual gabungan offline + online
+        // Eager load produk untuk efisiensi
+        $offlineDetails = TransaksiOfflineDetail::with('produk')->get();
+
         $produkTerjual = [];
 
-        // Hitung produk terjual dari transaksi offline (jumlah biasa dengan satuan)
-        $offlineDetails = TransaksiOfflineDetail::all();
         foreach ($offlineDetails as $detail) {
             $produkId = $detail->produk_id;
-            $satuan = Satuan::find($detail->satuan_id);
-            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-            $qtyUtama = floatval($detail->jumlah) * $konversi;
+            $jumlahJson = is_array($detail->jumlah_json) ? $detail->jumlah_json : json_decode($detail->jumlah_json, true);
+
+            $totalQtyUtama = 0;
+            if (is_array($jumlahJson)) {
+                foreach ($jumlahJson as $satuanId => $qty) {
+                    $satuan = Satuan::find($satuanId);
+                    $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                    $totalQtyUtama += $qty * $konversi;
+                }
+            }
 
             if (!isset($produkTerjual[$produkId])) {
                 $produkTerjual[$produkId] = 0;
             }
-            $produkTerjual[$produkId] += $qtyUtama;
+            $produkTerjual[$produkId] += $totalQtyUtama;
         }
+
 
         // Hitung produk terjual dari transaksi online (jumlah bertingkat JSON)
         $onlineDetails = TransaksiOnlineDetail::all();
+
         foreach ($onlineDetails as $detail) {
             $produkId = $detail->produk_id;
             $jumlahJson = is_array($detail->jumlah_json) ? $detail->jumlah_json : json_decode($detail->jumlah_json, true);
@@ -114,24 +107,20 @@ class DashboardController extends Controller
             $produkTerjual[$produkId] += $totalQtyUtama;
         }
 
-        // Urutkan produk terlaris berdasarkan total qty satuan utama
         arsort($produkTerjual);
 
-        // Ambil 5 produk terlaris dan format tampilannya
         $produkTerlaris = collect($produkTerjual)
             ->take(5)
             ->map(function ($total, $produkId) {
-                $produk = \App\Models\Produk::with('satuans')->find($produkId);
+                $produk = Produk::with('satuans')->find($produkId);
                 return [
                     'nama' => $produk?->nama_produk ?? 'Produk Tidak Ditemukan',
-                    // Fungsi tampilkanStok3Tingkatan harus mengubah jumlah utama ke string bertingkat, misal "1 slof 4 bks"
                     'total' => $produk?->tampilkanStok3Tingkatan($total) ?? (int) $total,
                 ];
             })
             ->values();
 
-
-        // ====== PELANGGAN TERROYAL (Gabungan online + offline) ======
+        // Pelanggan terroyal gabungan offline + online
         $gabungUser = DB::table('transaksi_offline')
             ->select('pelanggan_id as user_id', DB::raw('SUM(total) as total'))
             ->whereNotNull('pelanggan_id')
@@ -157,18 +146,8 @@ class DashboardController extends Controller
             ->get();
 
         // Bagi dua: individu dan toko kecil
-        $terroyalIndividu = $pelanggan->where('jenis_pelanggan', 'Individu')
-            ->sortByDesc('total_belanja')
-            ->take(5)
-            ->values();
-
-        $terroyalToko = $pelanggan->where('jenis_pelanggan', 'Toko Kecil')
-            ->sortByDesc('total_belanja')
-            ->take(5)
-            ->values();
-
-
-
+        $terroyalIndividu = $pelanggan->where('jenis_pelanggan', 'Individu')->sortByDesc('total_belanja')->take(5)->values();
+        $terroyalToko = $pelanggan->where('jenis_pelanggan', 'Toko Kecil')->sortByDesc('total_belanja')->take(5)->values();
 
         return view('dashboard.index', compact(
             'produk',
@@ -187,9 +166,9 @@ class DashboardController extends Controller
             'pendapatanBersihHariIni',
             'terroyalIndividu',
             'terroyalToko'
-
         ));
     }
+
 
     public function getRingkasanKeuanganBulanan($tahun = null)
     {

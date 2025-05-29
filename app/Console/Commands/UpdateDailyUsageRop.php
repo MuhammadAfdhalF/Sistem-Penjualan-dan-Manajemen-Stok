@@ -25,7 +25,20 @@ class UpdateDailyUsageRop extends Command
             // Hitung total produk terjual dari transaksi offline
             $jumlahOffline = TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
                 $q->where('tanggal', '>=', $tanggalMulai);
-            })->where('produk_id', $produk->id)->sum('jumlah');
+            })->where('produk_id', $produk->id)->get()->reduce(function ($carry, $detail) {
+                // $detail->jumlah_json sudah berupa array karena cast di model, jadi gunakan langsung
+                $jumlahArr = $detail->jumlah_json;
+                if (!is_array($jumlahArr)) return $carry;
+
+                $total = 0;
+                foreach ($jumlahArr as $satuanId => $qty) {
+                    $satuan = \App\Models\Satuan::find($satuanId);
+                    $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                    $total += $qty * $konversi;
+                }
+                return $carry + $total;
+            }, 0);
+
 
             // Hitung total produk terjual dari transaksi online
             $jumlahOnline = TransaksiOnlineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {

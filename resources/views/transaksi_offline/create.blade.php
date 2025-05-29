@@ -23,17 +23,17 @@
 
             <div class="row g-3 mb-3">
                 <div class="col-md-4">
-                    <label class="form-label">Kode Transaksi</label>
-                    <input type="text" name="kode_transaksi" class="form-control" value="{{ $kode_transaksi }}" readonly>
+                    <label for="kode_transaksi" class="form-label">Kode Transaksi</label>
+                    <input type="text" name="kode_transaksi" id="kode_transaksi" class="form-control" value="{{ $kode_transaksi }}" readonly>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Tanggal Transaksi</label>
-                    <input type="datetime-local" name="tanggal" class="form-control" value="{{ $tanggal->format('Y-m-d\TH:i') }}" readonly>
+                    <label for="tanggal" class="form-label">Tanggal Transaksi</label>
+                    <input type="datetime-local" name="tanggal" id="tanggal" class="form-control" value="{{ $tanggal->format('Y-m-d\TH:i') }}" readonly>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Pilih Pelanggan (Opsional)</label>
-                    <select name="pelanggan_id" class="form-select" id="pelanggan_id">
+                    <label for="pelanggan_id" class="form-label">Pilih Pelanggan (Opsional)</label>
+                    <select name="pelanggan_id" id="pelanggan_id" class="form-select">
                         <option value="">-- Tanpa Pelanggan --</option>
                         @foreach ($pelanggans as $pel)
                         <option value="{{ $pel->id }}" data-jenis="{{ $pel->jenis_pelanggan }}">{{ $pel->nama }}</option>
@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Jenis Pelanggan</label>
+                    <label for="jenis_pelanggan" class="form-label">Jenis Pelanggan</label>
                     <select name="jenis_pelanggan" id="jenis_pelanggan" class="form-select" required>
                         <option value="">-- Pilih Jenis Pelanggan --</option>
                         <option value="Individu">Individu</option>
@@ -54,18 +54,16 @@
             <hr>
 
             <div class="mb-3">
-                <label class="form-label">Produk</label>
+                <label class="form-label">Produk & Jumlah Bertingkat</label>
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle" id="produkTable">
                         <thead class="table-light">
                             <tr>
-                                <th>Produk</th>
-                                <th>Satuan</th>
-                                <th>Harga (Rp)</th>
-                                <th>Jumlah</th>
-                                <th>Subtotal (Rp)</th>
-                                <th class="text-center" style="width: 60px">
-                                    <button type="button" class="btn btn-sm btn-success" id="addRow">
+                                <th style="min-width:180px">Produk</th>
+                                <th style="min-width:300px">Jumlah Bertingkat (per satuan)</th>
+                                <th style="min-width:120px">Subtotal (Rp)</th>
+                                <th class="text-center" style="width: 60px;">
+                                    <button type="button" class="btn btn-sm btn-success" id="addRow" title="Tambah baris produk">
                                         <i class="ti ti-plus"></i>
                                     </button>
                                 </th>
@@ -76,29 +74,24 @@
                                 <td>
                                     <select name="produk_id[]" class="form-select produk-select" required>
                                         <option value="">Pilih Produk</option>
-                                        @forelse($produk as $item)
-                                        <option value="{{ $item->id }}">{{ $item->nama_produk }}</option>
-                                        @empty
-                                        <option value="">Tidak ada produk tersedia</option>
-                                        @endforelse
+                                        @foreach ($produk as $item)
+                                        <option value="{{ $item->id }}" data-satuans='@json($item->satuans)'>{{ $item->nama_produk }}</option>
+                                        @endforeach
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="satuan_id[]" class="form-select satuan-select" required>
-                                        <option value="">Pilih Satuan</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" name="harga[]" class="form-control harga text-end" readonly>
-                                </td>
-                                <td>
-                                    <input type="number" name="jumlah[]" class="form-control jumlah" min="0.01" step="0.01" value="1" required>
+                                    <div class="jumlah-bertingkat-container">
+                                        {{-- Input jumlah per satuan akan dirender via JS --}}
+                                    </div>
+                                    <input type="hidden" name="jumlah_json[]" class="jumlah-json-input" required>
                                 </td>
                                 <td>
                                     <input type="text" name="subtotal[]" class="form-control subtotal text-end" readonly>
+                                    <input type="hidden" name="harga[]" class="harga-input" />
+                                    <input type="hidden" name="harga_json[]" class="harga-json-input" />
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-danger removeRow">
+                                    <button type="button" class="btn btn-sm btn-danger removeRow" title="Hapus baris produk">
                                         <i class="ti ti-trash"></i>
                                     </button>
                                 </td>
@@ -112,19 +105,19 @@
 
             <div class="row justify-content-end g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Total</label>
+                    <label for="total" class="form-label">Total</label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
                         <input type="text" name="total" id="total" class="form-control text-end" readonly required>
                     </div>
 
-                    <label class="form-label mt-3">Dibayar</label>
+                    <label for="dibayar" class="form-label mt-3">Dibayar</label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
                         <input type="text" name="dibayar" id="dibayar" class="form-control text-end" required>
                     </div>
 
-                    <label class="form-label mt-3">Kembalian</label>
+                    <label for="kembalian" class="form-label mt-3">Kembalian</label>
                     <div class="input-group">
                         <span class="input-group-text">Rp</span>
                         <input type="text" name="kembalian" id="kembalian" class="form-control text-end" readonly>
@@ -144,6 +137,4 @@
 
 @section('scripts')
 @include('transaksi_offline.form_script')
-
-
 @endsection

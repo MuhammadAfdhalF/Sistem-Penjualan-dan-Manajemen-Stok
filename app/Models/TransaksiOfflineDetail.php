@@ -14,57 +14,41 @@ class TransaksiOfflineDetail extends Model
     protected $fillable = [
         'transaksi_id',
         'produk_id',
-        'harga_id',
-        'jumlah_json',   // ubah dari 'jumlah' jadi 'jumlah_json'
-        'harga',
+        'jumlah_json',
+        'harga_json',  // gunakan ini untuk harga per satuan
         'subtotal',
     ];
 
     protected $casts = [
-        'jumlah_json' => 'array',  // cast JSON ke array otomatis
-        'harga' => 'float',
+        'jumlah_json' => 'array',
+        'harga_json' => 'array', // harga per satuan sebagai array
         'subtotal' => 'float',
     ];
 
-    /**
-     * Relasi ke transaksi offline (parent)
-     */
     public function transaksi()
     {
-        return $this->belongsTo(TransaksiOffline::class);
+        return $this->belongsTo(TransaksiOffline::class, 'transaksi_id');
     }
 
-    /**
-     * Relasi ke produk
-     */
     public function produk()
     {
-        return $this->belongsTo(Produk::class);
+        return $this->belongsTo(Produk::class, 'produk_id');
     }
 
-    /**
-     * Relasi ke harga produk (data harga yang digunakan saat transaksi)
-     */
-    public function hargaProduk()
-    {
-        return $this->belongsTo(HargaProduk::class, 'harga_id');
-    }
-
-    /**
-     * Mendapatkan total jumlah dalam format bertingkat (opsional)
-     * Jumlah JSON akan dijumlahkan dan dikonversi ke stok utama.
-     */
     public function getJumlahBertingkatAttribute()
     {
-        if (!$this->jumlah_json || !is_array($this->jumlah_json)) {
+        if (!is_array($this->jumlah_json) || !$this->produk || !$this->produk->satuans) {
             return 0;
         }
-        // Jika ada fungsi tampilkanStok3Tingkatan pada produk, bisa panggil di sini
+
         $total = 0;
+
         foreach ($this->jumlah_json as $satuanId => $qty) {
+            $satuanId = (int) $satuanId;
             $konversi = $this->produk->satuans->firstWhere('id', $satuanId)?->konversi_ke_satuan_utama ?? 1;
-            $total += $qty * $konversi;
+            $total += floatval($qty) * $konversi;
         }
+
         return $total;
     }
 }
