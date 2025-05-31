@@ -14,10 +14,37 @@ use App\Models\Satuan;
 
 class StokController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $stok = Stok::all();
-        return view('stok.index', compact('stok'));
+        $query = \App\Models\Stok::with(['produk', 'satuan'])->orderByDesc('created_at');
+
+        // Filter tanggal (format: yyyy-mm-dd)
+        if ($request->date) {
+            $query->whereDate('created_at', $request->date);
+        }
+        // Filter bulan & tahun
+        if ($request->month) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        if ($request->year) {
+            $query->whereYear('created_at', $request->year);
+        }
+        // Filter nama produk (produk_id)
+        if ($request->produk_id) {
+            $query->where('produk_id', $request->produk_id);
+        }
+        // Filter jenis masuk/keluar
+        if ($request->jenis) {
+            $query->where('jenis', $request->jenis);
+        }
+
+        $stok = $query->get();
+
+        // Untuk dropdown produk dan tahun
+        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')->orderBy('nama_produk')->get();
+        $tahunTersedia = \App\Models\Stok::selectRaw('YEAR(created_at) as tahun')->distinct()->pluck('tahun')->toArray();
+
+        return view('stok.index', compact('stok', 'daftarProduk', 'tahunTersedia'));
     }
 
     public function create()

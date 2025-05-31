@@ -11,15 +11,41 @@ use Illuminate\Support\Facades\Log;
 
 class KeranjangController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $jenis = $user->jenis_pelanggan ?? 'Individu';
+
         if ($user->role === 'admin') {
-            $keranjangs = Keranjang::with(['user', 'produk.satuans', 'produk.hargaProduks'])->get();
-            return view('keranjang.keranjang_admin.index', compact('keranjangs'));
+            $keranjangQuery = Keranjang::with(['user', 'produk.satuans', 'produk.hargaProduks']);
+
+            // Filter tanggal
+            if ($request->date) {
+                $keranjangQuery->whereDate('created_at', $request->date);
+            }
+            // Filter bulan
+            if ($request->month) {
+                $keranjangQuery->whereMonth('created_at', $request->month);
+            }
+            // Filter tahun
+            if ($request->year) {
+                $keranjangQuery->whereYear('created_at', $request->year);
+            }
+            // Filter nama pelanggan
+            if ($request->user_id) {
+                $keranjangQuery->where('user_id', $request->user_id);
+            }
+
+            $keranjangs = $keranjangQuery->latest()->get();
+
+            // Untuk dropdown pelanggan dan tahun
+            $daftarPelanggan = \App\Models\User::where('role', 'pelanggan')->orderBy('nama')->get();
+            $tahunTersedia = Keranjang::selectRaw('YEAR(created_at) as tahun')->distinct()->pluck('tahun')->toArray();
+
+            return view('keranjang.keranjang_admin.index', compact('keranjangs', 'daftarPelanggan', 'tahunTersedia'));
         } else {
-            $keranjangs = Keranjang::with(['produk.satuans', 'produk.hargaProduks'])->where('user_id', $user->id)->get();
+            $keranjangs = Keranjang::with(['produk.satuans', 'produk.hargaProduks'])
+                ->where('user_id', $user->id)->get();
             return view('keranjang.keranjang_pelanggan.index', compact('keranjangs', 'jenis'));
         }
     }

@@ -8,6 +8,10 @@
 <li class="breadcrumb-item"><a href="{{ route('keuangan.create') }}" style="opacity: 0.5;">Tambah Catatan Keuangan</a></li>
 @endsection
 
+<head>
+    <title>Halaman Tambah Keuangan</title>
+</head>
+
 @section('content')
 <div>
     <div class="card">
@@ -16,14 +20,14 @@
             <a href="{{ route('keuangan.create') }}" class="btn btn-primary">Tambah Keuangan</a>
         </div>
 
-        <form method="GET" action="{{ route('keuangan.index') }}" class="row gx-2 gy-1 align-items-center">
+        <form method="GET" action="{{ route('keuangan.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
             <div class="col-auto">
                 <label for="filter_date" class="form-label small mb-1">Tanggal</label>
-                <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm">
+                <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm" style="min-width:140px;">
             </div>
             <div class="col-auto">
                 <label for="filter_month" class="form-label small mb-1">Bulan</label>
-                <select id="filter_month" name="month" class="form-select form-select-sm">
+                <select id="filter_month" name="month" class="form-select form-select-sm" style="min-width:140px;">
                     <option value="">-- Semua Bulan --</option>
                     @foreach(range(1,12) as $month)
                     <option value="{{ $month }}" {{ request('month') == $month ? 'selected' : '' }}>
@@ -34,7 +38,7 @@
             </div>
             <div class="col-auto">
                 <label for="filter_year" class="form-label small mb-1">Tahun</label>
-                <select id="filter_year" name="year" class="form-select form-select-sm">
+                <select id="filter_year" name="year" class="form-select form-select-sm" style="min-width:120px;">
                     <option value="">-- Semua Tahun --</option>
                     @foreach(range(date('Y'), date('Y') - 5) as $year)
                     <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
@@ -43,11 +47,17 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-auto align-self-end">
-                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                <a href="{{ route('keuangan.index') }}" class="btn btn-secondary btn-sm">Reset</a>
+            <div class="col-auto d-flex gap-1 align-items-end mt-3 mt-md-0">
+                <button type="submit" class="btn btn-primary btn-xs px-2 py-1" style="font-size: 0.8rem;" title="Terapkan Filter">
+                    <i class="ti ti-filter"></i>
+                </button>
+                <a href="{{ route('keuangan.index') }}" class="btn btn-secondary btn-xs px-2 py-1" style="font-size: 0.8rem;" title="Reset Filter">
+                    <i class="ti ti-refresh"></i>
+                </a>
             </div>
         </form>
+
+
 
 
         <div class="card-body p-0">

@@ -10,6 +10,10 @@ Halaman Pelanggan
 <li class="breadcrumb-item"><a href="{{ route('pelanggan.create') }}" style="opacity: 0.5;">Tambah Data Pelanggan</a></li>
 @endsection
 
+<head>
+     <title>Halaman Pelanggan</title>
+</head>
+
 @section('content')
 <div class="">
     <div class="card">

@@ -7,6 +7,9 @@
 <li class="breadcrumb-item"><a href="{{ route('keuangan.index') }}">Keuangan</a></li>
 <li class="breadcrumb-item active">Tambah Catatan</li>
 @endsection
+<head>
+     <title>Halaman Tambah Keuangan</title>
+</head>
 
 @section('content')
 <div class="card">

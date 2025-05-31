@@ -11,6 +11,10 @@ Halaman Edit Pelanggan
 <li class="breadcrumb-item"><strong><a href="">Edit Data Pelanggan</a></strong></li>
 @endsection
 
+<head>
+     <title>Halaman Edit Pelanggan</title>
+</head>
+
 @section('content')
 <div class="">
     <div class="card">

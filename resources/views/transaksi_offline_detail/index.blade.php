@@ -4,6 +4,10 @@
 Detail Transaksi
 @endsection
 
+<head>
+     <title>Halaman Detail Transaksi Offline</title>
+</head>
+
 @section('content')
 <div class="">
     <div class="card">

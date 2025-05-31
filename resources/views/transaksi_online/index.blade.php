@@ -5,10 +5,14 @@ Halaman Transaksi Online
 @endsection
 
 @section('breadcrumb')
-<li class="breadcrumb-item">Sistem Manajemen Stok</li>
+<li class="breadcrumb-item">Sistem Penjualan</li>
 <li class="breadcrumb-item"><strong><a href="{{ route('transaksi_online.index') }}">Transaksi Online</a></strong></li>
 <li class="breadcrumb-item"><a href="{{ route('transaksi_online.create') }}" style="opacity: 0.5;">Tambah Transaksi</a></li>
 @endsection
+
+<head>
+    <title>Halaman Transaksi Online</title>
+</head>
 
 @section('content')
 <div>
@@ -19,6 +23,53 @@ Halaman Transaksi Online
         </div>
 
         <div class="card-body">
+
+            <form method="GET" class="row gx-2 gy-1 align-items-end mb-3 flex-wrap">
+                <div class="col-auto">
+                    <label for="filter_date" class="form-label small mb-1">Tanggal</label>
+                    <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <label for="filter_month" class="form-label small mb-1">Bulan</label>
+                    <select id="filter_month" name="month" class="form-select form-select-sm">
+                        <option value="">-- Semua Bulan --</option>
+                        @foreach(range(1,12) as $month)
+                        <option value="{{ $month }}" {{ request('month') == $month ? 'selected' : '' }}>
+                            {{ \Carbon\Carbon::create()->month($month)->format('F') }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_year" class="form-label small mb-1">Tahun</label>
+                    <select id="filter_year" name="year" class="form-select form-select-sm">
+                        <option value="">-- Semua Tahun --</option>
+                        @foreach(range(date('Y'), date('Y') - 5) as $year)
+                        <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>
+                            {{ $year }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_user" class="form-label small mb-1">Pelanggan</label>
+                    <select id="filter_user" name="user_id" class="form-select form-select-sm">
+                        <option value="">-- Semua Pelanggan --</option>
+                        @foreach($users as $user)
+                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm px-2 py-1 me-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-filter"></i>
+                    </button>
+                    <a href="{{ route('transaksi_offline.index') }}" class="btn btn-secondary btn-sm px-2 py-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-refresh"></i>
+                    </a>
+                </div>
+            </form>
+
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">
                     <thead>

@@ -8,6 +8,10 @@
 <li class="breadcrumb-item"><a href="{{ route('produk.create') }}" style="opacity: 0.5;">Tambah Data Produk</a></li>
 @endsection
 
+
+<head>
+    <title>Halaman Produk</title>
+</head>
 @section('content')
 <div>
     <div class="card">
@@ -16,6 +20,30 @@
             <a href="{{ route('produk.create') }}" class="btn btn-primary">Tambah Produk</a>
         </div>
         <div class="card-body">
+
+            <form method="GET" action="{{ route('produk.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
+                <div class="col-auto">
+                    <label for="filter_kategori" class="form-label small mb-1">Kategori</label>
+                    <select id="filter_kategori" name="kategori" class="form-select form-select-sm" style="min-width:150px;">
+                        <option value="">-- Semua Kategori --</option>
+                        @foreach($listKategori as $kategori)
+                        <option value="{{ $kategori }}" {{ ($filterKategori ?? '') == $kategori ? 'selected' : '' }}>
+                            {{ $kategori }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-xs px-2 py-1 me-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-filter"></i>
+                    </button>
+                    <a href="{{ route('produk.index') }}" class="btn btn-secondary btn-xs px-2 py-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-refresh"></i>
+                    </a>
+                </div>
+            </form>
+
+
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">
                     <thead>

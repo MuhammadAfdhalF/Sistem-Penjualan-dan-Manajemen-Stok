@@ -7,6 +7,9 @@
 <li class="breadcrumb-item"><a href="{{ route('harga_produk.index') }}">Harga Produk</a></li>
 <li class="breadcrumb-item active">Edit</li>
 @endsection
+<head>
+     <title>Halaman Edit Harga</title>
+</head>
 
 @section('content')
 <div class="card">

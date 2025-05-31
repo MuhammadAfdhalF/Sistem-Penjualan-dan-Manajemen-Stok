@@ -4,6 +4,10 @@
 Detail Transaksi Online
 @endsection
 
+<head>
+     <title>Halaman Detail Transaksi Online</title>
+</head>
+
 @section('content')
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">

@@ -8,13 +8,22 @@ use Illuminate\Http\Request;
 
 class SatuanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Tampilkan semua satuan dengan data produk terkait
-        $satuans = Satuan::with('produk')->get();
+        // Ambil semua produk untuk filter dropdown
+        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')->orderBy('nama_produk')->get();
+        $produkId = $request->produk_id;
 
-        return view('satuan.index', compact('satuans'));
+        // Query satuan, filter jika ada produk_id
+        $query = \App\Models\Satuan::with('produk');
+        if ($produkId) {
+            $query->where('produk_id', $produkId);
+        }
+        $satuans = $query->get();
+
+        return view('satuan.index', compact('satuans', 'daftarProduk', 'produkId'));
     }
+
 
     public function create()
     {

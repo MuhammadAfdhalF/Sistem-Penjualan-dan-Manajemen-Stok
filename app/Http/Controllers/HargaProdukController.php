@@ -9,11 +9,28 @@ use Illuminate\Http\Request;
 
 class HargaProdukController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $hargaProduk = HargaProduk::with(['produk', 'satuan'])->latest()->get();
-        return view('harga_produk.index', compact('hargaProduk'));
+        $produkId = $request->produk_id;
+        $jenisPelanggan = $request->jenis_pelanggan;
+
+        // Ambil data produk untuk dropdown
+        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')->orderBy('nama_produk')->get();
+
+        $query = \App\Models\HargaProduk::with(['produk', 'satuan']);
+
+        if ($produkId) {
+            $query->where('produk_id', $produkId);
+        }
+        if ($jenisPelanggan) {
+            $query->where('jenis_pelanggan', $jenisPelanggan);
+        }
+
+        $hargaProduk = $query->latest()->get();
+
+        return view('harga_produk.index', compact('hargaProduk', 'daftarProduk', 'produkId', 'jenisPelanggan'));
     }
+
 
     public function create()
     {

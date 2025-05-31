@@ -8,6 +8,10 @@
 <li class="breadcrumb-item active">Tambah</li>
 @endsection
 
+<head>
+     <title>Halaman Tambah Harga</title>
+</head>
+
 @section('content')
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">

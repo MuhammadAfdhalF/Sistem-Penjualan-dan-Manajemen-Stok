@@ -8,6 +8,10 @@
 <li class="breadcrumb-item active">Edit Catatan</li>
 @endsection
 
+<head>
+     <title>Halaman Edit Keuangan</title>
+</head>
+
 @section('content')
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">

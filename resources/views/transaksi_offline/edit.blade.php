@@ -1,11 +1,14 @@
 @extends('layouts.mantis')
 
 @section('title', 'Halaman Edit Transaksi Offline')
+<head>
+     <title>Halaman Edit Transaksi Offline</title>
+</head>
 
 @section('content')
 <div class="card">
     <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-        <h4 class="card-title mb-2 mb-md-0">Form Edit Transaksi Offline</h4>
+        <h4 class="card-title mb-2 mb-md-0">Form Edit Transaksi</h4>
         <a href="{{ route('transaksi_offline.index') }}" class="btn btn-sm btn-secondary">Kembali</a>
     </div>
 
@@ -47,13 +50,13 @@
             <hr>
 
             <div class="mb-3">
-                <label class="form-label">Produk & Jumlah Bertingkat</label>
+                <label class="form-label"></label>
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle" id="produkTable">
                         <thead class="table-light">
                             <tr>
                                 <th style="min-width:180px">Produk</th>
-                                <th style="min-width:300px">Jumlah Bertingkat (per satuan)</th>
+                                <th style="min-width:300px">Jumlah</th>
                                 <th style="min-width:120px">Subtotal (Rp)</th>
                                 <th class="text-center" style="width: 60px;">
                                     <button type="button" class="btn btn-sm btn-success" id="addRow" title="Tambah baris produk">

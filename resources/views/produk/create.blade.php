@@ -8,6 +8,10 @@
 <li class="breadcrumb-item"><strong><a href="{{ route('produk.create') }}">Tambah Data Produk</a></strong></li>
 @endsection
 
+<head>
+     <title>Halaman Tambah Produk</title>
+</head>
+
 @section('content')
 <div>
     <div class="card">

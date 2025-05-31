@@ -75,8 +75,7 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     // keuangan
     Route::resource('keuangan', KeuanganController::class);
 
-    // pegawai
-    Route::resource('pegawai', PegawaiController::class);
+
 
     // route tambahan kalau ada yang spesifik
     Route::get('/pegawai', function () {

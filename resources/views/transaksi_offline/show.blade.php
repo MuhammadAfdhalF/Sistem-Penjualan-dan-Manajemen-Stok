@@ -2,6 +2,10 @@
 
 @section('title', 'Detail Transaksi Offline')
 
+<head>
+     <title>Halaman Detail Transaksi Offline</title>
+</head>
+
 @section('content')
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -19,7 +23,7 @@
                 <tr>
                     <th style="width: 5%;">No</th>
                     <th style="width: 30%;">Nama Produk</th>
-                    <th style="width: 20%;">Jumlah Bertingkat (per satuan)</th>
+                    <th style="width: 20%;">Jumlah</th>
                     <th style="width: 20%;">Harga per Satuan</th>
                     <th style="width: 25%;">Subtotal</th>
                 </tr>

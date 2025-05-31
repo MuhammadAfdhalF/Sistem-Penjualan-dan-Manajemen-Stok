@@ -8,6 +8,10 @@
 <li class="breadcrumb-item"><strong>Tambah Satuan</strong></li>
 @endsection
 
+<head>
+     <title>Halaman Tambah Satuan Produk</title>
+</head>
+
 @section('content')
 <div>
     <div class="card">

@@ -10,6 +10,10 @@ Halaman Stok
 <li class="breadcrumb-item"><a href="{{ route('stok.create') }}" style="opacity: 0.5;">Tambah Data Stok</a></li>
 @endsection
 
+<head>
+    <title>Halaman Stok</title>
+</head>
+
 @section('content')
 <div class="">
     <div class="card">
@@ -20,6 +24,62 @@ Halaman Stok
             </div>
         </div>
         <div class="card-body">
+
+            <form method="GET" action="{{ route('stok.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
+                <div class="col-auto">
+                    <label for="filter_date" class="form-label small mb-1">Tanggal</label>
+                    <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <label for="filter_month" class="form-label small mb-1">Bulan</label>
+                    <select id="filter_month" name="month" class="form-select form-select-sm" style="min-width: 90px;">
+                        <option value="">--</option>
+                        @foreach(range(1,12) as $month)
+                        <option value="{{ $month }}" {{ request('month') == $month ? 'selected' : '' }}>
+                            {{ \Carbon\Carbon::create()->month($month)->format('M') }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_year" class="form-label small mb-1">Tahun</label>
+                    <select id="filter_year" name="year" class="form-select form-select-sm" style="min-width: 80px;">
+                        <option value="">--</option>
+                        @foreach($tahunTersedia as $year)
+                        <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_produk" class="form-label small mb-1">Produk</label>
+                    <select id="filter_produk" name="produk_id" class="form-select form-select-sm" style="min-width: 120px;">
+                        <option value="">-- Semua --</option>
+                        @foreach($daftarProduk as $p)
+                        <option value="{{ $p->id }}" {{ request('produk_id') == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama_produk }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_jenis" class="form-label small mb-1">Jenis</label>
+                    <select id="filter_jenis" name="jenis" class="form-select form-select-sm" style="min-width: 80px;">
+                        <option value="">--</option>
+                        <option value="masuk" {{ request('jenis') == 'masuk' ? 'selected' : '' }}>Masuk</option>
+                        <option value="keluar" {{ request('jenis') == 'keluar' ? 'selected' : '' }}>Keluar</option>
+                    </select>
+                </div>
+                <div class="col-auto d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-xs px-2 py-1 me-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-filter"></i>
+                    </button>
+                    <a href="{{ route('stok.index') }}" class="btn btn-secondary btn-xs px-2 py-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-refresh"></i>
+                    </a>
+                </div>
+            </form>
+
+
             <div class="table-responsive"> <!-- Tambahkan ini -->
                 <table class="table table-bordered" id="table">
                     <thead>

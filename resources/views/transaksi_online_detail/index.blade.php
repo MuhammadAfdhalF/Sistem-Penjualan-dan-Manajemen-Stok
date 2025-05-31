@@ -3,6 +3,9 @@
 @section('title')
 Detail Transaksi Online
 @endsection
+<head>
+     <title>Halaman Detail Transaksi Online</title>
+</head>
 
 @section('content')
 <div class="">

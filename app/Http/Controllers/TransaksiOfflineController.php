@@ -19,10 +19,31 @@ use App\Models\Keuangan;
 class TransaksiOfflineController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $transaksi = TransaksiOffline::with('detail.produk')->latest()->get();
-        return view('transaksi_offline.index', compact('transaksi'));
+        $pelanggans = \App\Models\User::where('role', 'pelanggan')->orderBy('nama')->get();
+
+        $query = \App\Models\TransaksiOffline::with(['detail.produk', 'pelanggan'])->latest();
+
+        // Filter tanggal, bulan, tahun
+        if ($request->filled('date')) {
+            $query->whereDate('tanggal', $request->date);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('tanggal', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('tanggal', $request->year);
+        }
+
+        // Filter by pelanggan id
+        if ($request->filled('pelanggan_id')) {
+            $query->where('pelanggan_id', $request->pelanggan_id);
+        }
+
+        $transaksi = $query->get();
+
+        return view('transaksi_offline.index', compact('transaksi', 'pelanggans'));
     }
 
     public function show($id)

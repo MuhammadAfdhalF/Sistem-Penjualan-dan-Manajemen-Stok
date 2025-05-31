@@ -9,10 +9,15 @@
 <li class="breadcrumb-item"><strong>Edit Data Produk</strong></li>
 @endsection
 
+<head>
+     <title>Halaman Edit Produk</title>
+</head>
+
 @section('content')
 @php
 $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' : 'utama');
 @endphp
+
 
 <div>
     <div class="card">

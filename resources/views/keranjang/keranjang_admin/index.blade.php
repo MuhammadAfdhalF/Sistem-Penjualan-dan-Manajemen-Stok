@@ -11,6 +11,54 @@ Keranjang Pelanggan - Admin View
             <h4 class="card-title">Keranjang Pelanggan</h4>
         </div>
         <div class="card-body">
+
+            <form method="GET" action="{{ route('keranjang.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
+                <div class="col-auto">
+                    <label for="filter_date" class="form-label small mb-1">Tanggal</label>
+                    <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <label for="filter_month" class="form-label small mb-1">Bulan</label>
+                    <select id="filter_month" name="month" class="form-select form-select-sm" style="min-width: 90px;">
+                        <option value="">--</option>
+                        @foreach(range(1,12) as $month)
+                        <option value="{{ $month }}" {{ request('month') == $month ? 'selected' : '' }}>
+                            {{ \Carbon\Carbon::create()->month($month)->format('M') }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_year" class="form-label small mb-1">Tahun</label>
+                    <select id="filter_year" name="year" class="form-select form-select-sm" style="min-width: 80px;">
+                        <option value="">--</option>
+                        @foreach($tahunTersedia as $year)
+                        <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="filter_user" class="form-label small mb-1">Pelanggan</label>
+                    <select id="filter_user" name="user_id" class="form-select form-select-sm" style="min-width: 120px;">
+                        <option value="">-- Semua --</option>
+                        @foreach($daftarPelanggan as $p)
+                        <option value="{{ $p->id }}" {{ request('user_id') == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-xs px-2 py-1 me-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-filter"></i>
+                    </button>
+                    <a href="{{ route('keranjang.index') }}" class="btn btn-secondary btn-xs px-2 py-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-refresh"></i>
+                    </a>
+                </div>
+            </form>
+
+
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">
                     <thead>

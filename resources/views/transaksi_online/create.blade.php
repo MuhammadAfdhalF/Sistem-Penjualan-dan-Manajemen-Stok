@@ -2,6 +2,10 @@
 
 @section('title', 'Halaman Tambah Transaksi Online')
 
+<head>
+     <title>Halaman Tambah Transaksi Online</title>
+</head>
+
 @section('content')
 <div class="card">
     <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">

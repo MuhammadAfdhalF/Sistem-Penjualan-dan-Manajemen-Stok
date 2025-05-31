@@ -1,8 +1,13 @@
 @extends('layouts.mantis')
 
+
 @section('title')
 Halaman Dashboard
 @endsection
+
+<head>
+    <title>Halaman Dashboard</title>
+</head>
 
 @section('content')
 <div class="container">

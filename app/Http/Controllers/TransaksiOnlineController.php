@@ -16,11 +16,34 @@ use Illuminate\Support\Facades\Artisan;
 
 class TransaksiOnlineController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $transaksis = TransaksiOnline::with('user')->latest()->get();
-        return view('transaksi_online.index', compact('transaksis'));
+        // Ambil semua user pelanggan untuk dropdown filter
+        $users = \App\Models\User::where('role', 'pelanggan')->orderBy('nama')->get();
+
+        $query = \App\Models\TransaksiOnline::with('user')->latest();
+
+        // Filter berdasarkan tanggal, bulan, tahun
+        if ($request->filled('date')) {
+            $query->whereDate('tanggal', $request->date);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('tanggal', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('tanggal', $request->year);
+        }
+
+        // Filter by user_id (pelanggan)
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $transaksis = $query->get();
+
+        return view('transaksi_online.index', compact('transaksis', 'users'));
     }
+
 
     public function create()
     {

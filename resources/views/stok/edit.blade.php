@@ -11,6 +11,10 @@ Halaman Edit Stok
 <li class="breadcrumb-item"><strong><a href="">Edit Data Stok</a></strong></li>
 @endsection
 
+<head>
+     <title>Halaman Edit Stok</title>
+</head>
+
 @section('content')
 <div class="">
     <div class="card">

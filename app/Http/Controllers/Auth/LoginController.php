@@ -33,11 +33,11 @@ class LoginController extends Controller
         $user = auth()->user();
 
         if ($user->role === 'admin') {
-            return '/produk';    // admin diarahkan ke produk
+            return '/dashboard';   
         }
 
         if ($user->role === 'pelanggan') {
-            return '/home';      // pelanggan diarahkan ke home
+            return '/home';      
         }
 
         // default fallback jika role tidak dikenali

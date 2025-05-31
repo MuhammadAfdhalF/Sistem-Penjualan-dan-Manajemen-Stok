@@ -7,6 +7,10 @@
 <li class="breadcrumb-item"><strong>Data Satuan</strong></li>
 @endsection
 
+<head>
+    <title>Halaman Satuan Produk</title>
+</head>
+
 @section('content')
 <div>
     <div class="card">
@@ -19,6 +23,28 @@
             @if(session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
             @endif
+
+            <form method="GET" action="{{ route('satuan.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
+                <div class="col-auto">
+                    <label for="filter_produk" class="form-label small mb-1">Nama Produk</label>
+                    <select id="filter_produk" name="produk_id" class="form-select form-select-sm" style="min-width:170px;">
+                        <option value="">-- Semua Produk --</option>
+                        @foreach($daftarProduk as $produk)
+                        <option value="{{ $produk->id }}" {{ ($produkId ?? '') == $produk->id ? 'selected' : '' }}>
+                            {{ $produk->nama_produk }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-auto d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-xs px-2 py-1 me-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-filter"></i>
+                    </button>
+                    <a href="{{ route('satuan.index') }}" class="btn btn-secondary btn-xs px-2 py-1" style="font-size: 0.8rem;">
+                        <i class="ti ti-refresh"></i>
+                    </a>
+                </div>
+            </form>
 
             <div class="table-responsive">
                 <table class="table table-bordered table-striped align-middle" id="table">

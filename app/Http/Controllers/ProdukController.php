@@ -12,16 +12,31 @@ use Illuminate\Support\Facades\Artisan;
 
 class ProdukController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Eager load relasi satuans dan hargaProduks (beserta relasi satuan)
-        $produk = Produk::with(['satuans', 'hargaProduks.satuan'])->get();
+        // Ambil semua kategori unik
+        $listKategori = Produk::select('kategori')
+            ->distinct()
+            ->whereNotNull('kategori')
+            ->where('kategori', '!=', '')
+            ->pluck('kategori');
+
+        // Ambil parameter filter dari request
+        $filterKategori = $request->kategori;
+
+        // Query produk (filter jika ada kategori)
+        $query = Produk::with(['satuans', 'hargaProduks.satuan']);
+        if ($filterKategori) {
+            $query->where('kategori', $filterKategori);
+        }
+        $produk = $query->get();
 
         // Filter produk dengan stok <= ROP
         $produkMenipis = $produk->filter(fn($item) => $item->isStokDiBawahROP());
 
-        return view('produk.index', compact('produk', 'produkMenipis'));
+        return view('produk.index', compact('produk', 'produkMenipis', 'listKategori', 'filterKategori'));
     }
+
 
     public function create()
     {

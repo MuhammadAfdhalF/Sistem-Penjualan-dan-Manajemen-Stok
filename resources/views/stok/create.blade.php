@@ -10,6 +10,10 @@ Halaman Tambah/Kurangi Stok
 <li class="breadcrumb-item"><strong><a href="{{ route('stok.create') }}">Tambah Data Stok</a></strong></li>
 @endsection
 
+<head>
+     <title>Halaman Tambah Stok</title>
+</head>
+
 @section('content')
 <div class="">
     <div class="card">
