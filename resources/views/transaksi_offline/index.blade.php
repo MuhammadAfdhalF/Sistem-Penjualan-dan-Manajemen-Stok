@@ -24,12 +24,14 @@ Halaman Transaksi Offline
 
         <div class="card-body">
 
-            <form method="GET" action="{{ route('transaksi_offline.index') }}" class="row g-2 mb-3 align-items-end flex-nowrap">
-                <div class="col-auto">
+            <form method="GET" action="{{ route('transaksi_offline.index') }}"
+                class="row row-cols-1 row-cols-md-auto g-2 mb-3 align-items-end flex-wrap">
+                <div class="col">
                     <label for="filter_date" class="form-label small mb-1">Tanggal</label>
-                    <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm" style="min-width: 110px;">
+                    <input type="date" id="filter_date" name="date" value="{{ request('date') }}"
+                        class="form-control form-control-sm" style="min-width: 110px;">
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_month" class="form-label small mb-1">Bulan</label>
                     <select id="filter_month" name="month" class="form-select form-select-sm" style="min-width: 90px;">
                         <option value="">--</option>
@@ -40,7 +42,7 @@ Halaman Transaksi Offline
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_year" class="form-label small mb-1">Tahun</label>
                     <select id="filter_year" name="year" class="form-select form-select-sm" style="min-width: 70px;">
                         <option value="">--</option>
@@ -51,7 +53,7 @@ Halaman Transaksi Offline
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_pelanggan" class="form-label small mb-1">Pelanggan</label>
                     <select id="filter_pelanggan" name="pelanggan_id" class="form-select form-select-sm">
                         <option value="">-- Semua Pelanggan --</option>
@@ -60,8 +62,8 @@ Halaman Transaksi Offline
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm px-2 py-1 me-1" style="font-size: 0.8rem;">
+                <div class="col d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm px-2 py-1" style="font-size: 0.8rem;">
                         <i class="ti ti-filter"></i>
                     </button>
                     <a href="{{ route('transaksi_offline.index') }}" class="btn btn-secondary btn-sm px-2 py-1" style="font-size: 0.8rem;">
@@ -69,6 +71,7 @@ Halaman Transaksi Offline
                     </a>
                 </div>
             </form>
+
 
 
 

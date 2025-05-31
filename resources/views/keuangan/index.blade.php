@@ -20,12 +20,15 @@
             <a href="{{ route('keuangan.create') }}" class="btn btn-primary">Tambah Keuangan</a>
         </div>
 
-        <form method="GET" action="{{ route('keuangan.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
-            <div class="col-auto">
+        <form method="GET" action="{{ route('keuangan.index') }}"
+            class="row row-cols-1 row-cols-md-auto gx-2 gy-1 align-items-end flex-wrap mb-3">
+
+            <div class="col">
                 <label for="filter_date" class="form-label small mb-1">Tanggal</label>
-                <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm" style="min-width:140px;">
+                <input type="date" id="filter_date" name="date" value="{{ request('date') }}"
+                    class="form-control form-control-sm" style="min-width:140px;">
             </div>
-            <div class="col-auto">
+            <div class="col">
                 <label for="filter_month" class="form-label small mb-1">Bulan</label>
                 <select id="filter_month" name="month" class="form-select form-select-sm" style="min-width:140px;">
                     <option value="">-- Semua Bulan --</option>
@@ -36,7 +39,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-auto">
+            <div class="col">
                 <label for="filter_year" class="form-label small mb-1">Tahun</label>
                 <select id="filter_year" name="year" class="form-select form-select-sm" style="min-width:120px;">
                     <option value="">-- Semua Tahun --</option>
@@ -47,7 +50,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="col-auto d-flex gap-1 align-items-end mt-3 mt-md-0">
+            <div class="col d-flex gap-1 align-items-end">
                 <button type="submit" class="btn btn-primary btn-xs px-2 py-1" style="font-size: 0.8rem;" title="Terapkan Filter">
                     <i class="ti ti-filter"></i>
                 </button>
@@ -56,6 +59,7 @@
                 </a>
             </div>
         </form>
+
 
 
 

@@ -25,12 +25,13 @@ Halaman Stok
         </div>
         <div class="card-body">
 
-            <form method="GET" action="{{ route('stok.index') }}" class="row gx-2 gy-1 align-items-end flex-nowrap mb-3">
-                <div class="col-auto">
+            <form method="GET" action="{{ route('stok.index') }}"
+                class="row row-cols-1 row-cols-md-auto gx-2 gy-1 align-items-end flex-wrap mb-3">
+                <div class="col">
                     <label for="filter_date" class="form-label small mb-1">Tanggal</label>
                     <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm">
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_month" class="form-label small mb-1">Bulan</label>
                     <select id="filter_month" name="month" class="form-select form-select-sm" style="min-width: 90px;">
                         <option value="">--</option>
@@ -41,7 +42,7 @@ Halaman Stok
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_year" class="form-label small mb-1">Tahun</label>
                     <select id="filter_year" name="year" class="form-select form-select-sm" style="min-width: 80px;">
                         <option value="">--</option>
@@ -50,7 +51,7 @@ Halaman Stok
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_produk" class="form-label small mb-1">Produk</label>
                     <select id="filter_produk" name="produk_id" class="form-select form-select-sm" style="min-width: 120px;">
                         <option value="">-- Semua --</option>
@@ -61,7 +62,7 @@ Halaman Stok
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+                <div class="col">
                     <label for="filter_jenis" class="form-label small mb-1">Jenis</label>
                     <select id="filter_jenis" name="jenis" class="form-select form-select-sm" style="min-width: 80px;">
                         <option value="">--</option>
@@ -69,8 +70,8 @@ Halaman Stok
                         <option value="keluar" {{ request('jenis') == 'keluar' ? 'selected' : '' }}>Keluar</option>
                     </select>
                 </div>
-                <div class="col-auto d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-xs px-2 py-1 me-1" style="font-size: 0.8rem;">
+                <div class="col d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-xs px-2 py-1" style="font-size: 0.8rem;">
                         <i class="ti ti-filter"></i>
                     </button>
                     <a href="{{ route('stok.index') }}" class="btn btn-secondary btn-xs px-2 py-1" style="font-size: 0.8rem;">
@@ -78,6 +79,7 @@ Halaman Stok
                     </a>
                 </div>
             </form>
+
 
 
             <div class="table-responsive"> <!-- Tambahkan ini -->
