@@ -13,71 +13,94 @@
         body {
             font-family: 'Open Sans', sans-serif;
         }
+
+        .login-bg {
+            background-image: url('/storage/logo/login_dasar.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
     </style>
 </head>
 
-<body class="bg-[#a9bec9] min-h-screen flex flex-col items-center justify-center p-4">
+<body class="login-bg min-h-screen h-screen flex flex-col justify-center items-center">
 
     <!-- Main Card -->
-    <main class="max-w-7xl w-full max-h-[900px] bg-white rounded shadow-lg flex flex-col md:flex-row overflow-auto">
+    <main class="main-frame-bg w-full max-w-[98vw] md:max-w-[90vw] lg:max-w-[80vw] xl:max-w-[70vw] 2xl:max-w-[1400px]
+    bg-white rounded-2xl shadow-2xl flex flex-col lg:flex-row my-2 md:my-8 min-h-[600px]">
 
-        <!-- Left side -->
-        <section class="md:w-1/2 p-8 flex flex-col justify-between">
-            <div class="flex-grow flex items-center justify-center min-h-[300px]">
-                <img src="{{ asset('storage/logo/logo_kz.png') }}" alt="Logo Toko KZ Family" class="max-w-full max-h-[350px] object-contain" />
+        <!-- LEFT SIDE -->
+        <section class="relative flex flex-col bg-white w-full lg:basis-[53.5%] justify-center">
+            <div class="w-full h-auto lg:h-[600px] bg-white px-2 pt-4 md:px-8 md:pt-6 flex flex-col justify-center">
+                <div class="flex flex-row items-center">
+                    <img
+                        src="{{ asset('storage/logo/logo_kz.png') }}"
+                        class="w-[36px] h-[36px] md:w-[80px] md:h-[80px] lg:w-[120px] lg:h-[120px] object-contain"
+                        alt="Logo KZ"
+                        width="120"
+                        height="120" />
+                    <span class="ml-2 md:ml-6 text-base md:text-2xl lg:text-3xl font-extrabold tracking-tight" style="font-family: Montserrat, sans-serif;">
+                        Daftar Akun Baru di Toko KZ Family
+                    </span>
+                </div>
+                <div class="flex flex-row items-end justify-start mt-2 md:mt-5 lg:mt-5">
+                    <img src="{{ asset('storage/logo/login_cuy.png') }}"
+                        class="w-full max-w-[320px] md:max-w-[500px] lg:max-w-[817px] h-auto object-contain"
+                        alt="Register Cuy" />
+                </div>
             </div>
-
         </section>
 
-        <!-- Right section -->
-        <section class="md:w-1/2 p-8 flex flex-col justify-center items-center bg-white">
-            <div class="w-full max-w-md p-6 rounded-2xl shadow-lg">
-                <h2 class="text-xl font-bold text-gray-700 mb-4 text-center">Daftar Akun Baru</h2>
-                <p class="text-sm text-gray-600 mb-6 text-center">Isi data untuk membuat akun di Toko KZ Family</p>
-
-                <form action="{{ route('register') }}" method="POST" class="grid grid-cols-2 gap-6 text-gray-700 text-sm">
+        <!-- RIGHT SIDE -->
+        <!-- RIGHT SIDE -->
+        <section class="flex flex-col justify-center items-center w-full lg:basis-[46.5%] bg-[#7DBFD9]">
+            <div class="bg-white p-4 sm:p-6 lg:p-10 rounded-2xl w-full max-w-full sm:max-w-lg md:max-w-xl lg:max-w-[600px] mx-auto shadow-lg flex flex-col justify-center my-4 md:my-8 lg:my-0">
+                <h2 class="text-lg md:text-xl font-bold text-gray-700 mb-3 text-center">Daftar Akun Baru</h2>
+                <p class="text-sm md:text-base text-gray-700 mb-3 text-center">Isi data untuk membuat akun di Toko KZ Family</p>
+                <form action="{{ route('register') }}" method="POST"
+                    class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-gray-700 text-sm md:text-base">
                     @csrf
 
                     <div>
-                        <label for="nama" class="block mb-1 font-semibold text-gray-600">Nama Lengkap</label>
+                        <label for="nama" class="block mb-1 font-semibold text-sm">Nama Lengkap</label>
                         <input type="text" id="nama" name="nama" value="{{ old('nama') }}" placeholder="Masukkan nama lengkap"
-                            class="w-full border rounded-md px-3 py-2 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('nama') border-red-500 @enderror" />
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('nama') border-red-500 @enderror" />
                         @error('nama')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="email" class="block mb-1 font-semibold text-gray-600">Email</label>
-                        <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="Masukkan email"
-                            class="w-full border rounded-md px-3 py-2 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('email') border-red-500 @enderror" />
+                        <label for="email" class="block mb-1 font-semibold text-sm">Email</label>
+                        <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="Masukkan Email Anda"
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('email') border-red-500 @enderror" />
                         @error('email')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="no_hp" class="block mb-1 font-semibold text-gray-600">Nomor HP</label>
+                        <label for="no_hp" class="block mb-1 font-semibold text-sm">Nomor HP</label>
                         <input type="text" id="no_hp" name="no_hp" value="{{ old('no_hp') }}" placeholder="Masukkan nomor HP"
-                            class="w-full border rounded-md px-3 py-2 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('no_hp') border-red-500 @enderror" />
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('no_hp') border-red-500 @enderror" />
                         @error('no_hp')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="umur" class="block mb-1 font-semibold text-gray-600">Umur</label>
+                        <label for="umur" class="block mb-1 font-semibold text-sm">Umur</label>
                         <input type="number" id="umur" name="umur" value="{{ old('umur') }}" placeholder="Masukkan umur" min="1" max="150"
-                            class="w-full border rounded-md px-3 py-2 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('umur') border-red-500 @enderror" />
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('umur') border-red-500 @enderror" />
                         @error('umur')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="jenis_pelanggan" class="block mb-1 font-semibold text-gray-600">Jenis Pelanggan</label>
+                        <label for="jenis_pelanggan" class="block mb-1 font-semibold text-sm">Jenis Pelanggan</label>
                         <select id="jenis_pelanggan" name="jenis_pelanggan"
-                            class="w-full border rounded-md px-3 py-2 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('jenis_pelanggan') border-red-500 @enderror">
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('jenis_pelanggan') border-red-500 @enderror">
                             <option value="">-- Pilih Jenis Pelanggan --</option>
                             <option value="Toko Kecil" {{ old('jenis_pelanggan') == 'Toko Kecil' ? 'selected' : '' }}>Toko Kecil</option>
                             <option value="Individu" {{ old('jenis_pelanggan') == 'Individu' ? 'selected' : '' }}>Individu</option>
@@ -87,39 +110,35 @@
                         @enderror
                     </div>
 
-                    <div class="col-span-2">
-                        <label for="alamat" class="block mb-1 font-semibold text-gray-600">Alamat</label>
+                    <div>
+                        <label for="alamat" class="block mb-1 font-semibold text-sm">Alamat</label>
                         <textarea id="alamat" name="alamat" rows="3" placeholder="Masukkan alamat lengkap"
-                            class="w-full border rounded-md px-3 py-2 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('alamat') border-red-500 @enderror">{{ old('alamat') }}</textarea>
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('alamat') border-red-500 @enderror">{{ old('alamat') }}</textarea>
                         @error('alamat')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
                         @enderror
                     </div>
 
-                    <!-- Hidden role -->
                     <input type="hidden" name="role" value="pelanggan" />
 
                     <div class="relative">
-                        <label for="password" class="block mb-1 font-semibold text-gray-600">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            placeholder="Masukkan password"
-                            class="w-full border rounded-md px-3 py-2 pr-10 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('password') border-red-500 @enderror" />
+                        <label for="password" class="block mb-1 font-semibold text-sm">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Masukkan password"
+                            class="w-full border rounded-lg px-3 py-2 pr-10 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('password') border-red-500 @enderror" />
                         <button type="button" onclick="togglePassword('password', this)"
                             class="absolute right-2 text-gray-400 focus:outline-none"
                             style="top: 50%; transform: translateY(10%);">
                             <i class="fas fa-eye"></i>
                         </button>
-
+                        @error('password')
+                        <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
+                        @enderror
                     </div>
 
-
                     <div class="relative">
-                        <label for="password_confirmation" class="block mb-1 font-semibold text-gray-600">Konfirmasi Password</label>
+                        <label for="password_confirmation" class="block mb-1 font-semibold text-sm">Konfirmasi Password</label>
                         <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Masukkan konfirmasi password"
-                            class="w-full border rounded-md px-3 py-2 pr-10 text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-600 @error('password_confirmation') border-red-500 @enderror" />
+                            class="w-full border rounded-lg px-3 py-2 pr-10 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('password_confirmation') border-red-500 @enderror" />
                         <button type="button" onclick="togglePassword('password_confirmation', this)"
                             class="absolute right-2 text-gray-400 focus:outline-none"
                             style="top: 50%; transform: translateY(10%);">
@@ -130,45 +149,39 @@
                         @enderror
                     </div>
 
-                    <div class="col-span-2">
+                    <!-- Full width button and link -->
+                    <div class="col-span-1 md:col-span-2 flex flex-col gap-2 mt-2">
                         <button type="submit"
-                            class="bg-[#57aed1] text-white text-xs font-semibold px-6 py-2 w-full rounded-md hover:bg-[#001766] transition">
+                            class="bg-[#57aed1] text-white text-sm md:text-base font-bold px-4 py-2 w-full rounded-lg hover:bg-[#001766] transition">
                             Register
                         </button>
+                        <p class="mt-2 text-xs md:text-sm text-gray-800 text-center">
+                            <strong>Sudah punya akun?</strong>
+                            <a href="{{ route('login') }}" class="text-blue-600 font-semibold hover:underline">Masuk di sini</a>
+                        </p>
                     </div>
                 </form>
-
-                <p class="mt-6 text-xs text-gray-800 text-center">
-                    <strong>Sudah punya akun?</strong>
-                    <a href="{{ route('login') }}" class="text-blue-600 font-semibold hover:underline">Masuk di sini</a>
-                </p>
             </div>
         </section>
 
+
     </main>
 
-    <!-- Footer -->
-    <footer
-        class="w-full max-w-7xl bg-[#57aed1] text-white text-xs py-3 px-8 flex justify-between items-center mt-4 rounded shadow-lg">
-        <p>Selamat datang di Toko KZ Family, tempat belanja terpercaya Anda.</p>
-    </footer>
-
     <script>
-        function togglePassword(fieldId, btn) {
-            const input = document.getElementById(fieldId);
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
             const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
+            if (input.type === "password") {
+                input.type = "text";
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
             } else {
-                input.type = 'password';
+                input.type = "password";
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
             }
         }
     </script>
-
 </body>
 
 </html>
