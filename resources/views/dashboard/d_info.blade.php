@@ -52,7 +52,7 @@
         <div class="border rounded p-3 d-flex flex-column align-items-center justify-content-center shadow-sm"
             style="{{ $cardStyle }}">
             <div style="font-size: 32px; margin-bottom: 6px;">📊</div>
-            <strong style="font-weight: 600; font-size: 14px; text-align: center;">Pendapatan Bersih</strong>
+            <strong style="font-weight: 600; font-size: 14px; text-align: center;">Pendapatan Bersih Bulan Ini</strong>
             <small style="color: #555;">Rp {{ number_format($totalPendapatanBersih, 0, ',', '.') }}</small>
         </div>
 

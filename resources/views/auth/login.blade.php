@@ -28,9 +28,9 @@
     <!-- Main Card -->
     <!-- MAIN CARD -->
     <main class="main-frame-bg w-full max-w-[98vw] md:max-w-[90vw] lg:max-w-[80vw] xl:max-w-[70vw] 2xl:max-w-[1400px]
-    bg-white rounded-2xl shadow-2xl flex flex-col lg:flex-row overflow-hidden my-2 md:my-8
-    min-h-[600px] max-h-[1000px]">
-
+bg-white rounded-2xl flex flex-col lg:flex-row overflow-hidden my-2 md:my-8
+min-h-[600px] max-h-[1000px]"
+        style="box-shadow: 0 12px 50px 8px rgba(0,0,0,0.35);">
         <!-- LEFT SIDE -->
         <section class="relative flex flex-col bg-white w-full lg:basis-[53.5%]">
             <div class="w-full h-auto lg:h-[600px] bg-white px-2 pt-4 md:px-8 md:pt-6">

@@ -50,7 +50,7 @@
                     </li>
                     <x-sidebar.links title="Manajemen Pelanggan" icon="ti ti-users" route='pelanggan.index' />
                     <x-sidebar.links title="Keuangan" icon="ti ti-currency-dollar" route='keuangan.index' />
-                    <x-sidebar.links title="Keranjang" icon="ti ti-shopping-cart" route="keranjang.index" />
+                    <x-sidebar.links title="Keranjang Pelanggan" icon="ti ti-shopping-cart" route="keranjang.index" />
 
 
                 </ul>
