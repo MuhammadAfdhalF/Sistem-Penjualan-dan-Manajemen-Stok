@@ -18,8 +18,11 @@ class TransaksiOffline extends Model
         'total',
         'dibayar',
         'kembalian',
-        'pelanggan_id', 
+        'pelanggan_id',
 
+    ];
+    protected $casts = [
+        'tanggal' => 'datetime',
     ];
 
     public function detail()

@@ -107,33 +107,6 @@ $modeStok = old('mode_stok') ?? (count($stokBertingkatDefault) > 0 ? 'bertahap' 
                             @error('lead_time') <small class="text-danger">{{ $message }}</small> @enderror
                         </div>
 
-                        {{-- Safety Stock - Utama --}}
-                        <div id="safetyStockUtamaWrapper" class="col-md-6 mb-3">
-                            <label for="safety_stock" class="form-label">Safety Stock</label>
-                            <input type="number" id="safety_stock"
-                                class="form-control @error('safety_stock') is-invalid @enderror"
-                                value="{{ old('safety_stock', $produk->safety_stock) }}" min="0">
-                            @error('safety_stock') <small class="text-danger">{{ $message }}</small> @enderror
-                        </div>
-
-                        {{-- Safety Stock - Bertingkat --}}
-                        <div id="safetyStockBertingkatWrapper" class="col-md-12 mb-3" style="display: none;">
-                            <label class="form-label">Safety Stock Bertingkat</label>
-                            <div class="row">
-                                @foreach($satuanBertingkat as $satuan)
-                                <div class="col-md-6 mt-2">
-                                    <label class="form-label">{{ $satuan->nama_satuan }}</label>
-                                    <input type="number"
-                                        class="form-control safety-stock-bertahap-input"
-                                        name="safety_stock_bertahap[{{ $satuan->id }}]"
-                                        data-konversi="{{ $satuan->konversi_ke_satuan_utama }}"
-                                        min="0"
-                                        value="{{ old('safety_stock_bertahap.' . $satuan->id, $safetyStockBertingkatDefault[$satuan->id] ?? 0) }}">
-                                </div>
-                                @endforeach
-                            </div>
-                            <input type="hidden" id="safety_stock_final_hidden">
-                        </div>
 
                         {{-- Deskripsi --}}
                         <div class="col-12 mb-3">

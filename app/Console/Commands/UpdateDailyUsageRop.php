@@ -17,70 +17,94 @@ class UpdateDailyUsageRop extends Command
     public function handle()
     {
         $periodeHari = 30;
-        $tanggalMulai = Carbon::now()->subDays($periodeHari);
+        $tanggalMulai = Carbon::now()->subDays($periodeHari)->startOfDay();
 
         $produkList = Produk::all();
 
         foreach ($produkList as $produk) {
-            // Hitung total produk terjual dari transaksi offline
-            $jumlahOffline = TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
-                $q->where('tanggal', '>=', $tanggalMulai);
-            })->where('produk_id', $produk->id)->get()->reduce(function ($carry, $detail) {
-                // $detail->jumlah_json sudah berupa array karena cast di model, jadi gunakan langsung
-                $jumlahArr = $detail->jumlah_json;
-                if (!is_array($jumlahArr)) return $carry;
-
-                $total = 0;
-                foreach ($jumlahArr as $satuanId => $qty) {
-                    $satuan = \App\Models\Satuan::find($satuanId);
-                    $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                    $total += $qty * $konversi;
-                }
-                return $carry + $total;
-            }, 0);
-
-
-            // Hitung total produk terjual dari transaksi online
-            $jumlahOnline = TransaksiOnlineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
+            // Ambil penjualan harian offline selama 30 hari (array tanggal => qty dalam satuan utama)
+            $penjualanOfflinePerHari = TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
                 $q->where('tanggal', '>=', $tanggalMulai);
             })
                 ->where('produk_id', $produk->id)
                 ->get()
-                ->reduce(function ($carry, $detail) {
-                    $jumlahArr = $detail->jumlah_json;
-                    if (!is_array($jumlahArr)) return $carry;
-
+                ->groupBy(function ($item) {
+                    return $item->transaksi->tanggal->format('Y-m-d');
+                })
+                ->map(function ($items) {
                     $total = 0;
-                    foreach ($jumlahArr as $satuanId => $qty) {
-                        $satuan = \App\Models\Satuan::find($satuanId);
-                        $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                        $total += $qty * $konversi;
+                    foreach ($items as $detail) {
+                        $jumlahArr = $detail->jumlah_json;
+                        if (!is_array($jumlahArr)) continue;
+
+                        foreach ($jumlahArr as $satuanId => $qty) {
+                            $satuan = \App\Models\Satuan::find($satuanId);
+                            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                            $total += $qty * $konversi;
+                        }
                     }
-                    return $carry + $total;
-                }, 0);
+                    return $total;
+                });
 
+            // Ambil penjualan harian online selama 30 hari
+            $penjualanOnlinePerHari = TransaksiOnlineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
+                $q->where('tanggal', '>=', $tanggalMulai);
+            })
+                ->where('produk_id', $produk->id)
+                ->get()
+                ->groupBy(function ($item) {
+                    return $item->transaksi->tanggal->format('Y-m-d');
+                })
+                ->map(function ($items) {
+                    $total = 0;
+                    foreach ($items as $detail) {
+                        $jumlahArr = $detail->jumlah_json;
+                        if (!is_array($jumlahArr)) continue;
 
+                        foreach ($jumlahArr as $satuanId => $qty) {
+                            $satuan = \App\Models\Satuan::find($satuanId);
+                            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                            $total += $qty * $konversi;
+                        }
+                    }
+                    return $total;
+                });
 
-            $jumlahTerjual = $jumlahOffline + $jumlahOnline;
+            // Gabungkan penjualan per hari offline + online
+            $penjualanGabungan = [];
 
-            // Hitung daily usage
-            $dailyUsage = $jumlahTerjual / $periodeHari;
+            // Buat array tanggal lengkap selama periode untuk memastikan semua hari dihitung (termasuk yg 0)
+            for ($i = 0; $i < $periodeHari; $i++) {
+                $tgl = $tanggalMulai->copy()->addDays($i)->format('Y-m-d');
+                $offlineQty = $penjualanOfflinePerHari[$tgl] ?? 0;
+                $onlineQty = $penjualanOnlinePerHari[$tgl] ?? 0;
+                $penjualanGabungan[$tgl] = $offlineQty + $onlineQty;
+            }
 
-            // Hitung ROP (Reorder Point)
-            $rop = ($produk->lead_time * $dailyUsage) + $produk->safety_stock;
+            $totalTerjual = array_sum($penjualanGabungan);
+            $dailyUsage = $totalTerjual / $periodeHari;
 
-            // Simpan hanya daily_usage
+            $maxDailySales = max($penjualanGabungan);
+            $leadTime = $produk->lead_time; // diasumsikan lead_time sudah dalam satuan hari
+
+            // Hitung safety stock berdasarkan rumus:
+            // Safety Stock = (penjualan harian tertinggi - rata-rata penjualan harian) * lead time
+            $safetyStock = max(0, ($maxDailySales - $dailyUsage) * $leadTime);
+
+            // Update produk
             $produk->update([
                 'daily_usage' => $dailyUsage,
+                'safety_stock' => $safetyStock,
             ]);
 
-            // Log dan info ke console
-            $this->info("Produk ID {$produk->id} updated: daily_usage = {$dailyUsage}, rop = {$rop}");
+            $rop = ($leadTime * $dailyUsage) + $safetyStock;
 
-            Log::info("UpdateDailyUsageRop | Produk ID: {$produk->id} | Offline: {$jumlahOffline} | Online: {$jumlahOnline} | Lead Time: {$produk->lead_time} | Safety Stock: {$produk->safety_stock} | Daily Usage: {$dailyUsage} | ROP: {$rop}");
+            $this->info("Produk ID {$produk->id} updated: daily_usage = {$dailyUsage}, safety_stock = {$safetyStock}, rop = {$rop}");
+
+            Log::info("UpdateDailyUsageRop | Produk ID: {$produk->id} | Daily Usage: {$dailyUsage} | Max Daily Sales: {$maxDailySales} | Lead Time: {$leadTime} | Safety Stock: {$safetyStock} | ROP: {$rop}");
         }
 
-        $this->info("Update daily usage selesai.");
+        $this->info("Update daily usage dan safety stock selesai.");
         return 0;
     }
 }

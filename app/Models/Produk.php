@@ -65,6 +65,69 @@ class Produk extends Model
         return $this->rop; // untuk alias atau akses via accessor `calculated_rop`
     }
 
+    public function getCalculatedSafetyStockAttribute()
+    {
+        // Ambil data transaksi 30 hari terakhir dan hitung seperti rumus
+        $periodeHari = 30;
+        $tanggalMulai = now()->subDays($periodeHari)->startOfDay();
+
+        // Ambil penjualan per hari (offline + online) dalam array tanggal => qty
+        $penjualanPerHari = [];
+
+        for ($i = 0; $i < $periodeHari; $i++) {
+            $tgl = $tanggalMulai->copy()->addDays($i)->format('Y-m-d');
+
+            $offlineQty = \App\Models\TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tgl) {
+                $q->whereDate('tanggal', $tgl);
+            })
+                ->where('produk_id', $this->id)
+                ->get()
+                ->sum(function ($detail) {
+                    $total = 0;
+                    $jumlahArr = $detail->jumlah_json;
+                    if (is_array($jumlahArr)) {
+                        foreach ($jumlahArr as $satuanId => $qty) {
+                            $satuan = \App\Models\Satuan::find($satuanId);
+                            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                            $total += $qty * $konversi;
+                        }
+                    }
+                    return $total;
+                });
+
+            $onlineQty = \App\Models\TransaksiOnlineDetail::whereHas('transaksi', function ($q) use ($tgl) {
+                $q->whereDate('tanggal', $tgl);
+            })
+                ->where('produk_id', $this->id)
+                ->get()
+                ->sum(function ($detail) {
+                    $total = 0;
+                    $jumlahArr = $detail->jumlah_json;
+                    if (is_array($jumlahArr)) {
+                        foreach ($jumlahArr as $satuanId => $qty) {
+                            $satuan = \App\Models\Satuan::find($satuanId);
+                            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                            $total += $qty * $konversi;
+                        }
+                    }
+                    return $total;
+                });
+
+            $penjualanPerHari[$tgl] = $offlineQty + $onlineQty;
+        }
+
+        if (empty($penjualanPerHari)) return 0;
+
+        $rataRata = array_sum($penjualanPerHari) / $periodeHari;
+        $tertinggi = max($penjualanPerHari);
+        $leadTime = $this->lead_time ?? 0;
+
+        $safetyStock = max(0, ($tertinggi - $rataRata) * $leadTime);
+
+        return round($safetyStock, 2);
+    }
+
+
     // ============================
     // ==== STOK BERTINGKAT =======
     // ============================

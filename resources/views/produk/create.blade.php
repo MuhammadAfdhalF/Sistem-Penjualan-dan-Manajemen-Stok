@@ -119,57 +119,6 @@
                         @enderror
                     </div>
 
-                    {{-- Safety Stock Biasa --}}
-                    <div id="safety-stock-biasa-wrapper" class="col-md-4 mb-3" style="{{ old('mode_stok', 'utama') == 'utama' ? 'display:block' : 'display:none' }}">
-                        <label for="safety_stock" class="form-label">🛡️ Safety Stock</label>
-                        <input type="number" name="safety_stock" id="safety_stock"
-                            class="form-control @error('safety_stock') is-invalid @enderror"
-                            placeholder="🧮 Masukkan jumlah safety stock"
-                            value="{{ old('safety_stock') }}" min="0">
-                        @error('safety_stock')
-                        <small class="text-danger">{{ $message }}</small>
-                        @enderror
-                    </div>
-
-
-                    {{-- Safety Stock Bertingkat --}}
-                    <div id="safety-stock-bertingkat-wrapper" class="col-md-8 mb-3" style="{{ old('mode_stok') == 'bertahap' ? 'display:block' : 'display:none' }}">
-                        <label class="form-label">Safety Stock Bertingkat</label>
-                        {{-- Tingkat 1 --}}
-                        <div class="mb-2">
-                            <select name="safety_stock_bertahap[0][satuan_id]" class="form-select mb-1 safety-stock-select" data-index="0">
-                                <option value="">Pilih Satuan Tingkat 1</option>
-                                @foreach ($satuans as $satuan)
-                                <option value="{{ $satuan->id }}"
-                                    data-nama="{{ $satuan->nama_satuan }}"
-                                    data-konversi="{{ $satuan->konversi_ke_satuan_utama }}"
-                                    {{ old('safety_stock_bertahap.0.satuan_id') == $satuan->id ? 'selected' : '' }}>
-                                    {{ $satuan->nama_satuan }} = {{ $satuan->konversi_ke_satuan_utama }}
-                                </option>
-                                @endforeach
-                            </select>
-                            <input type="number" name="safety_stock_bertahap[0][qty]" class="form-control"
-                                placeholder="Jumlah tingkat 1" min="0" value="{{ old('safety_stock_bertahap.0.qty', 0) }}">
-                        </div>
-
-                        {{-- Tingkat 2 --}}
-                        <div class="mb-2">
-                            <select name="safety_stock_bertahap[1][satuan_id]" class="form-select mb-1 safety-stock-select" data-index="1">
-                                <option value="">Pilih Satuan Tingkat 2 (opsional)</option>
-                                @foreach ($satuans as $satuan)
-                                <option value="{{ $satuan->id }}"
-                                    data-nama="{{ $satuan->nama_satuan }}"
-                                    data-konversi="{{ $satuan->konversi_ke_satuan_utama }}"
-                                    {{ old('safety_stock_bertahap.1.satuan_id') == $satuan->id ? 'selected' : '' }}>
-                                    {{ $satuan->nama_satuan }} = {{ $satuan->konversi_ke_satuan_utama }}
-                                </option>
-                                @endforeach
-                            </select>
-                            <input type="number" name="safety_stock_bertahap[1][qty]" class="form-control"
-                                placeholder="Jumlah tingkat 2" min="0" value="{{ old('safety_stock_bertahap.1.qty', 0) }}">
-                        </div>
-                    </div>
-
                     {{-- Deskripsi --}}
                     <div class="col-12 mb-3">
                         <label for="deskripsi" class="form-label">Deskripsi</label>

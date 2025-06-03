@@ -54,16 +54,9 @@ class ProdukController extends Controller
                 return !empty($item['satuan_id']) && floatval($item['qty']) > 0;
             })->values()->all();
             $request->merge(['stok_bertahap' => $stokBertahapBersih]);
-
-            // Bersihkan juga input safety_stock_bertahap
-            $safetyStockBertahapBersih = collect($request->safety_stock_bertahap)->filter(function ($item) {
-                return !empty($item['satuan_id']) && floatval($item['qty']) > 0;
-            })->values()->all();
-            $request->merge(['safety_stock_bertahap' => $safetyStockBertahapBersih]);
         } else {
             $request->merge([
                 'stok_bertahap' => [],
-                'safety_stock_bertahap' => [],
             ]);
         }
 
@@ -79,18 +72,11 @@ class ProdukController extends Controller
 
         if ($request->mode_stok === 'utama') {
             $rules['stok'] = 'required|numeric|min:0';
-            $rules['safety_stock'] = 'required|numeric|min:0';
         } else {
             $rules['stok_bertahap'] = 'required|array|min:1';
             foreach ($request->stok_bertahap as $index => $item) {
                 $rules["stok_bertahap.$index.satuan_id"] = 'required|exists:satuans,id';
                 $rules["stok_bertahap.$index.qty"] = 'required|numeric|min:0.01';
-            }
-
-            $rules['safety_stock_bertahap'] = 'required|array|min:1';
-            foreach ($request->safety_stock_bertahap as $index => $item) {
-                $rules["safety_stock_bertahap.$index.satuan_id"] = 'required|exists:satuans,id';
-                $rules["safety_stock_bertahap.$index.qty"] = 'required|numeric|min:0.01';
             }
         }
 
@@ -130,23 +116,7 @@ class ProdukController extends Controller
                 }
             }
 
-            // Hitung safety stock final
-            $safetyStockFinal = 0;
-            if ($request->mode_stok === 'utama') {
-                $safetyStockFinal = $request->safety_stock ?? 0;
-            } else {
-                $satuanIdsSafety = collect($request->safety_stock_bertahap)->pluck('satuan_id')->all();
-                $satuansSafety = \App\Models\Satuan::whereIn('id', $satuanIdsSafety)->get()->keyBy('id');
-
-                foreach ($request->safety_stock_bertahap as $item) {
-                    $satuanId = $item['satuan_id'];
-                    $qty = (float) $item['qty'];
-                    $konversi = $satuansSafety[$satuanId]->konversi_ke_satuan_utama ?? 1;
-                    $safetyStockFinal += $qty * $konversi;
-                }
-            }
-
-            // Simpan produk
+            // Simpan produk tanpa safety_stock
             $produk = Produk::create([
                 'nama_produk'   => $request->nama_produk,
                 'deskripsi'     => $request->deskripsi,
@@ -155,7 +125,7 @@ class ProdukController extends Controller
                 'gambar'        => $fileName,
                 'lead_time'     => $request->lead_time,
                 'daily_usage'   => 0,
-                'safety_stock'  => $safetyStockFinal,
+                // safety_stock dihilangkan
             ]);
 
             DB::commit();
@@ -197,47 +167,32 @@ class ProdukController extends Controller
         }
         $stokBertingkatDefault['utama'] = $stokSisa;
 
-        // Dekonstruksi safety stock
-        $safetySisa = (int) $produk->safety_stock;
-        $safetyStockBertingkatDefault = [];
-
-        foreach ($satuanBertingkat as $satuan) {
-            if ($satuan->konversi_ke_satuan_utama <= 0) continue;
-            $jumlah = intdiv($safetySisa, $satuan->konversi_ke_satuan_utama);
-            $safetySisa %= $satuan->konversi_ke_satuan_utama;
-            $safetyStockBertingkatDefault[$satuan->id] = $jumlah;
-        }
-        $safetyStockBertingkatDefault['utama'] = $safetySisa;
 
         return view('produk.edit', compact(
             'produk',
             'satuanBertingkat',
             'stokBertingkatDefault',
-            'safetyStockBertingkatDefault'
         ));
     }
+
 
     public function update(Request $request, $id)
     {
         Log::info('Request Produk Update:', $request->all());
 
-        // Bersihkan input kosong dari stok_bertahap dan safety_stock_bertahap
+        // Bersihkan input kosong dari stok_bertahap
         if ($request->mode_stok === 'bertahap') {
             $stokBersih = collect($request->stok_bertahap)->filter(function ($qty) {
                 return is_numeric($qty) && floatval($qty) > 0;
             })->toArray();
 
-            $safetyBersih = collect($request->safety_stock_bertahap)->filter(function ($qty) {
-                return is_numeric($qty) && floatval($qty) > 0;
-            })->toArray();
-
             $request->merge([
                 'stok_bertahap' => $stokBersih,
-                'safety_stock_bertahap' => $safetyBersih
+                // safety_stock_bertahap dihapus
             ]);
         }
 
-        // Aturan validasi
+        // Aturan validasi tanpa safety_stock
         $rules = [
             'nama_produk'    => 'required|string|max:255',
             'deskripsi'      => 'required|string|max:500',
@@ -250,18 +205,15 @@ class ProdukController extends Controller
 
         if ($request->mode_stok === 'utama') {
             $rules['stok'] = 'required|numeric|min:0';
-            $rules['safety_stock'] = 'required|numeric|min:0';
+            // 'safety_stock' dihapus
         } else {
             $rules['stok'] = 'nullable';
             $rules['stok_bertahap'] = 'required|array|min:1';
             $rules['stok_bertahap.*'] = 'numeric|min:0.01';
 
-            $rules['safety_stock'] = 'nullable';
-            $rules['safety_stock_bertahap'] = 'required|array|min:1';
-            $rules['safety_stock_bertahap.*'] = 'numeric|min:0.01';
+            // 'safety_stock' dan 'safety_stock_bertahap' dihapus
         }
 
-        // Validasi request
         $request->validate($rules);
 
         $produk = Produk::findOrFail($id);
@@ -292,22 +244,9 @@ class ProdukController extends Controller
                 }
             }
 
-            // Hitung safety stock akhir
-            $safetyUpdate = $request->safety_stock;
-            if ($request->mode_stok === 'bertahap') {
-                $safetyUpdate = 0;
-                foreach ($request->safety_stock_bertahap as $key => $qty) {
-                    $qty = floatval($qty ?? 0);
-                    $konversi = 1;
-                    if ($key !== 'utama') {
-                        $satuan = $produk->satuans()->where('id', $key)->first();
-                        $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                    }
-                    $safetyUpdate += $qty * $konversi;
-                }
-            }
+            // Hilangkan perhitungan safety stock
 
-            // Update produk
+            // Update produk tanpa safety_stock
             $produk->update([
                 'nama_produk'   => $request->nama_produk,
                 'deskripsi'     => $request->deskripsi,
@@ -316,7 +255,7 @@ class ProdukController extends Controller
                 'gambar'        => $fileName,
                 'lead_time'     => $request->lead_time,
                 'daily_usage'   => $request->daily_usage,
-                'safety_stock'  => $safetyUpdate,
+                // 'safety_stock' dihapus
             ]);
 
             DB::commit();
@@ -334,6 +273,7 @@ class ProdukController extends Controller
             return redirect()->back()->withInput()->with('error', 'Gagal memperbarui data. ' . $e->getMessage());
         }
     }
+
 
 
     public function destroy(Produk $produk)
