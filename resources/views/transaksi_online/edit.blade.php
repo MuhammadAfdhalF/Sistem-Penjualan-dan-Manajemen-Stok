@@ -3,7 +3,7 @@
 @section('title', 'Halaman Edit Transaksi Online')
 
 <head>
-     <title>Halaman Edit Transaksi Online</title>
+    <title>Halaman Edit Transaksi Online</title>
 </head>
 
 @section('content')
@@ -39,6 +39,7 @@
                         <option value="">-- Pilih Pelanggan --</option>
                         @foreach ($users as $user)
                         <option value="{{ $user->id }}" data-jenis="{{ $user->jenis_pelanggan }}"
+
                             {{ $transaksiOnline->user_id == $user->id ? 'selected' : '' }}>
                             {{ $user->nama }}
                         </option>
@@ -72,10 +73,10 @@
                     </select>
                 </div>
                 <div class="col-md-4 mt-3">
-                    <label class="form-label">Ambil di Toko?</label>
-                    <select name="diambil_di_toko" class="form-select" required>
-                        <option value="0" {{ !$transaksiOnline->diambil_di_toko ? 'selected' : '' }}>Tidak</option>
-                        <option value="1" {{ $transaksiOnline->diambil_di_toko ? 'selected' : '' }}>Ya</option>
+                    <label class="form-label">Metode Pengambilan</label>
+                    <select name="metode_pengambilan" class="form-select" required>
+                        <option value="ambil di toko" {{ $transaksiOnline->metode_pengambilan == 'ambil di toko' ? 'selected' : '' }}>Ambil di Toko</option>
+                        <option value="diantar" {{ $transaksiOnline->metode_pengambilan == 'diantar' ? 'selected' : '' }}>Diantar</option>
                     </select>
                 </div>
                 <div class="col-md-12 mt-3">
@@ -127,8 +128,8 @@
                                         {{-- Render input jumlah per satuan di JS --}}
                                     </div>
                                     <input type="hidden" name="jumlah_json[]" class="jumlah-json-input" value="{{ json_encode($jumlahArr) }}" required>
-                                    <input type="hidden" name="harga_json[]" class="harga-json-input" value="">
-                                    <input type="hidden" name="harga[]" class="harga-input" value="">
+                                    <input type="hidden" name="harga_json[]" class="harga-json-input" value="" />
+                                    <input type="hidden" name="harga[]" class="harga-input" value="" />
                                 </td>
                                 <td>
                                     <input type="text" class="form-control subtotal text-end" readonly>

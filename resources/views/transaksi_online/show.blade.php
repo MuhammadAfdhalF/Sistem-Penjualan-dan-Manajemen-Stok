@@ -5,7 +5,7 @@ Detail Transaksi Online
 @endsection
 
 <head>
-     <title>Halaman Detail Transaksi Online</title>
+    <title>Halaman Detail Transaksi Online</title>
 </head>
 
 @section('content')
@@ -21,7 +21,7 @@ Detail Transaksi Online
         <p><strong>Metode Pembayaran:</strong> {{ ucfirst(str_replace('_', ' ', $transaksiOnline->metode_pembayaran)) }}</p>
         <p><strong>Status Pembayaran:</strong> {{ ucfirst($transaksiOnline->status_pembayaran) }}</p>
         <p><strong>Status Transaksi:</strong> {{ ucfirst($transaksiOnline->status_transaksi) }}</p>
-        <p><strong>Diambil di Toko:</strong> {{ $transaksiOnline->diambil_di_toko ? 'Ya' : 'Tidak' }}</p>
+        <p><strong>Metode Pengambilan:</strong> {{ ucfirst($transaksiOnline->metode_pengambilan) }}</p>
         <p><strong>Alamat Pengambilan / Pengiriman:</strong> {{ $transaksiOnline->alamat_pengambilan ?? '-' }}</p>
         <p><strong>Catatan:</strong> {{ $transaksiOnline->catatan ?? '-' }}</p>
 

@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Artisan;
 
-
 class TransaksiOnlineController extends Controller
 {
     public function index(Request $request)
@@ -62,7 +61,6 @@ class TransaksiOnlineController extends Controller
     }
 
 
-
     public function store(Request $request)
     {
         $request->validate([
@@ -73,6 +71,7 @@ class TransaksiOnlineController extends Controller
             'status_transaksi' => 'required|in:diproses,diantar,diambil,selesai,batal',
             'produk_id.*' => 'required|exists:produks,id',
             'jumlah_json.*' => 'required|string', // JSON dari inputan
+            'metode_pengambilan' => 'required|in:ambil di toko,diantar', // Menambahkan validasi untuk metode_pengambilan
         ]);
 
         DB::beginTransaction();
@@ -93,7 +92,7 @@ class TransaksiOnlineController extends Controller
                 'status_pembayaran' => $request->status_pembayaran,
                 'status_transaksi' => $request->status_transaksi,
                 'catatan' => $request->catatan,
-                'diambil_di_toko' => $request->diambil_di_toko ?? false,
+                'metode_pengambilan' => $request->metode_pengambilan, // Menyimpan metode pengambilan
                 'alamat_pengambilan' => $request->alamat_pengambilan,
                 'total' => 0,
             ]);
@@ -177,7 +176,6 @@ class TransaksiOnlineController extends Controller
         }
     }
 
-
     public function show($id)
     {
         $transaksiOnline = \App\Models\TransaksiOnline::with([
@@ -197,9 +195,6 @@ class TransaksiOnlineController extends Controller
 
         return view('transaksi_online.edit', compact('transaksiOnline', 'users', 'produk'));
     }
-
-
-
 
     public function update(Request $request, $id)
     {
@@ -248,7 +243,7 @@ class TransaksiOnlineController extends Controller
                 'status_pembayaran' => $request->status_pembayaran,
                 'status_transaksi' => $request->status_transaksi,
                 'catatan' => $request->catatan,
-                'diambil_di_toko' => $request->diambil_di_toko ?? false,
+                'metode_pengambilan' => $request->metode_pengambilan, // Update metode pengambilan
                 'alamat_pengambilan' => $request->alamat_pengambilan,
             ]);
 
@@ -334,8 +329,6 @@ class TransaksiOnlineController extends Controller
             return redirect()->back()->with('error', 'Gagal memperbarui transaksi: ' . $e->getMessage());
         }
     }
-
-
 
     public function destroy(TransaksiOnline $transaksiOnline)
     {

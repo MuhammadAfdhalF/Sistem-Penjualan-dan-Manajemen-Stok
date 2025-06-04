@@ -7,8 +7,9 @@
 <li class="breadcrumb-item"><a href="{{ route('keuangan.index') }}">Keuangan</a></li>
 <li class="breadcrumb-item active">Tambah Catatan</li>
 @endsection
+
 <head>
-     <title>Halaman Tambah Keuangan</title>
+    <title>Halaman Tambah Keuangan</title>
 </head>
 
 @section('content')
@@ -37,21 +38,13 @@
                     </select>
                 </div>
 
-                <input type="text" name="nominal_formatted" id="nominal_formatted" class="form-control"
-                    value="{{ number_format(old('nominal', $keuangan->nominal ?? 0), 0, ',', '.') }}" required>
-                <input type="hidden" name="nominal" id="nominal" value="{{ old('nominal', $keuangan->nominal ?? 0) }}">
+                <div class="col-md-6">
+                    <label for="nominal_formatted" class="form-label">Nominal</label>
+                    <input type="text" name="nominal_formatted" id="nominal_formatted" class="form-control"
+                        value="{{ number_format(old('nominal', $keuangan->nominal ?? 0), 0, ',', '.') }}" required>
+                    <input type="hidden" name="nominal" id="nominal" value="{{ old('nominal', $keuangan->nominal ?? 0) }}">
+                </div>
 
-                <!-- <div class="col-md-6">
-                    <label for="transaksi_id" class="form-label">Transaksi Offline (Opsional)</label>
-                    <select name="transaksi_id" id="transaksi_id" class="form-select">
-                        <option value="">-- Pilih Transaksi --</option>
-                        @foreach ($transaksis as $transaksi)
-                        <option value="{{ $transaksi->id }}" {{ old('transaksi_id') == $transaksi->id ? 'selected' : '' }}>
-                            #{{ $transaksi->kode_transaksi }} - {{ \Carbon\Carbon::parse($transaksi->tanggal)->format('d M Y') }}
-                        </option>
-                        @endforeach
-                    </select>
-                </div> -->
 
                 <div class="col-12">
                     <label for="keterangan" class="form-label">Keterangan</label>

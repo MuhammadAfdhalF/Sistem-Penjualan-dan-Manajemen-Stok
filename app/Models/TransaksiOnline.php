@@ -15,18 +15,18 @@ class TransaksiOnline extends Model
         'user_id',
         'kode_transaksi',
         'tanggal',
-        'metode_pembayaran',
+        'metode_pembayaran',  // Mengganti diambil_di_toko menjadi metode_pengambilan
         'status_pembayaran',
         'status_transaksi',
         'total',
         'catatan',
-        'diambil_di_toko',
+        'metode_pengambilan', // Menambahkan metode_pengambilan
         'alamat_pengambilan',
     ];
 
     protected $casts = [
         'tanggal' => 'datetime',
-        'diambil_di_toko' => 'boolean',
+        'metode_pengambilan' => 'string', // Ganti dengan string untuk enum
         'total' => 'float',
     ];
 
@@ -39,6 +39,4 @@ class TransaksiOnline extends Model
     {
         return $this->hasMany(TransaksiOnlineDetail::class, 'transaksi_id');
     }
-
-    
 }

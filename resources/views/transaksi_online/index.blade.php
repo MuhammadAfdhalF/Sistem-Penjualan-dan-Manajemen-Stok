@@ -60,11 +60,19 @@ Halaman Transaksi Online
                         @endforeach
                     </select>
                 </div>
+                <div class="col-auto">
+                    <label for="filter_metode_pengambilan" class="form-label small mb-1">Metode Pengambilan</label>
+                    <select id="filter_metode_pengambilan" name="metode_pengambilan" class="form-select form-select-sm">
+                        <option value="">-- Semua Metode --</option>
+                        <option value="ambil di toko" {{ request('metode_pengambilan') == 'ambil di toko' ? 'selected' : '' }}>Ambil di Toko</option>
+                        <option value="diantar" {{ request('metode_pengambilan') == 'diantar' ? 'selected' : '' }}>Diantar</option>
+                    </select>
+                </div>
                 <div class="col-auto d-flex align-items-end">
                     <button type="submit" class="btn btn-primary btn-sm px-2 py-1 me-1" style="font-size: 0.8rem;">
                         <i class="ti ti-filter"></i>
                     </button>
-                    <a href="{{ route('transaksi_offline.index') }}" class="btn btn-secondary btn-sm px-2 py-1" style="font-size: 0.8rem;">
+                    <a href="{{ route('transaksi_online.index') }}" class="btn btn-secondary btn-sm px-2 py-1" style="font-size: 0.8rem;">
                         <i class="ti ti-refresh"></i>
                     </a>
                 </div>
@@ -78,10 +86,10 @@ Halaman Transaksi Online
                             <th>Kode</th>
                             <th>Tanggal</th>
                             <th>Nama Pelanggan</th>
-
                             <th>Total</th>
                             <th>Pembayaran</th>
                             <th>Status Transaksi</th>
+                            <th>Metode Pengambilan</th> <!-- Menambahkan kolom untuk metode pengambilan -->
                             <th>Opsi</th>
                         </tr>
                     </thead>
@@ -94,7 +102,6 @@ Halaman Transaksi Online
                             <td>
                                 {{ $item->user ? $item->user->nama . ' (' . $item->user->jenis_pelanggan . ')' : '-' }}
                             </td>
-
                             <td>Rp {{ number_format($item->total, 0, ',', '.') }}</td>
                             <td>
                                 <span class="badge bg-{{ $item->status_pembayaran == 'lunas' ? 'success' : ($item->status_pembayaran == 'gagal' ? 'danger' : 'warning') }}">
@@ -116,7 +123,7 @@ Halaman Transaksi Online
                                 <span class="badge bg-secondary">{{ ucfirst($item->status_transaksi) }}</span>
                                 @endif
                             </td>
-
+                            <td>{{ ucfirst($item->metode_pengambilan) }}</td> <!-- Menampilkan metode pengambilan -->
                             <td>
                                 <a href="{{ route('transaksi_online.show', $item->id) }}" class="btn btn-info btn-sm" title="Lihat Detail">
                                     <i class="ti ti-eye"></i>

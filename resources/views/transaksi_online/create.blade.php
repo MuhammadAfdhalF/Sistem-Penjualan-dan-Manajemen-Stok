@@ -3,7 +3,7 @@
 @section('title', 'Halaman Tambah Transaksi Online')
 
 <head>
-     <title>Halaman Tambah Transaksi Online</title>
+    <title>Halaman Tambah Transaksi Online</title>
 </head>
 
 @section('content')
@@ -65,10 +65,10 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Ambil di Toko?</label>
-                    <select name="diambil_di_toko" class="form-select" required>
-                        <option value="0">Tidak</option>
-                        <option value="1">Ya</option>
+                    <label class="form-label">Metode Pengambilan</label>
+                    <select name="metode_pengambilan" class="form-select" required>
+                        <option value="ambil di toko">Ambil di Toko</option>
+                        <option value="diantar">Diantar</option>
                     </select>
                 </div>
                 <div class="col-md-12">
