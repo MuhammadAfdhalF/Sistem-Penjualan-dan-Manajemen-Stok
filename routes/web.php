@@ -1,5 +1,6 @@
 <?php
 
+
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\ProdukController;
@@ -13,12 +14,15 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HargaProdukController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KeuanganController;
 use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\TransaksiOnlineController;
 use App\Http\Controllers\TransaksiOnlineDetailController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PaymentLogController;
+use App\Http\Controllers\Mobile\CobaController;
+use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -28,6 +32,9 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/pelanggan/home', [MobileHomeController::class, 'index'])->name('mobile.home.index');
+
+
 
 
 // Group routes yang harus admin only
@@ -74,6 +81,7 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 
     // keuangan
     Route::resource('keuangan', KeuanganController::class);
+
 
 
 
