@@ -31,15 +31,11 @@
             }
         }
 
-        /* Header (Visible only on website) */
         .header {
             display: flex;
-            justify-content: center;
-            /* Center the content horizontally */
             align-items: center;
-            /* Center the content vertically */
-            padding: 20px 20px;
-            /* Increase padding to make header taller */
+            justify-content: space-between;
+            padding: 20px 0;
             background-color: #fff;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             position: fixed;
@@ -48,38 +44,84 @@
             z-index: 101;
         }
 
-        .header .logo {
-            font-size: 1.8rem;
-            /* Increase font size if needed for a larger logo */
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            /* Ensure logo is centered */
-            flex: 1;
-            /* Allows logo to take up space and center the nav */
+        .header-logo {
+            display: flex;
+            align-items: center;
+            padding-left: 32px;
+            gap: 16px;
         }
+
+        .header-logo img {
+            height: 60px;
+            width: auto;
+        }
+
+        .header-greeting {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-greeting-title {
+            font-size: 1.22rem;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 2px;
+            letter-spacing: 0.3px;
+        }
+
+        .header-greeting-subtitle {
+            font-size: 1rem;
+            color: #666;
+            font-weight: 400;
+            line-height: 1;
+        }
+
 
         .header nav {
             display: flex;
-            gap: 20px;
+            gap: 32px;
+            /* Bisa diubah untuk memperlebar/mempersempit spasi nav */
             justify-content: center;
-            /* Center the nav items horizontally */
-            flex: 2;
-            /* Ensure nav takes up remaining space */
+            flex: 1;
         }
 
         .header nav a {
             text-decoration: none;
-            color: #333;
+            color: #cccccc;
+            /* ABU-ABU MUDA, halaman tidak aktif */
             font-size: 1.2rem;
-            /* Increase font size of navigation links */
             transition: color 0.3s;
         }
 
         .header nav a:hover {
-            color: #7DBFD9;
+            color: #888888;
+            /* ABU SEDIKIT LEBIH TUA SAAT HOVER */
         }
 
+        .header nav a.active {
+            color: #000000;
+            /* HITAM untuk halaman aktif */
+        }
+
+        .header-cart {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 32px;
+            /* Supaya icon tidak mepet kanan */
+        }
+
+        .header-cart a {
+            display: flex;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                display: none;
+            }
+        }
 
 
         /* Footer Navigation (Visible only on mobile) */
@@ -97,6 +139,7 @@
             z-index: 100;
         }
 
+        /* Footer Navigation Button */
         .footer-nav-btn {
             background: none;
             border: none;
@@ -106,18 +149,21 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #191919;
+            color: #888888;
+            /* Warna abu-abu */
             font-size: 0.98rem;
             font-weight: 600;
             position: relative;
             z-index: 1;
         }
 
-        .footer-nav-btn svg {
+        footer-nav-btn svg {
             margin-bottom: 2px;
             width: 28px;
             height: 28px;
             stroke-width: 2.2;
+            stroke: #888888;
+            /* Warna abu-abu pada ikon */
         }
 
         .footer-nav-center {
@@ -150,13 +196,17 @@
             margin-top: 0px;
         }
 
+        /* Ketika tombol aktif ditekan */
         .footer-nav-btn.active span {
-            color: #2296f3;
+            color: #000000;
+            /* Hitam pekat */
         }
 
         .footer-nav-btn.active svg {
-            stroke: #2296f3;
+            stroke: #000000;
+            /* Hitam pekat */
         }
+
 
         /* Hide Footer on Desktop */
         @media (min-width: 769px) {
@@ -198,16 +248,29 @@
 <body>
     <!-- Header (Visible only on desktop) -->
     <header class="header">
+        <div class="header-logo">
+            <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="Logo">
+            <div class="header-greeting">
+                <div class="header-greeting-title">Hi, Acuyyy</div>
+                <div class="header-greeting-subtitle">Katalog Produk</div>
+            </div>
+        </div>
+
         <nav>
-            <a href="#">Home</a>
+            <a href="#" class="active">Home</a>
             <a href="#">Keranjang</a>
             <a href="#">Form Cepat</a>
             <a href="#">Riwayat</a>
             <a href="#">Profile</a>
-
-
         </nav>
+        <div class="header-cart">
+            <a href="#" style="font-size: 1.9rem; text-decoration:none;">🛒</a>
+        </div>
     </header>
+
+
+
+
 
     <main class="main-content">
         @yield('content')

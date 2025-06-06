@@ -22,6 +22,7 @@ use App\Http\Controllers\TransaksiOnlineDetailController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PaymentLogController;
 use App\Http\Controllers\Mobile\CobaController;
+use App\Http\Controllers\Mobile\DetailProdukController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Models\HargaProduk;
 
@@ -33,6 +34,8 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/pelanggan/home', [MobileHomeController::class, 'index'])->name('mobile.home.index');
+Route::get('/pelanggan/detail_produk', [DetailProdukController::class, 'index'])->name('mobile.detail_produk.index');
+
 
 
 

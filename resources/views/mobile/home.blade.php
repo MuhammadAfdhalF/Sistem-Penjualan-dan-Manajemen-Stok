@@ -75,6 +75,14 @@
         letter-spacing: 0.2px;
     }
 
+    /* Sembunyikan greet-card di desktop */
+    @media (min-width: 769px) {
+        .greet-card {
+            display: none !important;
+        }
+    }
+
+
     /* Cart Top Button */
     .cart-top-btn {
         background: #ffff;
@@ -206,20 +214,22 @@
         }
     }
 
-/* Produk Grid */
-.produk-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Default untuk mobile (2 kolom) */
-    gap: 6px;
-    padding: 0 6px 12px 6px;
-    background: #ffff;
-}
-
-@media (min-width: 768px) {
+    /* Produk Grid */
     .produk-grid {
-        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; /* 6 kolom pada layar besar (website) */
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* Default untuk mobile (2 kolom) */
+        gap: 6px;
+        padding: 0 6px 12px 6px;
+        background: #ffff;
     }
-}
+
+    @media (min-width: 768px) {
+        .produk-grid {
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            /* 6 kolom pada layar besar (website) */
+        }
+    }
 
     .produk-card {
         background: rgba(255, 255, 255, 0.5);
@@ -241,25 +251,69 @@
     }
 
 
-
-    /* Produk Gambar */
-
     .produk-img {
-        width: 100%;
-        aspect-ratio: 1/1;
-        background: #f5f5f5;
         position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        overflow: hidden;
     }
 
     .produk-img img {
         width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center;
+        display: block;
     }
+
+    .produk-actions {
+        position: absolute;
+        left: 50%;
+        bottom: 12px;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 2;
+    }
+
+    /* Desktop: hover, Mobile/JS: active */
+    .produk-img:hover .produk-actions,
+    .produk-img.active .produk-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+
+    .produk-action-btn {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 50%;
+        background: #ed2d34;
+        /* default: merah */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+        cursor: pointer;
+        outline: none;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    /* Icon Fullscreen = merah (default) */
+    .produk-fullscreen-btn {
+        background: #ed2d34;
+    }
+
+    /* Icon Eye = biru */
+    .produk-eye-btn {
+        background: #2492ff;
+    }
+
+    .produk-action-btn svg {
+        width: 22px;
+        height: 22px;
+        stroke: #fff;
+    }
+
 
     /* Nama Produk */
     .produk-nama {
@@ -455,11 +509,26 @@
     @foreach($produk as $item)
     <div class="produk-card">
         <div class="produk-img">
-            @if($item->gambar)
             <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}" alt="{{ $item->nama_produk }}" loading="lazy">
-            @else
-            <span class="text-muted">Tidak Ada</span>
-            @endif
+            <div class="produk-actions">
+                <button class="produk-action-btn produk-fullscreen-btn">
+                    <!-- Fullscreen icon -->
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2h-4" />
+                        <polyline points="21 21 15 21 21 15" />
+                        <path d="M3 9V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="3 3 9 3 3 9" />
+                    </svg>
+                </button>
+                <button class="produk-action-btn produk-eye-btn">
+                    <!-- Eye icon -->
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="12" rx="8" ry="5" />
+                        <circle cx="12" cy="12" r="2.5" fill="#fff" stroke="none" />
+                        <circle cx="12" cy="12" r="1.2" fill="#222" stroke="none" />
+                    </svg>
+                </button>
+            </div>
         </div>
         <div class="produk-nama">{{ $item->nama_produk }}</div>
         <div class="produk-desc">{{ $item->deskripsi }}</div>
@@ -472,3 +541,4 @@
     @endforeach
 </div>
 @endsection
+
