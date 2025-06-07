@@ -44,8 +44,8 @@
     }
 
     .btn-keranjang {
-        background: #93c8f9;
-        color: #222;
+        background: #135291;
+        color: #ffff;
         font-weight: bold;
         border: none;
         border-radius: 10px;
@@ -62,7 +62,7 @@
     }
 
     .btn-keranjang:hover {
-        background: #6bb3ea;
+        background: #135291;
     }
 
     .footer-fixed {
@@ -81,9 +81,9 @@
         display: flex;
         align-items: center;
         padding: 20px 18px 12px 18px;
-        background: #cce7fc;
-        border-bottom: 2px solid #e0e6ea;
-        box-shadow: 0 2px 6px #e8eaf0;
+        background: #fff;
+        /* Shadow biru tua lembut di bawah */
+        box-shadow: 0 4px 18px -2px #13529133, 0 1px 0 #13529130;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -91,13 +91,19 @@
         min-width: 100vw;
     }
 
+
     .header-detail svg {
         margin-right: 18px;
         cursor: pointer;
         min-width: 30px;
+        stroke: rgb(0, 0, 0);
+        /* Biru tua */
+        /* atau kalau ingin biru muda: stroke: #C1E5FF; */
     }
 
+
     .header-titles {
+        color: rgb(0, 0, 0);
         display: flex;
         flex-direction: column;
         gap: 0;
@@ -124,7 +130,8 @@
         width: 100vw;
         background: #fff;
         border-radius: 0 0 18px 18px;
-        box-shadow: 0 2px 10px #e3e8ef;
+        box-shadow: 0 4px 24px 0 rgba(19, 82, 145, 0.14), 0 1.5px 4px 0 rgba(0, 0, 0, 0.10);
+        /* shadow biru lembut + sedikit hitam, semua sisi */
         margin: 0;
         display: flex;
         align-items: center;
@@ -137,6 +144,7 @@
         margin-left: auto;
         margin-right: auto;
     }
+
 
     /* Responsive mobile */
     @media (max-width: 600px) {
@@ -256,7 +264,7 @@
     /* Harga */
     .info-card .harga {
         font-weight: bold;
-        font-size: 22px;
+        font-size: 17px;
         margin-bottom: 0;
         color: #181818;
         font-family: 'Inter', Arial, sans-serif;
@@ -564,122 +572,152 @@
 
         <!-- HEADER -->
         <div class="header-detail">
-            <a href="{{ asset('storage/logo/LogoKZ_transparant.png') }}">
-                <svg width="32" height="32" fill="none" stroke="black" stroke-width="2.2">
+            <a href="javascript:history.back()">
+                <svg width="32" height="32" fill="none" stroke="#135291" stroke-width="2.2">
                     <path d="M15 18l-6-6 6-6" />
                 </svg>
             </a>
             <div class="header-titles">
-                <span class="main">Home</span>
+                <span class="main">Detail Produk</span>
             </div>
         </div>
         <div class="desktop-flexbox">
             <!-- Kolom Kiri: Gambar -->
             <div class="desktop-col desktop-img">
-                <!-- IMAGE AREA -->
                 <div class="product-image-area">
-                    <!-- Jika tidak ada gambar, tampilkan placeholder -->
-                    <div class="product-image-placeholder"><span>Product</span></div>
-                    <!-- Jika ada gambar, tampilkan gambar dan sembunyikan placeholder dengan JS atau kondisi blade -->
-                    <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="KZ Family" class="product-image">
+                    @if($produk->gambar)
+                    <img src="{{ asset('storage/gambar_produk/' . $produk->gambar) }}" alt="{{ $produk->nama_produk }}" class="product-image">
+                    @else
+                    <div class="product-image-placeholder"><span>No Image</span></div>
+                    @endif
                 </div>
-
             </div>
             <!-- Kolom Kanan: Info & Form -->
             <div class="desktop-col desktop-info">
-
                 <!-- INFO CARD -->
                 <div class="info-card">
-                    <div class="product-title">Nama Produk</div>
-                    <div class="desc">Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi Deskripsi</div>
+                    <div class="product-title">{{ $produk->nama_produk }}</div>
+                    <div class="desc">{{ $produk->deskripsi }}</div>
                     <div class="info-bottom">
-                        <div class="harga">Rp. 50.000</div>
-                        <div class="stok">Produk Tersedia : 5 Slof 2 Bks</div>
+                        <div class="harga">
+                            @foreach($produk->satuans->take(3) as $satuan)
+                            @php
+                            $harga = $produk->hargaProduks->where('satuan_id', $satuan->id)->first();
+                            @endphp
+                            @if($harga)
+                            Rp. {{ number_format($harga->harga, 0, ',', '.') }}/{{ $satuan->nama_satuan }}<br>
+                            @endif
+                            @endforeach
+                        </div>
+
+
+                        <div class="stok">
+                            Produk Tersedia : {{ $produk->stok_bertingkat }}
+                        </div>
                     </div>
                 </div>
 
-                <!-- ORDER FORM -->
-                <form class="order-form" id="orderForm">
-                    <div class="judul">Pesan Sekarang, Masukkan ke dalam keranjang !!!!</div>
-                    <div id="order-rows">
+
+                <form id="orderForm" method="POST" action="{{ route('keranjang.store') }}">
+                    @csrf
+                    <input type="hidden" name="produk_id[]" value="{{ $produk->id }}">
+
+                    <div class="order-form" id="order-rows">
                         <div class="form-row order-row">
-                            <label for="jumlah-1">Jumlah</label>
-                            <input type="number" min="1" id="jumlah-1" name="jumlah[]" class="input-jumlah" style="height:38px;" />
-                            <select class="input-satuan" style="height:38px;" name="satuan[]">
-                                <option value="satuan">Satuan</option>
-                                <option value="bks">Bks</option>
-                                <option value="slof">Slof</option>
+                            <label>Jumlah</label>
+                            <input type="number" min="1" class="input-jumlah" style="height:38px;" />
+                            <select class="input-satuan" style="height:38px;">
+                                @foreach($produk->satuans as $satuan)
+                                <option value="{{ $satuan->id }}">{{ $satuan->nama_satuan }}</option>
+                                @endforeach
                             </select>
-                            <button type="button" class="btn-plus" onclick="tambahOrderRow(event)" title="Tambah baris">+</button>
+                            <button type="button" class="btn-plus" onclick="tambahOrderRow(event)">+</button>
+                            <button type="button" class="btn-remove" style="display:none;" onclick="hapusOrderRow(this)">x</button>
                         </div>
                     </div>
-                    <!-- Tombol keranjang center desktop & mobile -->
+                    <!-- DI SINI! Input hidden, harus ADA DI DALAM FORM -->
+                    <input type="hidden" name="jumlah_json[]" class="jumlah-json">
                     <div class="order-btn-wrapper">
                         <button type="submit" class="btn-keranjang">Masukkan Keranjang</button>
                     </div>
                 </form>
+
+
+
             </div>
         </div>
     </div>
-
 </div>
+
 @endsection
 
+
+
+
+
 <script>
-    let orderRowCount = 1;
-
-    function tambahOrderRow(e) {
-        orderRowCount++;
-        // Disable tombol + di baris sebelumnya
-        e.target.disabled = true;
-        e.target.style.opacity = 0.4;
-
-        // Buat row baru dengan tombol + dan tombol x
-        let html = `
-    <div class="form-row order-row">
-        <label for="jumlah-${orderRowCount}">Jumlah</label>
-        <input type="number" min="1" id="jumlah-${orderRowCount}" name="jumlah[]" class="input-jumlah" style="height:38px;" />
-        <select class="input-satuan" style="height:38px;" name="satuan[]">
-            <option value="satuan">Satuan</option>
-            <option value="bks">Bks</option>
-            <option value="slof">Slof</option>
-        </select>
-        <button type="button" class="btn-plus" onclick="tambahOrderRow(event)" title="Tambah baris">+</button>
-        <button type="button" class="btn-remove" onclick="hapusOrderRow(this)" title="Hapus baris">x</button>
-    </div>
-    `;
-        document.getElementById('order-rows').insertAdjacentHTML('beforeend', html);
-        updateRemoveButtons();
-    }
-
-    function hapusOrderRow(btn) {
-        // Hapus row ini
-        let row = btn.closest('.order-row');
-        let orderRows = document.querySelectorAll('#order-rows .order-row');
-        // Jika tombol + pada baris yang dihapus dalam keadaan enabled, aktifkan tombol + di baris terakhir
-        if (row.querySelector('.btn-plus:not(:disabled)')) {
-            let lastPlus = orderRows[orderRows.length - 1].querySelector('.btn-plus');
-            if (lastPlus) {
-                lastPlus.disabled = false;
-                lastPlus.style.opacity = 1;
-            }
-        }
-        row.remove();
-        updateRemoveButtons();
-    }
-
-    // Fungsi untuk update visibilitas tombol remove
     function updateRemoveButtons() {
         let rows = document.querySelectorAll('#order-rows .order-row');
         rows.forEach((row, i) => {
             let btnRemove = row.querySelector('.btn-remove');
-            if (btnRemove) btnRemove.style.display = (rows.length > 1 && i > 0) ? 'flex' : 'none';
             let btnPlus = row.querySelector('.btn-plus');
-            // Hanya tombol + di baris terakhir yang aktif
+            if (btnRemove) btnRemove.style.display = (rows.length > 1) ? 'inline-block' : 'none';
             if (btnPlus) {
                 btnPlus.disabled = (i !== rows.length - 1);
                 btnPlus.style.opacity = (i !== rows.length - 1) ? 0.4 : 1;
             }
         });
     }
+
+    function tambahOrderRow(e) {
+        // Copy satuan
+        let satuanOptions = document.querySelector('.input-satuan').innerHTML;
+        let html = `
+        <div class="form-row order-row">
+            <label>Jumlah</label>
+            <input type="number" min="1" class="input-jumlah" style="height:38px;" />
+            <select class="input-satuan" style="height:38px;">${satuanOptions}</select>
+            <button type="button" class="btn-plus" onclick="tambahOrderRow(event)">+</button>
+            <button type="button" class="btn-remove" onclick="hapusOrderRow(this)">x</button>
+        </div>
+    `;
+        document.getElementById('order-rows').insertAdjacentHTML('beforeend', html);
+        updateRemoveButtons();
+        if (e && e.target) {
+            e.target.disabled = true;
+            e.target.style.opacity = 0.4;
+        }
+    }
+
+    function hapusOrderRow(btn) {
+        btn.closest('.order-row').remove();
+        updateRemoveButtons();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateRemoveButtons();
+
+        document.getElementById('orderForm').addEventListener('submit', function(e) {
+            let jumlahObj = {};
+            document.querySelectorAll('#order-rows .order-row').forEach(function(row) {
+                let satuanId = row.querySelector('.input-satuan').value;
+                let qty = parseFloat(row.querySelector('.input-jumlah').value) || 0;
+                if (qty > 0 && satuanId) {
+                    if (jumlahObj[satuanId]) {
+                        jumlahObj[satuanId] += qty;
+                    } else {
+                        jumlahObj[satuanId] = qty;
+                    }
+                }
+            });
+            // CARI hidden input dalam form, lalu set nilainya!
+            let hiddenInput = document.querySelector('input.jumlah-json[name="jumlah_json[]"]');
+            hiddenInput.value = JSON.stringify(jumlahObj);
+
+            if (Object.keys(jumlahObj).length === 0) {
+                alert('Isi minimal 1 jumlah & satuan!');
+                e.preventDefault();
+            }
+        });
+    });
 </script>

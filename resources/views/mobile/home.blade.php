@@ -70,7 +70,7 @@
 
     .greet-desc {
         font-size: 0.96rem;
-        color: #353535;
+        color:rgb(14, 0, 0);
         margin-bottom: 0;
         letter-spacing: 0.2px;
     }
@@ -305,7 +305,7 @@
 
     /* Icon Eye = biru */
     .produk-eye-btn {
-        background: #2492ff;
+        background: #135291;
     }
 
     .produk-action-btn svg {
@@ -390,34 +390,44 @@
     }
 
 
-
-    /* Gambar Banner */
     .image-banner {
-        width: 100%;
-        height: 100%;
+        width: 90%;
+        /* Lebar cukup besar, agar tampak full */
+        max-width: 900px;
+        /* Biar di desktop tetap proporsional */
+        height: 250px;
+        /* Tetap fixed height */
+        margin: 40px auto 0 auto;
+        /* Tengah otomatis! (top 40px agar tidak nempel header) */
         overflow: hidden;
-        margin-top: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        display: flex;
+        /* Supaya child img gampang di-center-kan */
+        align-items: center;
+        /* Center vertikal img */
+        justify-content: center;
+        /* Center horizontal img */
+        background: #fff;
         position: relative;
-        border-radius: 8px;
-        /* Added for better shadow effect */
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        /* Soft shadow */
-        transition: box-shadow 0.3s ease;
-        /* Smooth transition for hover effect */
-    }
-
-    .image-banner:hover {
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        /* More prominent shadow on hover */
     }
 
     .image-banner img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        /* Bisa juga coba 'contain' jika ingin selalu penuh dan tidak crop */
         display: block;
-        /* Remove default image spacing */
     }
+
+
+
+    .image-banner:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        /* More prominent shadow on hover */
+    }
+
+
 
     @media (max-width: 600px) {
         .image-banner {
@@ -471,22 +481,28 @@
 <!-- Filter dan Pencarian Produk -->
 <!-- Filter dan Pencarian Produk -->
 <div class="search-row">
-    <form method="GET" action="{{ route('mobile.home.index') }}" class="d-flex align-items-center w-100">
+    <form id="filterForm" method="GET" action="{{ route('mobile.home.index') }}" class="d-flex align-items-center w-100">
         <!-- Input Pencarian Produk -->
-        <input type="text" name="search" class="form-control" placeholder="Cari Produk diinginkan..." value="{{ request()->search }}">
+        <input
+            type="text"
+            name="search"
+            class="form-control"
+            placeholder="Cari Produk diinginkan..."
+            value="{{ request()->search }}"
+            autocomplete="off"
+            id="searchInput">
 
         <!-- Filter Kategori -->
-        <select name="kategori" class="form-select ms-2" style="min-width: 150px;">
+        <select
+            name="kategori"
+            class="form-select ms-2"
+            style="min-width: 150px;"
+            id="kategoriSelect">
             <option value="">-- Semua Kategori --</option>
             @foreach($listKategori as $kategori)
             <option value="{{ $kategori }}" {{ request()->kategori == $kategori ? 'selected' : '' }}>{{ $kategori }}</option>
             @endforeach
         </select>
-
-        <!-- Tombol Submit (Ceklis Emoji) -->
-        <span onclick="this.closest('form').submit();" style="display: inline-flex; justify-content: center; align-items: center; padding: 6px 8px; border-radius: 8px; font-size: 20px; cursor: pointer;">
-            ✅
-        </span>
 
         <!-- Tombol Hapus Filter (X Emoji) - Untuk kategori atau pencarian -->
         @if(request()->kategori || request()->search)
@@ -494,10 +510,9 @@
             ❌
         </span>
         @endif
-
-
     </form>
 </div>
+
 
 
 
@@ -507,20 +522,17 @@
 <!-- Produk Grid -->
 <div class="produk-grid">
     @foreach($produk as $item)
-    <div class="produk-card">
+    <div
+        class="produk-card"
+        data-detail-url="{{ route('mobile.detail_produk.index', $item->id) }}"
+        style="cursor:pointer;">
         <div class="produk-img">
             <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}" alt="{{ $item->nama_produk }}" loading="lazy">
             <div class="produk-actions">
-                <button class="produk-action-btn produk-fullscreen-btn">
-                    <!-- Fullscreen icon -->
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2h-4" />
-                        <polyline points="21 21 15 21 21 15" />
-                        <path d="M3 9V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="3 3 9 3 3 9" />
-                    </svg>
-                </button>
-                <button class="produk-action-btn produk-eye-btn">
+                <button
+                    class="produk-action-btn produk-eye-btn d-none d-md-flex"
+                    onclick="window.location.href=this.closest('.produk-card').getAttribute('data-detail-url'); event.stopPropagation();"
+                    title="Lihat Detail Produk">
                     <!-- Eye icon -->
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <ellipse cx="12" cy="12" rx="8" ry="5" />
@@ -534,11 +546,81 @@
         <div class="produk-desc">{{ $item->deskripsi }}</div>
 
         <div class="produk-info-row">
-            <span class="produk-harga">Rp {{ number_format($item->hargaProduks->first()->harga ?? 0, 0, ',', '.') }}</span>
+            <span class="produk-harga">
+                @php
+                // Ambil maksimal 3 satuan beserta harga untuk produk ini
+                $hargaList = $item->satuans->take(3)->map(function($satuan) use ($item) {
+                $harga = $item->hargaProduks->where('satuan_id', $satuan->id)->first();
+                return $harga
+                ? 'Rp. ' . number_format($harga->harga, 0, ',', '.') . '/' . $satuan->nama_satuan
+                : null;
+                })->filter()->toArray();
+                @endphp
+                {!! implode('<br>', $hargaList) !!}
+            </span>
             <span class="produk-stok">{{ $item->stok_bertingkat }}</span>
         </div>
+
     </div>
+
     @endforeach
 </div>
+
 @endsection
 
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // Klik card: buka detail di mobile
+        document.querySelectorAll('.produk-card').forEach(function(card) {
+            card.addEventListener('click', function(e) {
+                if (isMobile()) {
+                    window.location = this.getAttribute('data-detail-url');
+                }
+            });
+        });
+
+        // Tombol mata: desktop (biar tetap stopPropagation, mobile gak pengaruh)
+        document.querySelectorAll('.produk-eye-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                if (!isMobile()) {
+                    // biarkan href di tombol
+                }
+                e.stopPropagation();
+            });
+        });
+
+        // === FILTER OTOMATIS ===
+
+        // Otomatis submit saat ganti kategori
+        var kategoriSelect = document.getElementById('kategoriSelect');
+        if (kategoriSelect) {
+            kategoriSelect.addEventListener('change', function() {
+                this.form.submit();
+            });
+        }
+
+        // Otomatis submit saat search (debounce 600ms)
+        var searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            let timeout = null;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    searchInput.form.submit();
+                }, 600);
+            });
+            // Submit juga kalau tekan Enter
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchInput.form.submit();
+                }
+            });
+        }
+    });
+</script>

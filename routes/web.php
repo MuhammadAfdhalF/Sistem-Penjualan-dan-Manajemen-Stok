@@ -22,6 +22,7 @@ use App\Http\Controllers\TransaksiOnlineDetailController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PaymentLogController;
 use App\Http\Controllers\Mobile\CobaController;
+
 use App\Http\Controllers\Mobile\DetailProdukController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Models\HargaProduk;
@@ -33,9 +34,6 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-Route::get('/pelanggan/home', [MobileHomeController::class, 'index'])->name('mobile.home.index');
-Route::get('/pelanggan/detail_produk', [DetailProdukController::class, 'index'])->name('mobile.detail_produk.index');
-
 
 
 
@@ -94,10 +92,6 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     });
 });
 
-// fallback
-Route::fallback(function () {
-    return "Halaman tidak ada, akses halaman yang benar ya dek !!!";
-});
 
 // Routes yang harus login, untuk pelanggan dan admin
 Route::middleware(['auth'])->group(function () {
@@ -108,4 +102,18 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/keranjang/{id}', [KeranjangController::class, 'destroy'])->name('keranjang.destroy');
 
     Route::resource('payment_logs', PaymentLogController::class)->only(['index', 'show']);
+});
+
+Route::middleware(['auth', 'pelangganonly'])->group(function () {
+    Route::get('/pelanggan-area/home', [MobileHomeController::class, 'index'])->name('mobile.home.index');
+    Route::get('/pelanggan-area/detail_produk/{id}', [DetailProdukController::class, 'index'])->name('mobile.detail_produk.index');
+});
+
+
+
+
+
+// fallback
+Route::fallback(function () {
+    return "Halaman tidak ada, akses halaman yang benar ya dek !!!";
 });

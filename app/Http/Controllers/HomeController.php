@@ -23,6 +23,15 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home');
+        $user = auth()->user();
+        if ($user) {
+            if ($user->role === 'admin') {
+                return redirect('/dashboard');
+            }
+            if ($user->role === 'pelanggan') {
+                return redirect('/pelanggan-area/home');
+            }
+        }
+        return redirect('/')->with('error', 'Akses tidak diizinkan.');
     }
 }

@@ -10,15 +10,6 @@ class LoginController extends Controller
 {
     use AuthenticatesUsers;
 
-    /**
-     * Where to redirect users after login.
-     * @var string
-     */
-    // protected $redirectTo = '/produk'; // kita override dengan method redirectTo()
-
-    /**
-     * Create a new controller instance.
-     */
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
@@ -26,21 +17,18 @@ class LoginController extends Controller
     }
 
     /**
-     * Override redirect path after login based on user role.
+     * Force redirect user after login based on role,
+     * overriding Laravel's intended behavior.
      */
-    protected function redirectTo()
+    protected function authenticated(Request $request, $user)
     {
-        $user = auth()->user();
-
+        \Session::forget('url.intended');
         if ($user->role === 'admin') {
-            return '/dashboard';   
+            return redirect('/dashboard');
         }
-
         if ($user->role === 'pelanggan') {
-            return '/home';      
+            return redirect('/pelanggan-area/home');
         }
-
-        // default fallback jika role tidak dikenali
-        return '/home';
+        return redirect('/pelanggan-area/home');
     }
 }

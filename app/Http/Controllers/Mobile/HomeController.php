@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Mobile;
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
+
+
         // Ambil semua kategori unik
         $listKategori = Produk::select('kategori')
             ->distinct()
@@ -32,7 +37,11 @@ class HomeController extends Controller
             $query->where('nama_produk', 'like', "%{$searchQuery}%");
         }
 
-        $produk = $query->get();
+        $produk = $query->with(['satuans', 'hargaProduks' => function ($q) use ($jenisPelanggan) {
+            $q->where('jenis_pelanggan', $jenisPelanggan);
+        }])->get();
+
+
 
         return view('mobile.home', compact('produk', 'listKategori', 'filterKategori', 'searchQuery'));
     }

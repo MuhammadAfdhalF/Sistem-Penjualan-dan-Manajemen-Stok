@@ -81,28 +81,88 @@
         .header nav {
             display: flex;
             gap: 32px;
-            /* Bisa diubah untuk memperlebar/mempersempit spasi nav */
-            justify-content: center;
-            flex: 1;
+            align-items: center;
+            /* RATA TENGAH VERTIKAL semua link */
         }
 
         .header nav a {
-            text-decoration: none;
-            color: #cccccc;
-            /* ABU-ABU MUDA, halaman tidak aktif */
+            color: #8a8a8a;
+            /* Abu-abu elegan */
             font-size: 1.2rem;
-            transition: color 0.3s;
+            font-weight: 500;
+            text-decoration: none;
+            line-height: 42px;
+            /* SAMA untuk semua menu (atur ke tinggi menu aktif) */
+            min-height: 42px;
+            /* Pastikan sama dengan tinggi menu aktif */
+            display: flex;
+            /* Agar vertikal align center */
+            align-items: center;
+            transition: color 0.3s, background 0.18s;
         }
 
         .header nav a:hover {
-            color: #888888;
+            color: #135291;
             /* ABU SEDIKIT LEBIH TUA SAAT HOVER */
         }
 
         .header nav a.active {
-            color: #000000;
-            /* HITAM untuk halaman aktif */
+            background: #135291;
+            color: #fff !important;
+            border-radius: 22px;
+            padding: 0 22px;
+            /* Padding hanya kanan kiri, atas bawah = 0 */
+            font-weight: 700;
+            box-shadow: 0 2px 8px #13529122;
+            min-height: 42px;
+            line-height: 42px;
+            display: flex;
         }
+
+
+
+        .footer-nav-btn.active,
+        .footer-nav-btn:active {
+            background: #135291 !important;
+            /* Biru muda */
+            color: #fff !important;
+            /* Teks putih */
+            border-radius: 50%;
+            /* Supaya bulat penuh */
+            width: 48px;
+            /* Lebar & tinggi sama, agar bulat */
+            height: 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px #c1e5ff55;
+            /* Opsional: shadow lembut */
+            padding: 0;
+            /* Hilangkan padding default */
+            margin: 0 6px;
+            /* Jarak antar tombol */
+            transition: background 0.18s, color 0.18s;
+            position: relative;
+            z-index: 2;
+            font-size: 1.1rem;
+        }
+
+        /* Agar icon dan teks putih */
+        .footer-nav-btn.active svg,
+        .footer-nav-btn:active svg {
+            stroke: #fff !important;
+            fill: none;
+        }
+
+        /* Agar teks di bawah icon juga putih, atau bisa disembunyikan jika hanya ingin icon */
+        .footer-nav-btn.active span,
+        .footer-nav-btn:active span {
+            color: #fff !important;
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+
 
         .header-cart {
             display: flex;
@@ -130,7 +190,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #7DBFD9;
+            background: #ffff;
             box-shadow: 0 -2px 12px #0001;
             display: flex;
             justify-content: space-around;
@@ -169,7 +229,7 @@
         .footer-nav-center {
             position: relative;
             top: -30px;
-            background: #C1E5FF;
+            background: #ffff;
             border-radius: 50%;
             box-shadow: 0 4px 16px #0002;
             width: 60px;
@@ -196,16 +256,6 @@
             margin-top: 0px;
         }
 
-        /* Ketika tombol aktif ditekan */
-        .footer-nav-btn.active span {
-            color: #000000;
-            /* Hitam pekat */
-        }
-
-        .footer-nav-btn.active svg {
-            stroke: #000000;
-            /* Hitam pekat */
-        }
 
 
         /* Hide Footer on Desktop */
