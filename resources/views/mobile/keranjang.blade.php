@@ -10,6 +10,14 @@
             padding: 0;
         }
 
+        .cart-total-desktop {
+            display: none;
+        }
+
+        .cart-badge-all-desktop {
+            display: none;
+        }
+
         .cart-header {
             padding: 20px 18px 8px 18px;
             background: #fff;
@@ -64,7 +72,7 @@
             border-radius: 12px;
             border: none;
             background: #fff;
-            margin: 18px 8px 12px 8px;
+            margin: 0 8px 12px 8px;
             box-shadow:
                 0 -2px 24px 0 rgba(80, 110, 160, 0.14),
                 /* shadow atas (lebih tebal) */
@@ -360,6 +368,7 @@
             .cart-check {
                 width: 22px;
                 height: 22px;
+                margin-left: 20px;
             }
 
             .cart-product-title {
@@ -390,6 +399,8 @@
             .cart-select-wrap {
                 width: 72px;
                 min-width: 60px;
+                margin-right: 10px;
+
             }
 
             .cart-select {
@@ -522,6 +533,7 @@
             .cart-check {
                 width: 22px !important;
                 height: 22px !important;
+                margin-left: 25px;
             }
 
             .cart-product-title {
@@ -552,6 +564,7 @@
             .cart-select-wrap {
                 width: 72px !important;
                 min-width: 60px !important;
+                margin-right: 15px;
             }
 
             .cart-select {
@@ -569,7 +582,7 @@
             .cart-footer-bar {
                 padding: 4px 2px !important;
                 gap: 3px !important;
-                margin-bottom: 50px !important;
+                margin-bottom: 80px !important;
                 height: auto !important;
             }
 
@@ -583,7 +596,7 @@
                 height: 22px !important;
                 border-radius: 5px !important;
                 border-width: 2px !important;
-                margin-left: 0px !important;
+                margin-left: 5px !important;
             }
 
             .footer-checkbox-box::after {
@@ -624,14 +637,122 @@
                 margin-right: 10px !important;
             }
         }
+
+        @media (min-width: 1025px) {
+
+            .cart-badge-all-desktop {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-top: 10px;
+                margin-bottom: 0px;
+                margin-left: 26px;
+                user-select: none;
+
+            }
+
+            .cart-badge-all-desktop .cart-check {
+                /* Copy persis dari .cart-check yang kamu pakai di dalam card */
+                align-self: center;
+                margin-top: 0px;
+                margin-right: 0px;
+                accent-color: #135291;
+                width: 32px;
+                height: 32px;
+                flex-shrink: 0;
+                border-radius: 8px;
+                box-shadow: 0 1px 6px #13529144;
+                border: none;
+            }
+
+            .cart-badge-label {
+                font-family: 'Inter', Arial, sans-serif;
+                font-size: 1.21rem;
+                font-weight: 700;
+                color: #18191a;
+                letter-spacing: 0.2px;
+            }
+
+            .cart-footer-bar {
+                display: none !important;
+            }
+
+            .cart-total-desktop {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                position: fixed;
+                bottom: 36px;
+                right: 38px;
+                background: #fff;
+                border-radius: 13px;
+                box-shadow:
+                    0 6px 48px 0 rgba(19, 82, 145, 0.13),
+                    /* blur & opacity lebih besar, lebih “bold” */
+                    0 3px 18px 0 rgba(19, 82, 145, 0.01),
+                    0 1px 8px 0 #0002;
+                /* shadow tambahan untuk efek dalam */
+
+                padding: 32px 38px 24px 38px;
+                z-index: 200;
+                min-width: 420px;
+                /* semula misal 270px jadi 420px */
+                max-width: 520px;
+                /* optional, biar ga kepanjangan */
+            }
+
+            .cart-total-title {
+                font-size: 1.06rem;
+                font-weight: bold;
+                color: #1c2634;
+                margin-bottom: 11px;
+                letter-spacing: 0.5px;
+            }
+
+            .cart-total-row {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                font-size: 1.07rem;
+                margin-bottom: 19px;
+            }
+
+            .cart-total-amount {
+                color: #135291;
+                font-weight: bold;
+                font-size: 1.11rem;
+                letter-spacing: 0.4px;
+            }
+
+            .cart-total-btn {
+                width: 100%;
+                padding: 11px 0;
+                border: none;
+                border-radius: 24px;
+                font-weight: 700;
+                font-size: 1rem;
+                background: #135291;
+                color: #fff;
+                cursor: pointer;
+                box-shadow: 0 3px 16px #13529133;
+                transition: background 0.17s;
+            }
+
+            .cart-total-btn:hover {
+                background: #103c66;
+            }
+        }
     </style>
     @endpush
     @section('content')
     <!-- Header -->
     <div class="cart-header">
-        <div>
-            <div class="cart-title">Toko KZ Family</div>
-            <div class="cart-subtitle">Keranjang Belanja</div>
+        <div style="display: flex; align-items: center;">
+            <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="Logo KZ" style="width:70px; height:auto; margin-right: 12px;">
+            <div style="display: flex; flex-direction: column; justify-content: center; height: 70px;">
+                <div class="fw-bold" style="margin-bottom:3px;">Toko KZ Family</div>
+                <div class="text-muted" style="font-size:0.95rem;">Keranjang Saya</div>
+            </div>
         </div>
         <div class="icon-profile">
             <svg fill="none" stroke="#222" stroke-width="2.1" viewBox="0 0 24 24" width="25" height="25">
@@ -640,6 +761,14 @@
             </svg>
         </div>
     </div>
+
+    <!-- all untuk desktop -->
+    <div class="cart-badge-all-desktop">
+        <input type="checkbox" class="cart-check" checked>
+        <span class="cart-badge-label">Semua</span>
+    </div>
+
+
 
     <!-- Daftar Cart (STATIC / 1 ITEM SAJA) -->
     <div class="cart-list">
@@ -687,6 +816,13 @@
         <button class="cart-btn-checkout">Checkout !!!</button>
     </div>
 
-
+    <div class="cart-total-desktop">
+        <div class="cart-total-title">Total Keranjang</div>
+        <div class="cart-total-row">
+            <span>Total</span>
+            <span class="cart-total-amount">Rp 3.000.000</span>
+        </div>
+        <button class="cart-total-btn">CHECKOUT !!!</button>
+    </div>
 
     @endsection

@@ -43,6 +43,8 @@ class HomeController extends Controller
 
 
 
-        return view('mobile.home', compact('produk', 'listKategori', 'filterKategori', 'searchQuery'));
+        return view('mobile.home', compact('produk', 'listKategori', 'filterKategori', 'searchQuery') + [
+            'activeMenu' => 'home'
+        ]);
     }
 }

@@ -23,6 +23,8 @@ class DetailProdukController extends Controller
             }
         ])->findOrFail($id);
 
-        return view('mobile.detail_produk', compact('produk', 'jenisPelanggan'));
+        return view('mobile.detail_produk', compact('produk', 'jenisPelanggan') + [
+            'activeMenu' => 'home'
+        ]);
     }
 }

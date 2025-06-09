@@ -24,6 +24,7 @@
         justify-content: flex-start;
     }
 
+
     .container-detail {
         flex: 1 0 auto;
         width: 100vw;
@@ -143,6 +144,10 @@
             object-fit: contain;
             display: block;
             margin: auto;
+        }
+
+        .footer-mobile-nav {
+            display: none !important;
         }
     }
 
@@ -414,7 +419,7 @@
         /* Konten utama jangan ketiban header */
         .container-detail,
         .flex-main {
-            padding-top: 42px;
+            padding-top: 0px;
             /* samakan dengan height header! */
         }
 
@@ -437,18 +442,16 @@
         }
 
         .desktop-img {
-            flex: 1 1 50%;
-            max-width: 600px;
-            min-width: 340px;
-            padding-left: 48px;
-            padding-right: 24px;
+            height: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
+            min-height: 450px;
+            /* pastikan kolom kiri tinggi */
         }
 
         .desktop-info {
+
             flex: 1 1 50%;
             max-width: 750px;
             min-width: 340px;
@@ -456,8 +459,11 @@
             padding-left: 24px;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
+            justify-content: center;
+            /* UBAH dari flex-start ke center */
+            height: 100%;
+
+            /* UBAH dari flex-start ke center */
         }
 
         .header-detail {
@@ -473,28 +479,27 @@
 
         .product-image-area {
             width: 100%;
-            /* Rasio aspect 1:1 agar gambar selalu utuh (boleh diubah sesuai kebutuhan) */
-            aspect-ratio: 1 / 1;
-            background: #fff;
-            border-radius: 16px;
+            height: 100%;
+            min-height: 350px;
+            /* agar area gambar tidak terlalu kecil */
+            min-width: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: #fff;
+            border-radius: 16px;
             overflow: hidden;
-            margin-top: 50px;
-            /* Atur sesuai kebutuhan, misal 24px */
-
         }
 
         .product-image {
-            width: 80%;
-            height: 80%;
+            width: 90%;
+            height: 90%;
+            max-width: 420px;
+            /* batas maksimal gambar */
+            max-height: 420px;
             object-fit: contain;
             display: block;
-            margin: auto;
-            /* agar tetap center */
         }
-
 
         .info-card,
         .order-form {
@@ -562,6 +567,38 @@
         display: flex;
         justify-content: center;
         margin-top: 16px;
+    }
+
+    @media (max-width: 1000px) and (orientation: landscape) {
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        .footer-mobile-nav {
+            display: none !important;
+        }
+
+        .product-image-area {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            min-height: 200px;
+            /* atau sesuaikan */
+            background: #fff;
+            width: 100vw;
+            margin: 0 auto;
+        }
+
+        .product-image {
+            display: block;
+            margin: 0 auto;
+            width: 70vw;
+            /* responsive, bisa diubah ke max-width: 300px; */
+            max-width: 300px;
+            height: auto;
+            object-fit: contain;
+        }
     }
 </style>
 

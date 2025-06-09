@@ -5,7 +5,6 @@
 <style>
     body {
         background: #ffff;
-
         background-image: url('{{ asset("storage/logo/back_biru.png") }}');
         background-size: cover;
         background-position: center;
@@ -15,329 +14,118 @@
         font-family: 'Inter', Arial, sans-serif;
     }
 
-    /* Optional: Add media query for smaller devices */
     @media (max-width: 768px) {
         body {
             background-size: contain;
-            /* Or adjust as needed for mobile */
         }
     }
 
     .greet-card {
         background: rgba(255, 255, 255, 0.5);
-        /* 0.5 = 50% opacity */
         padding: 22px 18px 12px 18px;
         border-bottom-left-radius: 15px;
         border-bottom-right-radius: 15px;
-        position: relative;
         margin-bottom: 8px;
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         backdrop-filter: blur(5px);
-        /* optional: efek blur untuk elemen di belakang */
     }
 
-    .greet-logo {
-        width: 56px;
-        height: 56px;
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px #0001;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        overflow: hidden;
-    }
-
-    .greet-main {
-        flex: 1;
-    }
-
-    .greet-title {
-        font-size: 1.14rem;
-        font-weight: 700;
-        letter-spacing: 0.4px;
-        margin-bottom: 2px;
-    }
-
-    .greet-subtitle {
-        font-size: 1.02rem;
-        font-weight: 600;
-        margin-bottom: 2px;
-    }
-
-    .greet-desc {
-        font-size: 0.96rem;
-        color:rgb(14, 0, 0);
-        margin-bottom: 0;
-        letter-spacing: 0.2px;
-    }
-
-    /* Sembunyikan greet-card di desktop */
     @media (min-width: 769px) {
         .greet-card {
             display: none !important;
         }
     }
 
-
-    /* Cart Top Button */
-    .cart-top-btn {
-        background: #ffff;
-        border: 0.5px solid rgba(0, 0, 0, 0.5);
-        border-radius: 8px;
-        padding: 7px 9px;
-        box-shadow: 0 6px 32px 0 rgba(30, 40, 60, 0.22), 0 2px 8px rgba(0, 0, 0, 0.15);
+    .image-banner {
+        width: 90%;
+        max-width: 900px;
+        height: 250px;
+        margin: 40px auto 0 auto;
+        overflow: hidden;
+        border-radius: 5px;
+        box-shadow: 2px 8px 46px rgba(0, 0, 0, 0.34);
         display: flex;
         align-items: center;
         justify-content: center;
-        min-width: 36px;
-        min-height: 36px;
-        margin-left: 8px;
-        margin-top: 20px;
-        transition: box-shadow 0.15s;
-        cursor: pointer;
+        background: #fff;
+        position: relative;
     }
 
-    .cart-top-btn svg {
-        width: 22px;
-        height: 22px;
-        color: #000000;
-    }
-
-    /* Search Row */
-    .search-row {
-        margin: 13px 16px 14px 16px;
-        display: flex;
-        gap: 8px;
-        /* Memberikan ruang antar elemen */
-        border-radius: 6px;
-        padding-bottom: 4px;
-        padding-top: 4px;
-        align-items: center;
+    .image-banner img {
         width: 100%;
-        /* Pastikan elemen menggunakan lebar penuh */
-        flex-wrap: nowrap;
-        /* Pastikan elemen tetap dalam satu baris */
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
-    .search-row input[type="text"] {
-        flex-grow: 2;
-        /* Memastikan input pencarian mengambil lebih banyak ruang */
-        min-width: 0;
-        /* Menghindari elemen melebihi batas */
-        padding: 10px 12px;
-        border-radius: 7px;
-        box-shadow: 0 0px 8px 0 rgba(30, 40, 60, 0.22), 0 0px 2px rgba(0, 0, 0, 0.15);
-        font-size: 1rem;
-        outline: none;
-        background: #fafdff;
-        border: 0.5px solid rgba(0, 0, 0, 0.5);
-    }
 
-    .search-row select {
-        flex-grow: 1;
-        /* Dropdown kategori lebih kecil dari input pencarian */
-        min-width: 0;
-        max-width: 150px;
-        /* Lebar maksimal untuk dropdown kategori */
-        padding: 10px 12px;
-        border-radius: 7px;
-        box-shadow: 0 0px 8px 0 rgba(30, 40, 60, 0.22), 0 0px 2px rgba(0, 0, 0, 0.15);
-        font-size: 1rem;
-        background: #fafdff;
-        border: 0.5px solid rgba(0, 0, 0, 0.5);
-    }
-
-    .search-row button,
-    .search-row a {
-        flex-shrink: 0;
-        /* Tombol tidak akan mengecil */
-        padding: 6px 8px;
-        border-radius: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-width: 36px;
-        min-height: 36px;
-    }
-
-    /* Tombol Submit */
-    .search-row button {
-        background: rgb(0, 123, 255);
-        color: #fff;
-        font-size: 18px;
-        /* Ukuran ikon */
-    }
-
-    /* Tombol Hapus Filter */
-    .search-row a {
-        background: rgb(220, 53, 69);
-        color: #fff;
-        font-size: 18px;
-        /* Ukuran ikon */
-    }
-
-    /* Responsif untuk Mobile */
-    @media (max-width: 600px) {
-        .search-row {
-            flex-wrap: nowrap;
-            /* Pastikan elemen tetap dalam satu baris */
-            gap: 4px;
-            /* Mengurangi jarak antar elemen untuk mobile */
-        }
-
-        .search-row input[type="text"],
-        .search-row select {
-            flex: 1;
-            /* Membuat input dan select mengisi ruang secara proporsional */
-            font-size: 0.9rem;
-            /* Menyesuaikan ukuran font di mobile */
-        }
-
-        .search-row button,
-        .search-row a {
-            padding: 6px;
-            /* Menyesuaikan ukuran tombol di mobile */
-            font-size: 16px;
-            /* Ukuran font tombol di mobile */
-            min-width: 36px;
-            /* Menjaga ukuran tombol tetap kecil */
-        }
-
-        /* Menghindari tombol X untuk turun ke bawah */
-        .search-row a {
-            white-space: nowrap;
-            /* Menjaga agar tombol X tidak turun ke bawah */
-        }
-    }
-
-    /* Produk Grid */
     .produk-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        /* Default untuk mobile (2 kolom) */
-        gap: 6px;
-        padding: 0 6px 12px 6px;
+        gap: 12px;
+        padding: 0 8px 16px 8px;
         background: #ffff;
     }
 
     @media (min-width: 768px) {
         .produk-grid {
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
-            /* 6 kolom pada layar besar (website) */
+            grid-template-columns: repeat(6, 1fr);
         }
     }
 
     .produk-card {
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 5px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        /* Shadow lebih tajam */
-        overflow: hidden;
-        border: 2px solid rgba(0, 0, 0, 0.1);
-        /* Border ditambahkan untuk ketajaman */
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 128, 255, 0.19);
+        border: 0.1px solid rgba(0, 0, 0, 0.08);
         display: flex;
         flex-direction: column;
         margin-bottom: 0;
-        padding: 6px;
-        box-sizing: border-box;
-        min-height: 200px;
-        height: auto;
-        transition: box-shadow 0.3s ease;
-        /* Efek transisi saat hover */
+        padding: 8px;
+        min-height: 190px;
+        cursor: pointer;
+        transition: box-shadow 0.3s;
+        height: 100%;
     }
-
 
     .produk-img {
-        position: relative;
-        overflow: hidden;
-    }
-
-    .produk-img img {
-        width: 100%;
-        display: block;
-    }
-
-    .produk-actions {
-        position: absolute;
-        left: 50%;
-        bottom: 12px;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 10px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-        z-index: 2;
-    }
-
-    /* Desktop: hover, Mobile/JS: active */
-    .produk-img:hover .produk-actions,
-    .produk-img.active .produk-actions {
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-
-    .produk-action-btn {
-        width: 44px;
-        height: 44px;
+        height: 210px !important;
+        /* perbesar dari sebelumnya, misal 210px */
         display: flex;
         align-items: center;
         justify-content: center;
-        border: none;
-        border-radius: 50%;
-        background: #ed2d34;
-        /* default: merah */
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
-        cursor: pointer;
-        outline: none;
-        transition: transform 0.2s, background 0.2s;
+        background: #f9f9f9;
+        border-radius: 10px 10px 0 0;
     }
 
-    /* Icon Fullscreen = merah (default) */
-    .produk-fullscreen-btn {
-        background: #ed2d34;
+    .produk-img img {
+        max-height: 185px !important;
+        /* perbesar dari sebelumnya, misal 185px */
+        width: auto !important;
+        object-fit: contain;
+        display: block;
+        margin: auto;
     }
 
-    /* Icon Eye = biru */
-    .produk-eye-btn {
-        background: #135291;
-    }
-
-    .produk-action-btn svg {
-        width: 22px;
-        height: 22px;
-        stroke: #fff;
-    }
-
-
-    /* Nama Produk */
     .produk-nama {
         font-size: 1rem;
-        /* Ukuran font lebih besar untuk nama produk */
         font-weight: 600;
-        margin: 12px 6px 2px 6px;
+        margin: 10px 6px 2px 6px;
         color: #232323;
-        height: auto;
+        min-height: 36px;
     }
 
-    /* Deskripsi Produk */
     .produk-desc {
         font-size: 0.9rem;
-        /* Ukuran font lebih besar untuk deskripsi produk */
         color: #666;
         margin: 0 6px 6px 6px;
         line-height: 1.3;
-        overflow: visible;
     }
 
     .produk-info-row {
         margin-top: auto;
-        /* Ini akan mendorong elemen ke bawah */
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -349,166 +137,377 @@
     .produk-harga,
     .produk-stok {
         font-size: 0.9rem;
-        /* Ukuran font lebih besar untuk harga dan stok */
         color: #888;
     }
 
-    /* Bagian Mobile tetap tidak berubah */
     @media (max-width: 600px) {
-        .produk-card {
-            padding: 4px;
-            /* Mengurangi padding pada perangkat mobile */
-            min-height: 160px;
-            /* Menambah min-height agar card cukup tinggi pada mobile */
+        .hover-eye {
+            display: none !important;
         }
 
-        .produk-harga,
-        .produk-stok {
-            font-size: 0.7rem;
-            /* Ukuran font lebih kecil pada perangkat mobile */
-        }
-
-        .produk-img {
-            font-size: 0.8rem;
-            /* Ukuran font gambar lebih kecil pada perangkat mobile */
-        }
-
-        .produk-nama {
-            font-size: 0.7rem;
-            /* Ukuran font nama lebih kecil pada perangkat mobile */
-        }
-
-        .produk-desc {
-            font-size: 0.7rem;
-            /* Ukuran font deskripsi lebih kecil pada perangkat mobile */
-        }
-
-        .produk-info-row {
-            font-size: 0.7rem;
-            /* Ukuran font bar informasi lebih kecil pada perangkat mobile */
-        }
-    }
-
-
-    .image-banner {
-        width: 90%;
-        /* Lebar cukup besar, agar tampak full */
-        max-width: 900px;
-        /* Biar di desktop tetap proporsional */
-        height: 250px;
-        /* Tetap fixed height */
-        margin: 40px auto 0 auto;
-        /* Tengah otomatis! (top 40px agar tidak nempel header) */
-        overflow: hidden;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-        display: flex;
-        /* Supaya child img gampang di-center-kan */
-        align-items: center;
-        /* Center vertikal img */
-        justify-content: center;
-        /* Center horizontal img */
-        background: #fff;
-        position: relative;
-    }
-
-    .image-banner img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        /* Bisa juga coba 'contain' jika ingin selalu penuh dan tidak crop */
-        display: block;
-    }
-
-
-
-    .image-banner:hover {
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        /* More prominent shadow on hover */
-    }
-
-
-
-    @media (max-width: 600px) {
         .image-banner {
-            height: 100px;
+            height: 120px;
+            border-radius: 15px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            /* Lighter shadow for mobile */
-            border-radius: 4px;
-            /* Smaller radius for mobile */
-        }
-
-        .image-banner:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            /* Less pronounced hover effect on mobile */
         }
 
         .image-banner img {
             object-fit: contain;
         }
+
+        #filterForm {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 4px !important;
+            width: 100%;
+            flex-wrap: wrap !important;
+            /* Biar X bisa turun kalau sempit */
+        }
+
+        #filterForm input.form-control,
+        #filterForm select.form-select {
+            font-size: 0.53rem !important;
+            /* Lebih kecil lagi */
+            padding: 2px 5px !important;
+            /* Ramping */
+            height: 26px !important;
+            /* Ramping */
+            border-radius: 7px !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+        }
+
+        #filterForm select.form-select {
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            max-width: 34vw !important;
+            /* Lebih kecil, biar ga nabrak */
+        }
+
+        #filterForm .btn-danger {
+            width: 22px !important;
+            /* Lebih kecil */
+            height: 22px !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            font-size: 1rem !important;
+            padding: 0 !important;
+            border-radius: 6px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            flex: none !important;
+        }
+
+        #filterForm .btn-danger i {
+            font-size: 0.92rem !important;
+        }
+
+        /* Hilangkan margin/padding row-col di mobile */
+        #filterForm .row,
+        #filterForm .col,
+        #filterForm .col-auto {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        #filterForm input.form-control,
+        #filterForm select.form-select {
+            border: 1.2px solid #bdbdbd !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            background: #fff !important;
+            /* Agar tidak ada background aneh */
+        }
+
+        .produk-card {
+            padding: 3px 2px !important;
+            min-height: 120px !important;
+        }
+
+        .produk-img {
+            height: 150px !important;
+        }
+
+        .produk-img img {
+            max-height: 130px !important;
+        }
+
+        .produk-nama {
+            font-size: 0.88rem !important;
+            min-height: 18px;
+            color: #232323 !important;
+            font-weight: 600;
+        }
+
+        .produk-desc {
+            font-size: 0.71rem !important;
+            min-height: 14px;
+            color: #232323 !important;
+        }
+
+        .produk-info-row {
+            font-size: 0.68rem !important;
+            color: #232323 !important;
+            padding-bottom: 0;
+        }
+
+        .produk-harga,
+        .produk-stok {
+            font-size: 0.68rem !important;
+            color: #232323 !important;
+        }
+    }
+
+
+    @media (max-width: 1000px) and (orientation: landscape) {
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+
+        .greet-card {
+            display: flex !important;
+        }
+
+        .image-banner {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+
+        .container-fluid,
+        .produk-grid {
+            max-width: 100vw !important;
+            width: 100vw !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin: 0 auto !important;
+        }
+
+        .produk-grid {
+            grid-template-columns: repeat(5, 1fr) !important;
+        }
+
+        .produk-nama {
+            font-size: 0.78rem !important;
+            min-height: 12px;
+        }
+
+        .produk-desc,
+        .produk-info-row,
+        .produk-harga,
+        .produk-stok {
+            font-size: 0.59rem !important;
+        }
+
+        #filterForm {
+            margin-left: 10px !important;
+            gap: 10px !important;
+        }
+
+        form#filterForm input.form-control,
+        form#filterForm select.form-select {
+            font-size: 0.85rem !important;
+            height: 32px !important;
+            border-radius: 12px !important;
+            padding: 2px 14px !important;
+            min-width: 0 !important;
+            max-width: 240px !important;
+            width: 210px !important;
+        }
+
+        form#filterForm select.form-select {
+            text-align: center !important;
+            text-align-last: center !important;
+            max-width: 180px !important;
+            min-width: 110px !important;
+            width: 150px !important;
+        }
+
+
+        #filterForm .btn-danger {
+            width: 42px !important;
+            height: 42px !important;
+            font-size: 0.1rem !important;
+            border-radius: 13px !important;
+            margin-left: 7px !important;
+        }
+    }
+
+
+    @media (min-width: 768px) {
+
+        #filterForm input.form-control:hover,
+        #filterForm input.form-control:focus,
+        #filterForm select.form-select:hover,
+        #filterForm select.form-select:focus {
+            box-shadow: 0 2px 12px rgb(19, 82, 145, 0.18);
+            border-color: rgb(19, 82, 145) !important;
+            z-index: 2;
+            transition: box-shadow .16s, border-color .16s;
+        }
+
+        #filterForm .btn-danger:hover,
+        #filterForm .btn-danger:focus {
+            box-shadow: 0 2px 12px rgb(19, 82, 145, 0.19);
+            border-color: rgb(19, 82, 145) !important;
+            outline: none;
+            z-index: 2;
+            transition: box-shadow .16s, border-color .16s;
+        }
+
+        #filterForm {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            background: none;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 18px;
+        }
+
+        #filterForm input.form-control,
+        #filterForm select.form-select {
+            border: 1.5px solid #222 !important;
+            border-radius: 13px !important;
+            height: 38px !important;
+            font-size: 1rem !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            min-width: 140px;
+            max-width: 350px;
+            transition: border-color .18s;
+        }
+
+        #filterForm input.form-control:focus,
+        #filterForm select.form-select:focus {
+            border-color: #1976d2 !important;
+            outline: none !important;
+        }
+
+        #filterForm .btn-danger {
+            width: 38px !important;
+            height: 38px !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+            font-size: 1.18rem !important;
+            padding: 0 !important;
+            border-radius: 13px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: 1.5px solid #222 !important;
+            background: #dc3545 !important;
+            color: #fff !important;
+            transition: border-color .18s;
+        }
+
+        #filterForm .btn-danger:focus {
+            border-color: #1976d2 !important;
+            outline: none !important;
+        }
+
+        #kategoriSelect {
+            max-width: 250px !important;
+            min-width: 250px !important;
+            width: 100% !important;
+            text-align: center;
+        }
+
+        .produk-card {
+            cursor: pointer !important;
+            position: relative;
+            transition: box-shadow 0.25s;
+        }
+
+        .produk-card:hover,
+        .produk-card:focus {
+            box-shadow: 0 4px 20px rgb(19, 82, 145);
+            z-index: 2;
+        }
+
+        /* Icon mata muncul di hover/focus */
+        .produk-card .hover-eye {
+            display: none;
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            z-index: 3;
+            font-size: 1.24rem;
+            color: #4f4f4f;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 100px;
+            box-shadow: 0 1px 6px rgba(0, 21, 255, 0.07);
+            padding: 2px 6px;
+            transition: opacity .18s;
+            pointer-events: none;
+        }
+
+        .produk-card:hover .hover-eye,
+        .produk-card:focus .hover-eye {
+            display: block;
+            opacity: 1;
+        }
     }
 </style>
 @endpush
 
-
-
 @section('content')
+
+{{-- Greeting Card (mobile only) --}}
 <div class="greet-card">
     <div style="display: flex; align-items: center;">
-        <!-- LOGO tanpa box -->
-        <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="Logo KZ" style="width:80px; height:auto; margin-right: 12px;">
-        <div class="greet-main" style="display: flex; flex-direction: column; justify-content: center; height: 80px;">
-            <div class="greet-title" style="margin-bottom:3px;">ACuyyy</div>
-            <div class="greet-subtitle" style="font-size:0.97rem; color:#6b6b6b; font-weight:500;">Katalog produk</div>
+        <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="Logo KZ" style="width:70px; height:auto; margin-right: 12px;">
+        <div style="display: flex; flex-direction: column; justify-content: center; height: 70px;">
+            <div class="fw-bold" style="margin-bottom:3px;">Toko KZ Family</div>
+            <div class="text-muted" style="font-size:0.95rem;">Katalog produk</div>
         </div>
     </div>
-
-    <button class="cart-top-btn">
-        <!-- Keranjang icon -->
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <circle cx="9" cy="21" r="1" />
-            <circle cx="20" cy="21" r="1" />
-            <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-    </button>
+    <a href="#" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center" style="min-width:36px; min-height:36px; margin-left:8px; margin-top:0px;">
+        <i class="bi bi-cart" style="font-size:1.2rem;"></i>
+    </a>
 </div>
 
-<!-- Gambar Persegi Panjang -->
-<div class="image-banner">
+{{-- Banner --}}
+<div class="image-banner mb-4">
     <img src="{{ asset('storage/logo/Spanduk KZ Family 2.png') }}" alt="Banner Image">
 </div>
 
-<!-- Filter dan Pencarian Produk -->
-<!-- Filter dan Pencarian Produk -->
-<div class="search-row">
-    <form id="filterForm" method="GET" action="{{ route('mobile.home.index') }}" class="d-flex align-items-center w-100">
-        <!-- Input Pencarian Produk -->
+{{-- Search & Filter --}}
+<div class="container-fluid px-3">
+    <form id="filterForm" method="GET" action="{{ route('mobile.home.index') }}" class="d-flex align-items-center gap-1 w-100 flex-wrap">
         <input
             type="text"
             name="search"
-            class="form-control"
-            placeholder="Cari Produk diinginkan..."
+            class="form-control form-control-sm flex-fill"
+            placeholder="🔍 Cari Produk diinginkan.... "
             value="{{ request()->search }}"
             autocomplete="off"
             id="searchInput">
-
-        <!-- Filter Kategori -->
         <select
             name="kategori"
-            class="form-select ms-2"
-            style="min-width: 150px;"
+            class="form-select form-select-sm flex-fill"
             id="kategoriSelect">
             <option value="">-- Semua Kategori --</option>
             @foreach($listKategori as $kategori)
             <option value="{{ $kategori }}" {{ request()->kategori == $kategori ? 'selected' : '' }}>{{ $kategori }}</option>
             @endforeach
         </select>
-
-        <!-- Tombol Hapus Filter (X Emoji) - Untuk kategori atau pencarian -->
         @if(request()->kategori || request()->search)
-        <span onclick="window.location='{{ route('mobile.home.index')}}'" style="display: inline-flex; justify-content: center; align-items: center; padding: 6px 8px; border-radius: 8px; font-size: 20px; cursor: pointer;">
-            ❌
-        </span>
+        <a href="{{ route('mobile.home.index') }}"
+            class="btn btn-danger d-flex align-items-center justify-content-center px-0 reset-btn"
+            style="width: 32px; height: 32px; min-width: 32px;">
+            <i class="bi bi-x-lg"></i>
+        </a>
         @endif
     </form>
 </div>
@@ -517,38 +516,25 @@
 
 
 
-
-
-<!-- Produk Grid -->
-<div class="produk-grid">
+{{-- Produk Grid --}}
+<div class="produk-grid mt-3">
     @foreach($produk as $item)
-    <div
-        class="produk-card"
-        data-detail-url="{{ route('mobile.detail_produk.index', $item->id) }}"
-        style="cursor:pointer;">
+    <div class="produk-card" data-detail-url="{{ route('mobile.detail_produk.index', $item->id) }}">
+        <span class="hover-eye">
+            <i class="bi bi-eye"></i>
+        </span>
         <div class="produk-img">
-            <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}" alt="{{ $item->nama_produk }}" loading="lazy">
-            <div class="produk-actions">
-                <button
-                    class="produk-action-btn produk-eye-btn d-none d-md-flex"
-                    onclick="window.location.href=this.closest('.produk-card').getAttribute('data-detail-url'); event.stopPropagation();"
-                    title="Lihat Detail Produk">
-                    <!-- Eye icon -->
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <ellipse cx="12" cy="12" rx="8" ry="5" />
-                        <circle cx="12" cy="12" r="2.5" fill="#fff" stroke="none" />
-                        <circle cx="12" cy="12" r="1.2" fill="#222" stroke="none" />
-                    </svg>
-                </button>
-            </div>
+            <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}" alt="{{ $item->nama_produk }}">
         </div>
-        <div class="produk-nama">{{ $item->nama_produk }}</div>
-        <div class="produk-desc">{{ $item->deskripsi }}</div>
-
+        <div class="produk-nama">
+            {{ $item->nama_produk }}
+        </div>
+        <div class="produk-desc">
+            {{ $item->deskripsi }}
+        </div>
         <div class="produk-info-row">
-            <span class="produk-harga">
+            <div class="produk-harga">
                 @php
-                // Ambil maksimal 3 satuan beserta harga untuk produk ini
                 $hargaList = $item->satuans->take(3)->map(function($satuan) use ($item) {
                 $harga = $item->hargaProduks->where('satuan_id', $satuan->id)->first();
                 return $harga
@@ -557,70 +543,36 @@
                 })->filter()->toArray();
                 @endphp
                 {!! implode('<br>', $hargaList) !!}
-            </span>
-            <span class="produk-stok">{{ $item->stok_bertingkat }}</span>
+            </div>
+            <div class="produk-stok">
+                {{ $item->stok_bertingkat }}
+            </div>
         </div>
-
     </div>
-
     @endforeach
 </div>
-
 @endsection
 
-
+@push('body')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        function isMobile() {
-            return window.innerWidth <= 768;
-        }
-
-        // Klik card: buka detail di mobile
         document.querySelectorAll('.produk-card').forEach(function(card) {
             card.addEventListener('click', function(e) {
-                if (isMobile()) {
+                // Arahkan ke detail di semua device (tidak perlu cek mobile lagi)
+                window.location = this.getAttribute('data-detail-url');
+            });
+            // Tambah tab index biar bisa diakses pakai keyboard (opsional)
+            card.setAttribute('tabindex', '0');
+            card.style.outline = 'none';
+            card.addEventListener('keydown', function(e) {
+                if (e.key === "Enter" || e.key === " ") {
                     window.location = this.getAttribute('data-detail-url');
                 }
             });
         });
-
-        // Tombol mata: desktop (biar tetap stopPropagation, mobile gak pengaruh)
-        document.querySelectorAll('.produk-eye-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                if (!isMobile()) {
-                    // biarkan href di tombol
-                }
-                e.stopPropagation();
-            });
-        });
-
-        // === FILTER OTOMATIS ===
-
-        // Otomatis submit saat ganti kategori
-        var kategoriSelect = document.getElementById('kategoriSelect');
-        if (kategoriSelect) {
-            kategoriSelect.addEventListener('change', function() {
-                this.form.submit();
-            });
-        }
-
-        // Otomatis submit saat search (debounce 600ms)
-        var searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            let timeout = null;
-            searchInput.addEventListener('input', function() {
-                clearTimeout(timeout);
-                timeout = setTimeout(function() {
-                    searchInput.form.submit();
-                }, 600);
-            });
-            // Submit juga kalau tekan Enter
-            searchInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    searchInput.form.submit();
-                }
-            });
-        }
+    });
+    document.getElementById('kategoriSelect').addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
     });
 </script>
+@endpush

@@ -13,6 +13,8 @@ class KeranjangMobileController extends Controller
         $user = Auth::user();
         $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
         // Untuk sekarang cukup return view (data bisa ditambah nanti)
-        return view('mobile.keranjang');
+        return view('mobile.keranjang', [
+            'activeMenu' => 'keranjang'
+        ]);
     }
 }
