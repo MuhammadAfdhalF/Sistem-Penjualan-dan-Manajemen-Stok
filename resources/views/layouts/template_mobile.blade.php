@@ -291,6 +291,57 @@
                 height: 24px;
             }
         }
+
+        @media (pointer: coarse) {
+            .header {
+                display: none !important;
+            }
+
+            .footer-nav {
+                display: flex !important;
+            }
+        }
+
+        @media (min-width: 769px) and (pointer: fine) {
+            .footer-nav {
+                display: none !important;
+            }
+        }
+
+        /* FOOTER NAV LEBIH KECIL SAAT LANDSCAPE DI MOBILE */
+        @media (pointer: coarse) and (orientation: landscape) {
+            .footer-nav {
+                height: 46px;
+            }
+
+            .footer-nav-center {
+                width: 37px;
+                height: 37px;
+                top: -18px;
+            }
+
+            .footer-nav-btn {
+                font-size: 0.78rem;
+            }
+
+            .footer-nav-btn svg,
+            .footer-nav-center svg {
+                width: 19px !important;
+                height: 19px !important;
+            }
+
+            .footer-nav-btn.active,
+            .footer-nav-btn:active {
+                width: 32px;
+                height: 32px;
+                font-size: 0.88rem;
+            }
+
+            .footer-nav-btn span {
+                font-size: 0.72rem;
+                margin-top: 0;
+            }
+        }
     </style>
     @stack('head')
 </head>

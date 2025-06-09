@@ -25,6 +25,7 @@ use App\Http\Controllers\Mobile\CobaController;
 
 use App\Http\Controllers\Mobile\DetailProdukController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
+use App\Http\Controllers\Mobile\KeranjangMobileController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -107,6 +108,9 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::get('/pelanggan-area/home', [MobileHomeController::class, 'index'])->name('mobile.home.index');
     Route::get('/pelanggan-area/detail_produk/{id}', [DetailProdukController::class, 'index'])->name('mobile.detail_produk.index');
+
+    // Keranjang
+    Route::get('/pelanggan-area/keranjang', [KeranjangMobileController::class, 'keranjang'])->name('mobile.keranjang.index');
 });
 
 

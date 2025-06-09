@@ -126,33 +126,26 @@
         margin-top: -2px;
     }
 
-    .product-image-area {
-        width: 100vw;
-        background: #fff;
-        border-radius: 0 0 18px 18px;
-        box-shadow: 0 4px 24px 0 rgba(19, 82, 145, 0.14), 0 1.5px 4px 0 rgba(0, 0, 0, 0.10);
-        /* shadow biru lembut + sedikit hitam, semua sisi */
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-        aspect-ratio: 1 / 1.1;
-        /* area proporsional, tidak terpotong */
-        max-width: 500px;
-        margin-left: auto;
-        margin-right: auto;
-    }
 
 
-    /* Responsive mobile */
+
     @media (max-width: 600px) {
         .product-image-area {
             aspect-ratio: 1 / 1;
             max-width: 100vw;
+            margin-top: 24px;
+            /* tambahkan margin top khusus mobile */
+        }
+
+        .product-image {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            display: block;
+            margin: auto;
         }
     }
+
 
     .product-image-placeholder {
         width: 100%;
@@ -488,15 +481,20 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            margin-top: 50px;
+            /* Atur sesuai kebutuhan, misal 24px */
+
         }
 
         .product-image {
-            max-width: 100%;
-            max-height: 100%;
+            width: 80%;
+            height: 80%;
             object-fit: contain;
-            /* agar gambar tidak terpotong */
             display: block;
+            margin: auto;
+            /* agar tetap center */
         }
+
 
         .info-card,
         .order-form {
