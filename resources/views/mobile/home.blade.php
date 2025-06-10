@@ -291,7 +291,8 @@
         }
 
         .produk-grid {
-            grid-template-columns: repeat(5, 1fr) !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            /* Atur jadi 5-6 kolom */
         }
 
         .produk-nama {
