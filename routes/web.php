@@ -105,12 +105,19 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('payment_logs', PaymentLogController::class)->only(['index', 'show']);
 });
 
+
+
 Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::get('/pelanggan-area/home', [MobileHomeController::class, 'index'])->name('mobile.home.index');
     Route::get('/pelanggan-area/detail_produk/{id}', [DetailProdukController::class, 'index'])->name('mobile.detail_produk.index');
 
-    // Keranjang
+    // keranjang
     Route::get('/pelanggan-area/keranjang', [KeranjangMobileController::class, 'keranjang'])->name('mobile.keranjang.index');
+    Route::get('/pelanggan-area/keranjang/create', [KeranjangMobileController::class, 'create'])->name('mobile.keranjang.create');
+    Route::post('/pelanggan-area/keranjang', [KeranjangMobileController::class, 'store'])->name('mobile.keranjang.store');
+    Route::put('/pelanggan-area/keranjang/{id}', [KeranjangMobileController::class, 'update'])->name('mobile.keranjang.update');
+    Route::delete('/pelanggan-area/keranjang/{id}', [KeranjangMobileController::class, 'destroy'])->name('mobile.keranjang.destroy');
+    
 });
 
 

@@ -24,6 +24,87 @@
         justify-content: flex-start;
     }
 
+    #toast-keranjang {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.63);
+        border: 1px solid rgba(0, 0, 0, 0.3);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+
+    .toast-modal {
+        background: rgba(255, 255, 255, 0.6);
+        padding: 24px 32px 16px 32px;
+        border-radius: 24px;
+        text-align: center;
+        min-width: 210px;
+        max-width: 88vw;
+        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.10);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: auto;
+    }
+
+    /* Responsive icon & font */
+    .toast-icon svg {
+        width: 56px;
+        height: 56px;
+    }
+
+    .toast-msg span {
+        color: #135291;
+        font-weight: bold;
+        font-size: 1.10rem;
+        font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+        letter-spacing: 0.01em;
+    }
+
+    /* Tablet */
+    @media (max-width: 700px) {
+        .toast-modal {
+            padding: 18px 18px 11px 18px;
+            border-radius: 19px;
+            min-width: 160px;
+            max-width: 96vw;
+        }
+
+        .toast-icon svg {
+            width: 38px;
+            height: 38px;
+        }
+
+        .toast-msg span {
+            font-size: 1rem;
+        }
+    }
+
+    /* Smartphone */
+    @media (max-width: 420px) {
+        .toast-modal {
+            padding: 10px 8vw 7px 8vw;
+            border-radius: 12px;
+            min-width: 120px;
+            max-width: 98vw;
+        }
+
+        .toast-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .toast-msg span {
+            font-size: 0.98rem;
+        }
+    }
 
     .container-detail {
         flex: 1 0 auto;
@@ -600,6 +681,92 @@
             object-fit: contain;
         }
     }
+
+    /* ======================= */
+    /*  RESPONSIVE TABLET CSS  */
+    /* ======================= */
+
+    @media (min-width: 600px) and (max-width: 1024px) {
+
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+
+        .desktop-flexbox {
+            flex-direction: column !important;
+            gap: 22px !important;
+            padding: 16px 0 20px 0 !important;
+            max-width: 96vw !important;
+            min-width: 0 !important;
+            width: 98vw !important;
+            box-sizing: border-box;
+        }
+
+        .desktop-img,
+        .desktop-col {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+            padding: 0 !important;
+        }
+
+        .product-image-area {
+            max-width: 350px !important;
+            min-width: 170px !important;
+            min-height: 220px !important;
+            margin: 0 auto 8px auto !important;
+            border-radius: 15px !important;
+        }
+
+        .product-image {
+            max-width: 100% !important;
+            max-height: 200px !important;
+            margin: auto !important;
+            display: block !important;
+        }
+
+        .desktop-info {
+            padding: 0 8vw !important;
+            max-width: 100vw !important;
+            min-width: 0 !important;
+        }
+
+        .info-card,
+        .order-form {
+            width: 100% !important;
+            max-width: 99vw !important;
+            min-width: 0 !important;
+            border-radius: 14px !important;
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+            margin: 0 0 14px 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        .order-form {
+            padding-bottom: 18px !important;
+            margin-bottom: 18px !important;
+        }
+
+        .order-btn-wrapper {
+            margin-top: 18px !important;
+            margin-bottom: 6px !important;
+        }
+
+        .footer-fixed {
+            padding: 12px 0 !important;
+            border-radius: 0 0 12px 12px !important;
+            font-size: 17px !important;
+        }
+
+        .header-detail {
+            font-size: 20px !important;
+            padding: 18px 8vw 8px 8vw !important;
+            min-width: 0 !important;
+        }
+    }
 </style>
 
 <div class="flex-main">
@@ -653,7 +820,7 @@
                 </div>
 
 
-                <form id="orderForm" method="POST" action="{{ route('keranjang.store') }}">
+                <form id="orderForm" method="POST" action="{{ route('mobile.keranjang.store') }}">
                     @csrf
                     <input type="hidden" name="produk_id[]" value="{{ $produk->id }}">
 
@@ -676,12 +843,28 @@
                         <button type="submit" class="btn-keranjang">Masukkan Keranjang</button>
                     </div>
                 </form>
-
-
-
             </div>
         </div>
     </div>
+
+    <div id="toast-keranjang" style="display:none;">
+        <div class="toast-modal">
+            <div class="toast-icon">
+                <svg width="56" height="56" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="22" fill="#135291" />
+                    <path d="M19 29l6 6 12-12" stroke="rgba(255, 255, 255, 0.65)"
+                        stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="toast-msg">
+                <span id="toast-msg-text">Produk dimasukkan ke keranjang anda</span>
+            </div>
+        </div>
+    </div>
+
+
+
+
 </div>
 
 @endsection
@@ -705,7 +888,6 @@
     }
 
     function tambahOrderRow(e) {
-        // Copy satuan
         let satuanOptions = document.querySelector('.input-satuan').innerHTML;
         let html = `
         <div class="form-row order-row">
@@ -715,7 +897,7 @@
             <button type="button" class="btn-plus" onclick="tambahOrderRow(event)">+</button>
             <button type="button" class="btn-remove" onclick="hapusOrderRow(this)">x</button>
         </div>
-    `;
+        `;
         document.getElementById('order-rows').insertAdjacentHTML('beforeend', html);
         updateRemoveButtons();
         if (e && e.target) {
@@ -729,10 +911,29 @@
         updateRemoveButtons();
     }
 
+    // Toast show function
+    function showToast(msg) {
+        let toast = document.getElementById('toast-keranjang');
+        let msgText = document.getElementById('toast-msg-text');
+        msgText.textContent = msg || 'Produk dimasukkan ke keranjang anda';
+        toast.style.display = 'flex';
+        toast.style.opacity = 1;
+
+        setTimeout(() => {
+            toast.style.opacity = 0;
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 500);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         updateRemoveButtons();
 
         document.getElementById('orderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Build jumlah JSON object
             let jumlahObj = {};
             document.querySelectorAll('#order-rows .order-row').forEach(function(row) {
                 let satuanId = row.querySelector('.input-satuan').value;
@@ -745,14 +946,37 @@
                     }
                 }
             });
-            // CARI hidden input dalam form, lalu set nilainya!
             let hiddenInput = document.querySelector('input.jumlah-json[name="jumlah_json[]"]');
             hiddenInput.value = JSON.stringify(jumlahObj);
 
             if (Object.keys(jumlahObj).length === 0) {
                 alert('Isi minimal 1 jumlah & satuan!');
-                e.preventDefault();
+                return;
             }
+
+            // Buat data form
+            let formData = new FormData(e.target);
+
+            fetch(e.target.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message || 'Produk dimasukkan ke keranjang anda');
+                        // (Opsional) reset input jumlah di form
+                        document.querySelectorAll('.input-jumlah').forEach(input => input.value = '');
+                    } else {
+                        alert(data.message || 'Gagal menambahkan ke keranjang!');
+                    }
+                })
+                .catch(() => {
+                    alert('Terjadi kesalahan. Silakan coba lagi.');
+                });
         });
     });
 </script>
