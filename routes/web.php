@@ -26,6 +26,7 @@ use App\Http\Controllers\Mobile\CobaController;
 use App\Http\Controllers\Mobile\DetailProdukController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Http\Controllers\Mobile\KeranjangMobileController;
+use App\Http\Controllers\Mobile\ProsesTransaksiController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -117,6 +118,9 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::post('/pelanggan-area/keranjang', [KeranjangMobileController::class, 'store'])->name('mobile.keranjang.store');
     Route::put('/pelanggan-area/keranjang/{id}', [KeranjangMobileController::class, 'update'])->name('mobile.keranjang.update');
     Route::delete('/pelanggan-area/keranjang/{id}', [KeranjangMobileController::class, 'destroy'])->name('mobile.keranjang.destroy');
+    
+    // proses transaksi
+    Route::get('/pelanggan-area/proses_transaksi', [ProsesTransaksiController::class, 'keranjang'])->name('mobile.proses_transaksi.index');
     
 });
 
