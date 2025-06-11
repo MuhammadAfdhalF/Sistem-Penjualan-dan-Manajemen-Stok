@@ -118,10 +118,10 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::post('/pelanggan-area/keranjang', [KeranjangMobileController::class, 'store'])->name('mobile.keranjang.store');
     Route::put('/pelanggan-area/keranjang/{id}', [KeranjangMobileController::class, 'update'])->name('mobile.keranjang.update');
     Route::delete('/pelanggan-area/keranjang/{id}', [KeranjangMobileController::class, 'destroy'])->name('mobile.keranjang.destroy');
-    
+
     // proses transaksi
     Route::get('/pelanggan-area/proses_transaksi', [ProsesTransaksiController::class, 'keranjang'])->name('mobile.proses_transaksi.index');
-    
+    Route::post('/pelanggan-area/proses_transaksi', [ProsesTransaksiController::class, 'store'])->name('mobile.proses_transaksi.store');
 });
 
 

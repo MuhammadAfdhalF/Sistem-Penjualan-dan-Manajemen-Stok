@@ -1148,11 +1148,13 @@
                     </div>
 
                     <!-- Tombol Checkout -->
-                    <button class="btn w-100 fw-bold text-white"
-                        style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px;">
-
+                    <!-- Tombol Checkout (desktop) -->
+                    <a href="{{ route('mobile.proses_transaksi.index') }}"
+                        class="btn w-100 fw-bold text-white text-center"
+                        style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px; text-decoration: none;">
                         CHECKOUT !!!
-                    </button>
+                    </a>
+
                 </div>
             </div>
             <!-- Footer Mobile -->
@@ -1168,10 +1170,11 @@
                     <span class="footer-total-title">Total</span>
                     <span class="footer-total-amount" id="totalKeranjang">Rp 0</span>
                 </div>
-                <button class="cart-btn-checkout">Checkout !!!</button>
+                <a href="{{ route('mobile.proses_transaksi.index') }}"
+                    class="cart-btn-checkout text-decoration-none text-white text-center">
+                    Checkout !!!
+                </a>
             </div>
-
-
         </div>
     </div>
     </div>
