@@ -13,6 +13,9 @@
         body {
             background: #f7f7f7;
             font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
         }
 
         .header-nav {
@@ -27,7 +30,6 @@
         /* Nav Desktop Custom Color */
         .header-nav .nav-link {
             color: #222 !important;
-            /* Default: hitam */
             font-weight: 500;
             transition: color 0.2s, background 0.2s;
         }
@@ -36,13 +38,9 @@
         .header-nav .nav-link:focus,
         .header-nav .nav-link:hover {
             color: #135291 !important;
-            /* Aktif/Biru Tua/Hover */
             background: none !important;
             border-bottom: 3px solid #135291;
             font-weight: 700;
-
-            /* garis bawah biru */
-
         }
 
         .header-nav .header-greeting-title {
@@ -65,6 +63,22 @@
             text-decoration: none;
         }
 
+        /* Footer Nav Mobile */
+        .footer-mobile-nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            box-shadow: 0 -2px 12px #0001;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 68px;
+            z-index: 103;
+            border-top: 1.2px solid #eee;
+        }
+
         /* Hide footer on desktop */
         @media (min-width: 769px) and (pointer: fine) {
             .footer-mobile-nav {
@@ -84,21 +98,6 @@
             }
         }
 
-        .footer-mobile-nav {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #fff;
-            box-shadow: 0 -2px 12px #0001;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 68px;
-            z-index: 103;
-            border-top: 1.2px solid #eee;
-        }
-
         .footer-nav-btn {
             background: none;
             border: none;
@@ -114,7 +113,6 @@
             padding: 0;
             transition: color 0.19s;
             text-decoration: none !important;
-
         }
 
         .footer-nav-btn .bi {
@@ -126,7 +124,6 @@
 
         .footer-nav-btn span {
             font-size: 0.97rem;
-            margin-top: 0;
             font-weight: 500;
             color: #000;
             transition: color 0.2s;
@@ -135,29 +132,20 @@
         .footer-nav-btn.active .bi,
         .footer-nav-btn.active span {
             color: #135291 !important;
-            /* Biru untuk aktif */
             font-weight: 700;
         }
 
         .footer-nav-btn:not(.active) .bi,
         .footer-nav-btn:not(.active) span {
             color: #000 !important;
-            /* Hitam untuk non-aktif */
             font-weight: 500;
         }
 
-        .footer-mobile-nav .footer-nav-btn span {
-            text-decoration: none !important;
-            /* Hapus garis bawah */
-        }
-
         /* Tombol tengah (floating) */
-        /* Floating button tetap ukuran normal */
         .footer-nav-btn.center-btn {
             position: relative;
             top: -22px;
             width: 54px;
-            /* Tidak diubah */
             height: 54px;
             background: #fff;
             box-shadow: 0 4px 16px #0002;
@@ -169,25 +157,25 @@
             padding: 0;
         }
 
-        /* Icon SVG di dalam tombol tengah diperbesar */
         .footer-nav-btn.center-btn svg {
             width: 38px !important;
-            /* Ukuran icon SVG lebih besar */
             height: 38px !important;
             display: block;
         }
 
-
+        /* Main content wrapper */
         .main-content {
             min-height: 100vh;
             padding-top: 80px;
-            padding-bottom: 90px;
+            padding-bottom: 65px;
+            /* <– disesuaikan dari sebelumnya 90 */
         }
 
         @media (max-width: 768px) {
             .main-content {
                 padding-top: 0;
-                padding-bottom: 75px;
+                padding-bottom: 65px;
+                /* <– disesuaikan dari sebelumnya 75 */
             }
         }
     </style>
