@@ -1147,13 +1147,15 @@
                         <span class="fw-bold fs-5" id="totalKeranjangDesktop" style="color: #135291;">Rp 0</span>
                     </div>
 
-                    <!-- Tombol Checkout -->
                     <!-- Tombol Checkout (desktop) -->
-                    <a href="{{ route('mobile.proses_transaksi.index') }}"
-                        class="btn w-100 fw-bold text-white text-center"
-                        style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px; text-decoration: none;">
-                        CHECKOUT !!!
-                    </a>
+                    <form id="checkoutFormDesktop" method="GET" action="{{ route('mobile.proses_transaksi.index') }}">
+                        <input type="hidden" name="keranjang_id[]" value="" disabled> {{-- Placeholder dummy --}}
+                        <button type="submit" class="btn w-100 fw-bold text-white text-center"
+                            style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px; border: none;">
+                            CHECKOUT !!!
+                        </button>
+                    </form>
+
 
                 </div>
             </div>
@@ -1170,10 +1172,13 @@
                     <span class="footer-total-title">Total</span>
                     <span class="footer-total-amount" id="totalKeranjang">Rp 0</span>
                 </div>
-                <a href="{{ route('mobile.proses_transaksi.index') }}"
-                    class="cart-btn-checkout text-decoration-none text-white text-center">
-                    Checkout !!!
-                </a>
+                <form id="checkoutForm" method="GET" action="{{ route('mobile.proses_transaksi.index') }}">
+                    <input type="hidden" name="keranjang_id[]" value="" disabled> {{-- Placeholder dummy --}}
+                    <button type="submit" class="cart-btn-checkout text-decoration-none text-white text-center" style="border:none;">
+                        Checkout !!!
+                    </button>
+                </form>
+
             </div>
         </div>
     </div>
@@ -1279,6 +1284,33 @@
                     }
                 });
             });
+
+            // Script submit form checkout (mobile & desktop)
+            function updateCheckoutForms() {
+                const selected = document.querySelectorAll('.item-checkbox:checked');
+                const formMobile = document.getElementById('checkoutForm');
+                const formDesktop = document.getElementById('checkoutFormDesktop');
+
+                // Hapus input hidden lama
+                formMobile?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
+                formDesktop?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
+
+                selected.forEach(cb => {
+                    const inputMobile = document.createElement('input');
+                    inputMobile.type = 'hidden';
+                    inputMobile.name = 'keranjang_id[]';
+                    inputMobile.value = cb.dataset.id;
+                    formMobile?.appendChild(inputMobile);
+
+                    const inputDesktop = inputMobile.cloneNode();
+                    inputDesktop?.setAttribute('value', cb.dataset.id);
+                    formDesktop?.appendChild(inputDesktop);
+                });
+            }
+
+            document.getElementById('checkoutForm')?.addEventListener('submit', updateCheckoutForms);
+            document.getElementById('checkoutFormDesktop')?.addEventListener('submit', updateCheckoutForms);
+
         });
     </script>
 

@@ -26,8 +26,10 @@ class ProsesTransaksiController extends Controller
         $user = Auth::user();
         $jenis = $user->jenis_pelanggan ?? 'Individu';
 
-        $keranjangs = Keranjang::with(['produk.satuans', 'produk.hargaProduks'])
+        $keranjangIds = $request->input('keranjang_id', []);
+        $keranjangs = Keranjang::with('produk.hargaProduks', 'produk.satuans')
             ->where('user_id', $user->id)
+            ->whereIn('id', $keranjangIds)
             ->get();
 
         return view('mobile.proses_transaksi', [
@@ -46,11 +48,17 @@ class ProsesTransaksiController extends Controller
             'metode_pembayaran' => 'required|in:payment_gateway,cod,bayar_di_toko',
             'alamat_pengambilan' => 'nullable|string',
             'catatan' => 'nullable|string',
+            'keranjang_id' => 'required|array|min:1',
+            'keranjang_id.*' => 'integer|exists:keranjangs,id',
         ]);
 
-        $keranjangs = $user->keranjangs()->with('produk.hargaProduks', 'produk.satuans')->get();
+        $keranjangs = $user->keranjangs()
+            ->with('produk.hargaProduks', 'produk.satuans')
+            ->whereIn('id', $request->keranjang_id)
+            ->get();
+
         if ($keranjangs->isEmpty()) {
-            return redirect()->back()->with('error', 'Keranjang kosong.');
+            return redirect()->back()->with('error', 'Tidak ada produk yang dipilih.');
         }
 
         DB::beginTransaction();
@@ -68,7 +76,7 @@ class ProsesTransaksiController extends Controller
                 'status_transaksi' => 'diproses',
                 'catatan' => $request->catatan,
                 'metode_pengambilan' => $request->metode_pengambilan,
-                'alamat_pengambilan' => $request->alamat_pengambilan,
+                'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
                 'total' => 0,
             ]);
 
@@ -91,7 +99,6 @@ class ProsesTransaksiController extends Controller
                     $hargaArr[$satuanId] = $harga;
                     $subtotalProduk += $harga * $qty;
 
-                    // Kurangi stok
                     $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
                     $jumlahUtama = $qty * $konversi;
 
@@ -103,8 +110,7 @@ class ProsesTransaksiController extends Controller
                     $produk->stok -= $jumlahUtama;
                     $produk->save();
 
-                    // Catat log stok keluar
-                    \App\Models\Stok::create([
+                    Stok::create([
                         'produk_id' => $produk->id,
                         'satuan_id' => $satuanId,
                         'jenis' => 'keluar',
@@ -126,9 +132,8 @@ class ProsesTransaksiController extends Controller
 
             $transaksi->update(['total' => $total]);
 
-            // Catat keuangan jika lunas
             if ($request->metode_pembayaran === 'payment_gateway') {
-                \App\Models\Keuangan::create([
+                Keuangan::create([
                     'transaksi_online_id' => $transaksi->id,
                     'tanggal' => now(),
                     'jenis' => 'pemasukan',
@@ -138,8 +143,7 @@ class ProsesTransaksiController extends Controller
                 ]);
             }
 
-            // Kosongkan keranjang
-            $user->keranjangs()->delete();
+            $user->keranjangs()->whereIn('id', $request->keranjang_id)->delete();
 
             Artisan::call('produk:update-dailyusage-rop');
             DB::commit();

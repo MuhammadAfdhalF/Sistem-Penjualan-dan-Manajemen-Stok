@@ -3,7 +3,28 @@
 
 @push('head')
 <style>
-    /* Responsive mobile */
+    .btn-pengambilan.active,
+    .btn-pembayaran.active {
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5);
+        transform: scale(0.97);
+        opacity: 1;
+    }
+
+    .btn-pengambilan,
+    .btn-pembayaran {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-aksi {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-aksi:active {
+        transform: scale(0.96);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
     @media (max-width: 576px) {
         .footer-mobile-nav {
             display: none !important;
@@ -11,14 +32,11 @@
 
         .rincian-header .col-4,
         .rincian-header .col-2,
-        .rincian-header .col-3 {
-            font-size: 0.8rem;
-        }
-
+        .rincian-header .col-3,
         .rincian-body .col-4,
         .rincian-body .col-2,
         .rincian-body .col-3 {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
         }
 
         .rincian-body .col-2 {
@@ -36,11 +54,8 @@
 
         .mobile-button-slim {
             width: 120px !important;
-            /* Atur lebar pasti */
             height: 35px;
-            /* Tinggi tombol */
             padding: 0.5rem 1rem;
-            /* Padding atas/bawah dan kanan/kiri */
             font-size: 0.85rem;
             border-radius: 8px;
             text-align: center;
@@ -65,23 +80,6 @@
         .mobile-fs-xs {
             font-size: 0.85rem !important;
         }
-
-
-    }
-
-    @media (max-width: 1000px) and (orientation: landscape) {
-        main.main-content {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-        }
-    }
-
-    @media (min-width: 600px) and (max-width: 1024px) {
-
-        main.main-content {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
-        }
     }
 </style>
 @endpush
@@ -89,44 +87,43 @@
 @section('content')
 <form action="{{ route('mobile.proses_transaksi.store') }}" method="POST">
     @csrf
-    <input type="hidden" name="metode_pengambilan" id="metode_pengambilan" value="ambil di toko">
-    <input type="hidden" name="metode_pembayaran" id="metode_pembayaran" value="bayar_di_toko">
+
+    @foreach(request('keranjang_id', []) as $id)
+    <input type="hidden" name="keranjang_id[]" value="{{ $id }}">
+    @endforeach
+
+    <input type="hidden" name="metode_pengambilan" id="metode_pengambilan">
+    <input type="hidden" name="metode_pembayaran" id="metode_pembayaran">
 
     <div class="container-fluid px-0 px-md-4 py-2" style="max-width: 1280px;">
 
-        <!-- Header Navigasi -->
+        {{-- HEADER --}}
         <div class="bg-white shadow-sm mb-1 d-block d-lg-none">
-            <div class="px-3 py-2" style="box-shadow: 0 2px 4px rgba(0, 0, 0, 0.36); z-index:1; position:relative;">
-                <i class="bi bi-arrow-left fs-3" style="cursor:pointer;"></i>
-            </div>
-            <div class="px-3 pb-3 pt-2 bg-white" style="z-index:0; position:relative; box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);">
+            <div class="px-3 py-2"><i class="bi bi-arrow-left fs-3" style="cursor:pointer;"></i></div>
+            <div class="px-3 pb-3 pt-2 bg-white">
                 <div class="fw-bold fs-6 fs-md-5">Toko KZ Family</div>
                 <div class="text-muted mobile-fs-xs fs-md-6">Proses Transaksi</div>
             </div>
         </div>
 
-        <!-- Rincian Belanja -->
-        <div class="card mb-1 shadow" style="border-radius: 8px;">
-            <div class="card-header fw-bold bg-white fs-6 fs-md-5">
-                <i class="bi bi-receipt me-2"></i>Rincian Belanja
-            </div>
-            <div class="card-body fs-8 fs-md-6">
-                <div class="row fw-semibold border-bottom pb-2 rincian-header">
+        {{-- RINCIAN BELANJA --}}
+        <div class="card mb-1 shadow">
+            <div class="card-header fw-bold bg-white"><i class="bi bi-receipt me-2"></i>Rincian Belanja</div>
+            <div class="card-body">
+                <div class="row fw-semibold border-bottom pb-2">
                     <div class="col-4">Nama Produk</div>
                     <div class="col-2">Satuan</div>
                     <div class="col-3 text-end">Harga</div>
                     <div class="col-3 text-end">Sub Total</div>
                 </div>
-
                 @php $total = 0; @endphp
                 @foreach($keranjangs as $item)
                 @php
-                $namaProduk = $item->produk->nama_produk;
-                $satuans = $item->produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
+                $produk = $item->produk;
+                $satuans = $produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
                 @endphp
-
-                <div class="row mt-3 rincian-body">
-                    <div class="col-4 fw-medium">{{ $namaProduk }}</div>
+                <div class="row mt-3">
+                    <div class="col-4">{{ $produk->nama_produk }}</div>
                     <div class="col-2">
                         @foreach($satuans as $satuan)
                         @php $qty = $item->jumlah_json[$satuan->id] ?? 0; @endphp
@@ -139,7 +136,7 @@
                         @foreach($satuans as $satuan)
                         @php
                         $qty = $item->jumlah_json[$satuan->id] ?? 0;
-                        $harga = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id)?->harga ?? 0;
+                        $harga = $produk->hargaProduks->firstWhere('satuan_id', $satuan->id)?->harga ?? 0;
                         @endphp
                         @if($qty > 0)
                         Rp {{ number_format($harga, 0, ',', '.') }}<br>
@@ -150,7 +147,7 @@
                         @foreach($satuans as $satuan)
                         @php
                         $qty = $item->jumlah_json[$satuan->id] ?? 0;
-                        $harga = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id)?->harga ?? 0;
+                        $harga = $produk->hargaProduks->firstWhere('satuan_id', $satuan->id)?->harga ?? 0;
                         $subtotal = $harga * $qty;
                         $total += $subtotal;
                         @endphp
@@ -163,84 +160,82 @@
                 @endforeach
 
                 <hr>
-                <div class="d-flex justify-content-between align-items-center fw-bold">
-                    <span><i class="bi bi-cash-stack me-2"></i>Total Harga</span>
-                    <span class="fs-6 fs-md-5">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Total Harga</span>
+                    <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
                 </div>
             </div>
         </div>
 
-        <!-- Metode Pengambilan -->
-        <div class="card mb-1 shadow" style="border-radius: 8px;">
-            <div class="card-header fw-bold bg-white fs-6 fs-md-5">
-                <i class="bi bi-truck me-2"></i>Metode Pengambilan
-            </div>
-            <div class="card-body fs-8 fs-md-6">
-                <p class="text-muted mb-2 fs-8 fs-md-5 fs-lg-4 mobile-text-small">
-                    Pengambilan barang bisa diambil di toko dan diantar ke alamat
-                </p>
-                <div class="d-flex gap-2 mobile-justify-center">
-                    <button type="button" class="btn w-50 text-white mobile-button-slim btn-pengambilan" data-value="ambil di toko" style="background-color: #058DA9;">Di Toko</button>
-                    <button type="button" class="btn w-50 text-white mobile-button-slim btn-pengambilan" data-value="diantar" style="background-color: #0057B2;">Diantar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Metode Pembayaran -->
-        <div class="card mb-1 shadow" style="border-radius: 8px;">
-            <div class="card-header fw-bold bg-white fs-6 fs-md-5">
-                <i class="bi bi-wallet2 me-2"></i>Metode Pembayaran
-            </div>
-            <div class="card-body fs-8 fs-md-6">
-                <p class="text-muted mb-2 fs-8 fs-md-5 fs-lg-4 mobile-text-small">
-                    Pembayaran untuk ditempat pilih cash dan untuk pembayaran online pilih pembayaran digital
-                </p>
-                <div class="d-flex gap-2 mobile-justify-center">
-                    <button type="button" class="btn w-50 text-white mobile-button-slim btn-pembayaran" data-value="bayar_di_toko" style="background-color: #058DA9;">Cash</button>
-                    <button type="button" class="btn w-50 text-white mobile-button-slim btn-pembayaran" data-value="payment_gateway" style="background-color: #0057B2;">Digital</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Alamat Pengiriman -->
+        {{-- METODE PENGAMBILAN --}}
         <div class="card mb-1 shadow">
-            <div class="card-body px-3 pt-3 pb-2">
-                <label class="form-label fw-bold fs-6 fs-md-5 mb-1">
-                    <i class="bi bi-geo-alt-fill me-2"></i>Alamat Pengiriman
-                </label>
-                <textarea class="form-control fs-8 fs-md-5 fs-lg-4 mobile-text-small py-2" rows="3" name="alamat_pengambilan" placeholder="Masukkan alamat pengiriman"></textarea>
+            <div class="card-header fw-bold bg-white"><i class="bi bi-truck me-2"></i>Metode Pengambilan</div>
+            <div class="card-body">
+                <p class="text-muted mb-2">Pilih metode pengambilan barang</p>
+                <div class="d-flex gap-2 mobile-justify-center">
+                    <button type="button" class="btn w-50 text-white btn-pengambilan" data-value="ambil di toko" style="background-color: #058DA9;">Di Toko</button>
+                    <button type="button" class="btn w-50 text-white btn-pengambilan" data-value="diantar" style="background-color: #0057B2;">Diantar</button>
+                </div>
             </div>
         </div>
 
-        <!-- Catatan -->
+        {{-- METODE PEMBAYARAN --}}
+        <div class="card mb-1 shadow">
+            <div class="card-header fw-bold bg-white"><i class="bi bi-wallet2 me-2"></i>Metode Pembayaran</div>
+            <div class="card-body">
+                <p class="text-muted mb-2">Pilih metode pembayaran</p>
+                <div class="d-flex gap-2 mobile-justify-center">
+                    <button type="button" class="btn w-50 text-white btn-pembayaran" data-value="bayar_di_toko" style="background-color: #058DA9;">Cash</button>
+                    <button type="button" class="btn w-50 text-white btn-pembayaran" data-value="payment_gateway" style="background-color: #0057B2;">Digital</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- ALAMAT PENGIRIMAN --}}
+        <div class="card mb-1 shadow" id="alamat-card">
+            <div class="card-body px-3 pt-3 pb-2">
+                <label class="form-label fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Alamat Pengiriman</label>
+                <textarea class="form-control py-2" rows="3" name="alamat_pengambilan" placeholder="Masukkan alamat pengiriman"></textarea>
+            </div>
+        </div>
+
+        {{-- CATATAN --}}
         <div class="card mb-4 shadow">
             <div class="card-body px-3 pt-3 pb-2">
-                <label class="form-label fw-bold fs-6 fs-md-5 mb-1">
-                    <i class="bi bi-journal-text me-2"></i>Catatan
-                </label>
-                <textarea class="form-control fs-8 fs-md-5 fs-lg-4 mobile-text-small py-2" rows="3" name="catatan" placeholder="Tambahkan catatan..."></textarea>
+                <label class="form-label fw-bold"><i class="bi bi-journal-text me-2"></i>Catatan</label>
+                <textarea class="form-control py-2" rows="3" name="catatan" placeholder="Tambahkan catatan..."></textarea>
             </div>
         </div>
 
-        <!-- Tombol Aksi -->
-        <div class="d-flex gap-2 mb-5 mobile-btn-container">
-            <a href="{{ route('mobile.keranjang.index') }}" class="btn w-50 mobile-btn-small" style="background:#c62828; color:#fff; font-weight:600;">Batalkan</a>
-            <button type="submit" class="btn w-50 mobile-btn-small" style="background:#0d47a1; color:#fff; font-weight:600;">Buat Pesanan</button>
+        {{-- TOMBOL --}}
+        <div class="d-flex gap-2 mb-5 justify-content-center">
+            <a href="{{ route('mobile.keranjang.index') }}" class="btn w-50" style="background:#c62828; color:#fff;">Batalkan</a>
+            <button type="submit" class="btn w-50" style="background:#0d47a1; color:#fff;">Buat Pesanan</button>
         </div>
 
     </div>
 </form>
+@endsection
 
 @push('scripts')
 <script>
+    // Handle tombol pengambilan
     document.querySelectorAll('.btn-pengambilan').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('metode_pengambilan').value = this.dataset.value;
             document.querySelectorAll('.btn-pengambilan').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+
+            const alamatCard = document.getElementById('alamat-card');
+            if (this.dataset.value === 'ambil di toko') {
+                alamatCard.style.display = 'none';
+            } else {
+                alamatCard.style.display = 'block';
+            }
         });
     });
 
+    // Handle tombol pembayaran
     document.querySelectorAll('.btn-pembayaran').forEach(btn => {
         btn.addEventListener('click', function() {
             document.getElementById('metode_pembayaran').value = this.dataset.value;
@@ -248,6 +243,16 @@
             this.classList.add('active');
         });
     });
+
+    // Validasi sebelum submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const metodePengambilan = document.getElementById('metode_pengambilan').value;
+        const metodePembayaran = document.getElementById('metode_pembayaran').value;
+
+        if (!metodePengambilan || !metodePembayaran) {
+            e.preventDefault();
+            alert('Pilih metode pengambilan dan metode pembayaran terlebih dahulu.');
+        }
+    });
 </script>
 @endpush
-@endsection
