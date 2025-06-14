@@ -1150,7 +1150,7 @@
                     <!-- Tombol Checkout (desktop) -->
                     <form id="checkoutFormDesktop" method="GET" action="{{ route('mobile.proses_transaksi.index') }}">
                         <input type="hidden" name="keranjang_id[]" value="" disabled> {{-- Placeholder dummy --}}
-                        <button type="submit" class="btn w-100 fw-bold text-white text-center"
+                        <button type="submit" id="btnCheckoutDesktop" class="btn w-100 fw-bold text-white text-center"
                             style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px; border: none;">
                             CHECKOUT !!!
                         </button>
@@ -1174,8 +1174,9 @@
                 </div>
                 <form id="checkoutForm" method="GET" action="{{ route('mobile.proses_transaksi.index') }}">
                     <input type="hidden" name="keranjang_id[]" value="" disabled> {{-- Placeholder dummy --}}
-                    <button type="submit" class="cart-btn-checkout text-decoration-none text-white text-center" style="border:none;">
-                        Checkout !!!
+                    <button type="submit" id="btnCheckoutDesktop" class="btn w-100 fw-bold text-white text-center"
+                        style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px; border: none;">
+                        CHECKOUT !!!
                     </button>
                 </form>
 
@@ -1198,9 +1199,12 @@
 
             function hitungTotal() {
                 let total = 0;
+                let adaYangDipilih = false;
+
                 document.querySelectorAll('.card').forEach(card => {
                     const checkbox = card.querySelector('.item-checkbox');
                     if (checkbox && checkbox.checked) {
+                        adaYangDipilih = true;
                         const inputs = card.querySelectorAll('.jumlah-per-satuan');
                         inputs.forEach(input => {
                             const jumlah = parseFloat(input.value) || 0;
@@ -1210,8 +1214,16 @@
                     }
                 });
 
+                // Update tampilan total
                 document.getElementById('totalKeranjang').textContent = formatRupiah(total);
                 document.getElementById('totalKeranjangDesktop').textContent = formatRupiah(total);
+
+                // Enable/disable tombol
+                const btnMobile = document.getElementById('btnCheckoutMobile');
+                const btnDesktop = document.getElementById('btnCheckoutDesktop');
+
+                if (btnMobile) btnMobile.disabled = !adaYangDipilih;
+                if (btnDesktop) btnDesktop.disabled = !adaYangDipilih;
             }
 
             hitungTotal();
@@ -1307,6 +1319,22 @@
                     formDesktop?.appendChild(inputDesktop);
                 });
             }
+
+            function preventSubmitIfEmpty(formId) {
+                const form = document.getElementById(formId);
+                if (!form) return;
+
+                form.addEventListener('submit', function(e) {
+                    const selected = document.querySelectorAll('.item-checkbox:checked');
+                    if (selected.length === 0) {
+                        e.preventDefault();
+                        alert('Pilih minimal satu produk sebelum checkout.');
+                    }
+                });
+            }
+
+            preventSubmitIfEmpty('checkoutForm');
+            preventSubmitIfEmpty('checkoutFormDesktop');
 
             document.getElementById('checkoutForm')?.addEventListener('submit', updateCheckoutForms);
             document.getElementById('checkoutFormDesktop')?.addEventListener('submit', updateCheckoutForms);
