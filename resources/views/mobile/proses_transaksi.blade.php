@@ -150,7 +150,7 @@
 
 @section('content')
 
-<form action="{{ (isset($from_form_cepat) && $from_form_cepat) ? route('mobile.form_belanja_cepat.proses_transaksi') : route('mobile.proses_transaksi.store') }}" method="POST">
+<form action="{{ (isset($from_form_cepat) && $from_form_cepat) ? route('mobile.form_belanja_cepat.store') : route('mobile.proses_transaksi.store') }}" method="POST">
     @csrf
 
     <input type="hidden" name="metode_pengambilan" id="metode_pengambilan" value="{{ old('metode_pengambilan') }}">

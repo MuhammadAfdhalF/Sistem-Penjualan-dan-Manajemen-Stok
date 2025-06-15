@@ -161,7 +161,7 @@
 
 
     <!-- ===== FORM UNTUK CHECKOUT ===== -->
-    <form action="{{ route('mobile.form_belanja_cepat.proses_transaksi') }}" method="POST" id="form-belanja-cepat">
+    <form action="{{ route('mobile.form_belanja_cepat.konfirmasi') }}" method="POST" id="form-belanja-cepat">
         @csrf
 
         <!-- Layout Produk & Checkout -->
