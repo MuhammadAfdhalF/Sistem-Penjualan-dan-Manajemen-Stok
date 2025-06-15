@@ -129,8 +129,8 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::get('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'index'])->name('mobile.form_belanja_cepat.index');
     Route::post('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'store'])->name('mobile.form_belanja_cepat.store');
 
-    // 🔥 TAMBAHAN INI UNTUK MASUK PROSES TRANSAKSI DARI FORM BELANJA CEPAT
-    Route::post('/pelanggan-area/form_belanja_cepat/proses_transaksi', [ProsesTransaksiController::class, 'formCepat'])->name('mobile.form_belanja_cepat.proses_transaksi');
+    //    🔥 PERBAIKAN: Mengganti 'formCepat' menjadi 'formBelanjaCepat' yang merupakan nama metode yang benar.
+    Route::post('/pelanggan-area/form_belanja_cepat/proses_transaksi', [ProsesTransaksiController::class, 'formBelanjaCepat'])->name('mobile.form_belanja_cepat.proses_transaksi');
 });
 
 

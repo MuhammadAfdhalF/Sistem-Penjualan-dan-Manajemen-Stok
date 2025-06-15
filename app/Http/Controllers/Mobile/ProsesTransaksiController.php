@@ -16,8 +16,7 @@ use App\Models\Stok;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-use App\Models\User; // Jika perlu digunakan eksplisit
-
+use App\Models\User;
 
 class ProsesTransaksiController extends Controller
 {
@@ -25,28 +24,31 @@ class ProsesTransaksiController extends Controller
     public function formBelanjaCepat(Request $request)
     {
         $user = Auth::user();
-        $jenis = $user->jenis_pelanggan ?? 'Individu';
+        $produkData = $request->input('produk_data', []);
 
-        $produkData = $request->input('produk_data', []); // array dari form cepat
-
-        // Validasi minimum 1 produk
         if (empty($produkData)) {
             return redirect()->back()->with('error', 'Pilih minimal 1 produk.');
         }
 
-        // Ambil data produk dan konversi jadi mirip struktur keranjang
+        // 🔥 SIMPAN data ke session agar tidak hilang
+        session(['form_cepat_data' => $produkData]);
+
+        // Ubah data untuk ditampilkan di view
         $produkCollection = collect($produkData)->map(function ($item) {
+            $produk = Produk::with('hargaProduks', 'satuans')->find($item['produk_id']);
+            if (!$produk) return null;
+
             return (object)[
-                'produk' => Produk::with('hargaProduks', 'satuans')->find($item['produk_id']),
-                'jumlah_json' => $item['jumlah_json'], // format: [satuan_id => jumlah]
+                'produk' => $produk,
+                'jumlah_json' => $item['jumlah_json'],
             ];
-        });
+        })->filter();
 
         return view('mobile.proses_transaksi', [
-            'jenis' => $jenis,
-            'keranjangs' => $produkCollection, // kita treat seolah ini “keranjang”
+            'jenis' => $user->jenis_pelanggan ?? 'Individu',
+            'keranjangs' => $produkCollection,
             'activeMenu' => 'formcepat',
-            'from_form_cepat' => true, // biar bisa dibedakan nanti
+            'from_form_cepat' => true, // Penanda penting untuk view
         ]);
     }
 
@@ -54,13 +56,17 @@ class ProsesTransaksiController extends Controller
     {
         $user = Auth::user();
 
+        // 🔥 AMBIL data dari session, bukan dari request form
+        $produkData = session('form_cepat_data', []);
+
+        if (empty($produkData)) {
+            return redirect()->route('mobile.form_belanja_cepat.index')->with('error', 'Sesi belanja Anda telah berakhir. Silakan ulangi.');
+        }
+
         $request->validate([
-            'produk_data' => 'required|array|min:1',
-            'produk_data.*.produk_id' => 'required|integer|exists:produks,id',
-            'produk_data.*.jumlah_json' => 'required|array|min:1',
             'metode_pengambilan' => 'required|in:ambil di toko,diantar',
             'metode_pembayaran' => 'required|in:payment_gateway,cod,bayar_di_toko',
-            'alamat_pengambilan' => 'nullable|string',
+            'alamat_pengambilan' => 'required_if:metode_pengambilan,diantar|nullable|string',
             'catatan' => 'nullable|string',
         ]);
 
@@ -83,7 +89,7 @@ class ProsesTransaksiController extends Controller
                 'total' => 0,
             ]);
 
-            foreach ($request->produk_data as $item) {
+            foreach ($produkData as $item) {
                 $produk = Produk::with('satuans')->findOrFail($item['produk_id']);
                 $jumlahArr = $item['jumlah_json'];
                 $subtotalProduk = 0;
@@ -101,17 +107,15 @@ class ProsesTransaksiController extends Controller
 
                     $hargaArr[$satuanId] = $harga;
                     $subtotalProduk += $harga * $qty;
-
                     $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
                     $jumlahUtama = $qty * $konversi;
 
                     if ($produk->stok < $jumlahUtama) {
                         DB::rollBack();
-                        return redirect()->back()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
+                        return redirect()->back()->withInput()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
                     }
 
-                    $produk->stok -= $jumlahUtama;
-                    $produk->save();
+                    $produk->decrement('stok', $jumlahUtama);
 
                     Stok::create([
                         'produk_id' => $produk->id,
@@ -135,63 +139,59 @@ class ProsesTransaksiController extends Controller
 
             $transaksi->update(['total' => $total]);
 
-            if ($request->metode_pembayaran === 'payment_gateway') {
-                Keuangan::create([
-                    'transaksi_online_id' => $transaksi->id,
-                    'tanggal' => now(),
-                    'jenis' => 'pemasukan',
-                    'nominal' => $total,
-                    'keterangan' => 'Pemasukan dari transaksi online #' . $kode,
-                    'sumber' => 'online',
-                ]);
-            }
-
-            Artisan::call('produk:update-dailyusage-rop');
             DB::commit();
+
+            // 🔥 Hapus session setelah transaksi berhasil
+            session()->forget('form_cepat_data');
+            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
-
 
     public function keranjang(Request $request)
     {
         $user = Auth::user();
-        $jenis = $user->jenis_pelanggan ?? 'Individu';
-
         $keranjangIds = $request->input('keranjang_id', []);
+
+        if (empty($keranjangIds)) {
+            return redirect()->route('mobile.keranjang.index')->with('error', 'Anda harus memilih item di keranjang terlebih dahulu.');
+        }
+
+        session(['keranjang_ids' => $keranjangIds]);
+
         $keranjangs = Keranjang::with('produk.hargaProduks', 'produk.satuans')
             ->where('user_id', $user->id)
             ->whereIn('id', $keranjangIds)
             ->get();
 
         return view('mobile.proses_transaksi', [
-            'jenis' => $jenis,
+            'jenis' => $user->jenis_pelanggan ?? 'Individu',
             'keranjangs' => $keranjangs,
-            'activeMenu' => 'keranjang'
+            'activeMenu' => 'keranjang',
         ]);
     }
 
     public function store(Request $request)
     {
         $user = Auth::user();
+        $keranjangIds = session('keranjang_ids', []);
+
+        if (empty($keranjangIds)) {
+            return redirect()->route('mobile.keranjang.index')->with('error', 'Sesi keranjang Anda telah berakhir. Silakan ulangi.');
+        }
 
         $request->validate([
             'metode_pengambilan' => 'required|in:ambil di toko,diantar',
             'metode_pembayaran' => 'required|in:payment_gateway,cod,bayar_di_toko',
-            'alamat_pengambilan' => 'nullable|string',
+            'alamat_pengambilan' => 'required_if:metode_pengambilan,diantar|nullable|string',
             'catatan' => 'nullable|string',
-            'keranjang_id' => 'required|array|min:1',
-            'keranjang_id.*' => 'integer|exists:keranjangs,id',
         ]);
 
-        $keranjangs = $user->keranjangs()
-            ->with('produk.hargaProduks', 'produk.satuans')
-            ->whereIn('id', $request->keranjang_id)
-            ->get();
+        $keranjangs = $user->keranjangs()->whereIn('id', $keranjangIds)->get();
 
         if ($keranjangs->isEmpty()) {
             return redirect()->back()->with('error', 'Tidak ada produk yang dipilih.');
@@ -234,17 +234,15 @@ class ProsesTransaksiController extends Controller
 
                     $hargaArr[$satuanId] = $harga;
                     $subtotalProduk += $harga * $qty;
-
                     $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
                     $jumlahUtama = $qty * $konversi;
 
                     if ($produk->stok < $jumlahUtama) {
                         DB::rollBack();
-                        return redirect()->back()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
+                        return redirect()->back()->withInput()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
                     }
 
-                    $produk->stok -= $jumlahUtama;
-                    $produk->save();
+                    $produk->decrement('stok', $jumlahUtama);
 
                     Stok::create([
                         'produk_id' => $produk->id,
@@ -267,27 +265,16 @@ class ProsesTransaksiController extends Controller
             }
 
             $transaksi->update(['total' => $total]);
+            $user->keranjangs()->whereIn('id', $keranjangIds)->delete();
+            session()->forget('keranjang_ids');
 
-            if ($request->metode_pembayaran === 'payment_gateway') {
-                Keuangan::create([
-                    'transaksi_online_id' => $transaksi->id,
-                    'tanggal' => now(),
-                    'jenis' => 'pemasukan',
-                    'nominal' => $total,
-                    'keterangan' => 'Pemasukan dari transaksi online #' . $kode,
-                    'sumber' => 'online',
-                ]);
-            }
-
-            $user->keranjangs()->whereIn('id', $request->keranjang_id)->delete();
-
-            Artisan::call('produk:update-dailyusage-rop');
             DB::commit();
+            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
         }
     }
 }
