@@ -554,27 +554,31 @@
 
         /* Banner lebih pendek, object-fit: contain */
         @media (max-width: 1024px) {
-    .image-banner {
-        height: 170px !important;       /* Naikkan height banner */
-        min-height: 150px !important;
-        max-height: 220px !important;
-        margin-bottom: 18px !important; /* Lebih banyak jarak bawah */
-        border-radius: 13px !important;
-    }
-    .image-banner img {
-        object-fit: contain !important;
-        width: 100% !important;
-        height: 100% !important;
-    }
+            .image-banner {
+                height: 170px !important;
+                /* Naikkan height banner */
+                min-height: 150px !important;
+                max-height: 220px !important;
+                margin-bottom: 18px !important;
+                /* Lebih banyak jarak bawah */
+                border-radius: 13px !important;
+            }
 
-    /* Beri jarak antara filter & produk */
-    #filterForm {
-        margin-bottom: 18px !important;
-    }
-    /* Jika produk grid terlalu nempel atas, beri margin top */
-    .produk-grid {
-        margin-top: 0 !important;
-    }
+            .image-banner img {
+                object-fit: contain !important;
+                width: 100% !important;
+                height: 100% !important;
+            }
+
+            /* Beri jarak antara filter & produk */
+            #filterForm {
+                margin-bottom: 18px !important;
+            }
+
+            /* Jika produk grid terlalu nempel atas, beri margin top */
+            .produk-grid {
+                margin-top: 0 !important;
+            }
         }
 
 
@@ -593,9 +597,9 @@
             <div class="text-muted" style="font-size:0.95rem;">Katalog produk</div>
         </div>
     </div>
-    <a href="#" class="btn btn-light border shadow-sm d-flex align-items-center justify-content-center" style="min-width:36px; min-height:36px; margin-left:8px; margin-top:0px;">
-        <i class="bi bi-cart" style="font-size:1.2rem;"></i>
-    </a>
+    <button class="btn btn-outline-secondary mt-3">
+        <i class="bi bi-cart text-dark"></i> <!-- Ini bikin ikon jadi hitam -->
+    </button>
 </div>
 
 {{-- Banner --}}

@@ -18,6 +18,10 @@
             overflow-x: hidden;
         }
 
+        .text-primary-custom {
+            color: #135291 !important;
+        }
+
         .header-nav {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
             position: fixed;
@@ -201,7 +205,7 @@
                     <a href="{{ route('mobile.keranjang.index') }}" class="nav-link px-3 {{ ($activeMenu ?? '') == 'keranjang' ? 'active' : '' }}">Keranjang</a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0);" class="nav-link px-3 {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">Form Cepat</a>
+                    <a href="{{ route('mobile.form_belanja_cepat.index') }}" class="nav-link px-3 {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">Form Cepat</a>
                 </li>
                 <li class="nav-item">
                     <a href="javascript:void(0);" class="nav-link px-3 {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">Riwayat</a>
@@ -213,8 +217,11 @@
         </div>
 
         <div class="header-cart">
-            <a href="{{ route('mobile.keranjang.index') }}"><i class="bi bi-cart"></i></a>
+            <a href="{{ route('mobile.keranjang.index') }}">
+                <i class="bi bi-cart {{ ($activeMenu ?? '') == 'keranjang' ? 'text-primary-custom fw-bold' : 'text-dark' }}"></i>
+            </a>
         </div>
+
     </nav>
 
     <!-- Main Content -->
@@ -232,7 +239,7 @@
             <i class="bi bi-cart"></i>
             <span>Keranjang</span>
         </a>
-        <a href="javascript:void(0);" class="footer-nav-btn center-btn {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">
+        <a href="{{ route('mobile.form_belanja_cepat.index') }}"  class="footer-nav-btn center-btn {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">
             <img src="{{ asset('storage/logo/form_cepat.png') }}" alt="Form Cepat Aktif" style="width:44px; height:44px; object-fit:contain;" />
         </a>
         <a href="javascript:void(0);" class="footer-nav-btn {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">

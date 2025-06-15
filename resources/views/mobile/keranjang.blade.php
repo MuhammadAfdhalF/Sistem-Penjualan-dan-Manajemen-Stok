@@ -10,6 +10,39 @@
             padding: 0;
         }
 
+        /* Hilangkan spinner browser default */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Input counter style clean */
+        .input-counter input.form-control {
+            border: none;
+            outline: none;
+            box-shadow: none;
+            padding: 0;
+            font-weight: 600;
+        }
+
+        .input-counter .btn {
+            font-weight: bold;
+            line-height: 1;
+            height: 32px;
+            width: 28px;
+            font-size: 1rem;
+            border-radius: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+
         .custom-check-item {
             width: 20px;
             height: 20px;
@@ -412,6 +445,24 @@
 
         /* Responsive mobile */
         @media (max-width: 600px) {
+
+            .input-counter {
+                margin-right: 10px;
+            }
+
+            .input-counter input.form-control {
+                height: 26px;
+                width: 15px;
+                font-size: 0.4rem;
+            }
+
+            .input-counter .btn {
+                width: 10px;
+                height: 26px;
+                font-size: 0.8rem;
+                padding: 0;
+            }
+
             .checkbox-margin-mobile {
                 margin-left: 10px !important;
             }
@@ -1016,6 +1067,12 @@
                 display: none !important;
             }
         }
+
+        @media (max-width: 991.98px) {
+            .col-12.col-lg-8.col-xl-8 {
+                margin-bottom: 5rem !important;
+            }
+        }
     </style>
     @endpush
 
@@ -1029,12 +1086,10 @@
                 <div class="text-muted" style="font-size:0.95rem;">Keranjang Saya</div>
             </div>
         </div>
-        <div class="icon-profile">
-            <svg fill="none" stroke="#222" stroke-width="2.1" viewBox="0 0 24 24" width="25" height="25">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-        </div>
+        <button class="btn btn-outline-secondary">
+            <i class="bi bi-cart text-dark"></i> <!-- Ini bikin ikon jadi hitam -->
+        </button>
+
     </div>
 
 
@@ -1086,26 +1141,31 @@
                                 <div class="fw-bold fs-6 text-dark mb-1">{{ $item->produk->nama_produk }}</div>
                                 <div class="fw-semibold text-dark mb-1">Rp {{ number_format($item->produk->hargaProduks->first()->harga, 0, ',', '.') }}</div>
                                 <div class="text-muted fw-semibold small mb-1">Jumlah :</div>
-
                                 <div class="d-flex align-items-center gap-2 ms-auto flex-wrap justify-content-end">
                                     @foreach($item->produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get() as $satuan)
                                     @php
                                     $harga = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id)?->harga ?? 0;
+                                    $jumlah = $item->jumlah_json[$satuan->id] ?? 0;
                                     @endphp
                                     <div class="d-flex align-items-center gap-1">
                                         <span class="text-lowercase" style="font-size: 0.84rem; min-width: 28px;">{{ strtolower($satuan->nama_satuan) }}</span>
-                                        <input type="number"
-                                            class="form-control form-control-sm jumlah-per-satuan"
-                                            name="jumlah_json[{{ $satuan->id }}]"
-                                            data-harga="{{ $harga }}"
-                                            data-id="{{ $item->id }}"
-                                            data-satuan="{{ $satuan->id }}"
-                                            min="0"
-                                            value="{{ $item->jumlah_json[$satuan->id] ?? 0 }}"
-                                            style="width: 56px; font-size: 0.85rem; padding: 2px 6px;">
+                                        <div class="input-counter d-flex align-items-center border rounded overflow-hidden">
+                                            <button type="button" class="btn btn-sm px-2 py-1 border-0 bg-light minus-btn">−</button>
+                                            <input type="number"
+                                                class="form-control jumlah-per-satuan text-center border-0"
+                                                value="{{ $jumlah }}"
+                                                min="0"
+                                                data-id="{{ $item->id }}"
+                                                data-satuan="{{ $satuan->id }}"
+                                                data-harga="{{ $harga }}"
+                                                style="width: 44px; height: 32px; font-size: 0.85rem; box-shadow: none;">
+
+                                            <button type="button" class="btn btn-sm px-2 py-1 border-0 bg-light plus-btn">+</button>
+                                        </div>
                                     </div>
                                     @endforeach
                                 </div>
+
                             </div>
 
                             <!-- Tombol Delete -->
@@ -1174,10 +1234,23 @@
                 </div>
                 <form id="checkoutForm" method="GET" action="{{ route('mobile.proses_transaksi.index') }}">
                     <input type="hidden" name="keranjang_id[]" value="" disabled> {{-- Placeholder dummy --}}
-                    <button type="submit" id="btnCheckoutDesktop" class="btn w-100 fw-bold text-white text-center"
-                        style="background-color: #135291; font-size: 1rem; padding: 12px 0; border-radius: 12px; border: none;">
+                    <button type="submit" id="btnCheckoutDesktop"
+                        class="btn fw-bold text-white text-center"
+                        style="
+        background-color: #135291;
+        font-size: 0.8rem;
+        width: 120px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: none;
+        margin-right : 5px
+    ">
                         CHECKOUT !!!
                     </button>
+
                 </form>
 
             </div>
@@ -1185,10 +1258,6 @@
     </div>
     </div>
     </div>
-
-
-
-
 
 
     <script>
@@ -1218,16 +1287,96 @@
                 document.getElementById('totalKeranjang').textContent = formatRupiah(total);
                 document.getElementById('totalKeranjangDesktop').textContent = formatRupiah(total);
 
-                // Enable/disable tombol
-                const btnMobile = document.getElementById('btnCheckoutMobile');
-                const btnDesktop = document.getElementById('btnCheckoutDesktop');
+                // Toggle tombol checkout
+                const formMobile = document.getElementById('checkoutForm');
+                const formDesktop = document.getElementById('checkoutFormDesktop');
+
+                const btnMobile = formMobile?.querySelector('button[type="submit"]');
+                const btnDesktop = formDesktop?.querySelector('button[type="submit"]');
 
                 if (btnMobile) btnMobile.disabled = !adaYangDipilih;
                 if (btnDesktop) btnDesktop.disabled = !adaYangDipilih;
             }
 
-            hitungTotal();
+            function updateCheckoutForms() {
+                const selected = document.querySelectorAll('.item-checkbox:checked');
+                const formMobile = document.getElementById('checkoutForm');
+                const formDesktop = document.getElementById('checkoutFormDesktop');
 
+                // Hapus input hidden sebelumnya
+                formMobile?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
+                formDesktop?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
+
+                // Tambahkan input hidden baru
+                selected.forEach(cb => {
+                    const id = cb.dataset.id;
+                    if (!id) return;
+
+                    const inputMobile = document.createElement('input');
+                    inputMobile.type = 'hidden';
+                    inputMobile.name = 'keranjang_id[]';
+                    inputMobile.value = id;
+                    formMobile?.appendChild(inputMobile);
+
+                    const inputDesktop = inputMobile.cloneNode();
+                    formDesktop?.appendChild(inputDesktop);
+                });
+            }
+
+            function preventSubmitIfEmpty(formId) {
+                const form = document.getElementById(formId);
+                if (!form) return;
+
+                form.addEventListener('submit', function(e) {
+                    const selected = document.querySelectorAll('.item-checkbox:checked');
+                    if (selected.length === 0) {
+                        e.preventDefault();
+                        alert('Pilih minimal satu produk sebelum checkout.');
+                    }
+                });
+            }
+
+            // Checkbox per item
+            document.querySelector('.cart-list')?.addEventListener('change', function(e) {
+                if (e.target.classList.contains('item-checkbox')) {
+                    hitungTotal();
+                    updateCheckoutForms();
+                }
+            });
+
+            // Checkbox "pilih semua"
+            document.querySelectorAll('.select-all').forEach(master => {
+                master.addEventListener('change', function() {
+                    const checked = this.checked;
+                    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = checked);
+                    document.querySelectorAll('.select-all').forEach(sa => sa.checked = checked);
+                    hitungTotal();
+                    updateCheckoutForms();
+                });
+            });
+
+            // Tombol + -
+            document.querySelectorAll('.input-counter').forEach(wrapper => {
+                const input = wrapper.querySelector('.jumlah-per-satuan');
+                const minus = wrapper.querySelector('.minus-btn');
+                const plus = wrapper.querySelector('.plus-btn');
+
+                minus.addEventListener('click', () => {
+                    let val = parseInt(input.value) || 0;
+                    if (val > parseInt(input.min || 0)) {
+                        input.value = val - 1;
+                        input.dispatchEvent(new Event('input'));
+                    }
+                });
+
+                plus.addEventListener('click', () => {
+                    let val = parseInt(input.value) || 0;
+                    input.value = val + 1;
+                    input.dispatchEvent(new Event('input'));
+                });
+            });
+
+            // Event ketika input jumlah diketik langsung
             document.querySelectorAll('.jumlah-per-satuan').forEach(input => {
                 input.addEventListener('input', function() {
                     hitungTotal();
@@ -1239,14 +1388,14 @@
                     const inputs = card.querySelectorAll('.jumlah-per-satuan');
                     const jumlahJson = {};
                     inputs.forEach(i => {
-                        const satuanId = i.dataset.satuan || i.name.match(/\[(\d+)\]/)?.[1];
+                        const satuanId = i.dataset.satuan || i.name?.match(/\[(\d+)\]/)?.[1];
                         const qty = parseFloat(i.value);
                         if (satuanId && !isNaN(qty) && qty > 0) {
                             jumlahJson[satuanId] = qty;
                         }
                     });
 
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                     const baseUrl = "{{ url('/pelanggan-area/keranjang') }}";
 
                     fetch(`${baseUrl}/${keranjangId}`, {
@@ -1276,69 +1425,17 @@
                 });
             });
 
-            document.querySelectorAll('.item-checkbox').forEach(cb => {
-                cb.addEventListener('change', hitungTotal);
-            });
-
-            document.querySelectorAll('.select-all').forEach(master => {
-                master.addEventListener('change', function() {
-                    const checked = this.checked;
-                    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = checked);
-                    document.querySelectorAll('.select-all').forEach(sa => sa.checked = checked);
-                    hitungTotal();
-                });
-            });
-
-            document.querySelectorAll('form[action*="keranjang.destroy"]').forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    if (!confirm('Yakin ingin menghapus item ini dari keranjang?')) {
-                        e.preventDefault();
-                    }
-                });
-            });
-
-            // Script submit form checkout (mobile & desktop)
-            function updateCheckoutForms() {
-                const selected = document.querySelectorAll('.item-checkbox:checked');
-                const formMobile = document.getElementById('checkoutForm');
-                const formDesktop = document.getElementById('checkoutFormDesktop');
-
-                // Hapus input hidden lama
-                formMobile?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
-                formDesktop?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
-
-                selected.forEach(cb => {
-                    const inputMobile = document.createElement('input');
-                    inputMobile.type = 'hidden';
-                    inputMobile.name = 'keranjang_id[]';
-                    inputMobile.value = cb.dataset.id;
-                    formMobile?.appendChild(inputMobile);
-
-                    const inputDesktop = inputMobile.cloneNode();
-                    inputDesktop?.setAttribute('value', cb.dataset.id);
-                    formDesktop?.appendChild(inputDesktop);
-                });
-            }
-
-            function preventSubmitIfEmpty(formId) {
-                const form = document.getElementById(formId);
-                if (!form) return;
-
-                form.addEventListener('submit', function(e) {
-                    const selected = document.querySelectorAll('.item-checkbox:checked');
-                    if (selected.length === 0) {
-                        e.preventDefault();
-                        alert('Pilih minimal satu produk sebelum checkout.');
-                    }
-                });
-            }
-
+            // Validasi form sebelum submit
             preventSubmitIfEmpty('checkoutForm');
             preventSubmitIfEmpty('checkoutFormDesktop');
 
+            // Tambahkan hidden input sebelum submit
             document.getElementById('checkoutForm')?.addEventListener('submit', updateCheckoutForms);
             document.getElementById('checkoutFormDesktop')?.addEventListener('submit', updateCheckoutForms);
 
+            // Jalankan pertama kali
+            hitungTotal();
+            updateCheckoutForms();
         });
     </script>
 

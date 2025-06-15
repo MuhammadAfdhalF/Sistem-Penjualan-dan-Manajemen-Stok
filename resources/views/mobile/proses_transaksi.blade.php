@@ -144,7 +144,7 @@
         }
     }
 
-    @media (max-width: 1000px) and (orientation: landscape) {
+    @media (max-width: 1280px) and (orientation: landscape) {
         main.main-content {
             margin-top: 0 !important;
             padding-top: 0 !important;

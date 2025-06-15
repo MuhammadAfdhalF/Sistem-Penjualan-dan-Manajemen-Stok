@@ -24,6 +24,7 @@ use App\Http\Controllers\PaymentLogController;
 use App\Http\Controllers\Mobile\CobaController;
 
 use App\Http\Controllers\Mobile\DetailProdukController;
+use App\Http\Controllers\Mobile\FormBelanjaCepatController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Http\Controllers\Mobile\KeranjangMobileController;
 use App\Http\Controllers\Mobile\ProsesTransaksiController;
@@ -122,7 +123,16 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     // proses transaksi
     Route::get('/pelanggan-area/proses_transaksi', [ProsesTransaksiController::class, 'keranjang'])->name('mobile.proses_transaksi.index');
     Route::post('/pelanggan-area/proses_transaksi', [ProsesTransaksiController::class, 'store'])->name('mobile.proses_transaksi.store');
+
+
+    // form cepat
+    Route::get('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'index'])->name('mobile.form_belanja_cepat.index');
+    Route::post('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'store'])->name('mobile.form_belanja_cepat.store');
+
+    // 🔥 TAMBAHAN INI UNTUK MASUK PROSES TRANSAKSI DARI FORM BELANJA CEPAT
+    Route::post('/pelanggan-area/form_belanja_cepat/proses_transaksi', [ProsesTransaksiController::class, 'formCepat'])->name('mobile.form_belanja_cepat.proses_transaksi');
 });
+
 
 
 
