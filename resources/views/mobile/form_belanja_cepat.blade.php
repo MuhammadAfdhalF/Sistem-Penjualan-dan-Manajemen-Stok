@@ -58,14 +58,27 @@
     }
 
     @media (max-width: 576px) {
+
+
+
+
         .filter-wrapper {
-            flex-direction: column !important;
-            gap: 0.5rem !important;
+            /* Perintah ini tetap ada untuk memaksa filter menjadi satu baris */
+            flex-wrap: nowrap !important;
         }
 
-        .filter-wrapper .filter-input,
+        /* Atur lebar untuk input pencarian (lebih besar) */
+        .filter-wrapper .filter-input {
+            width: 60%;
+            /* Input pencarian mengambil 60% dari lebar */
+            flex-grow: 0;
+            /* Pastikan tidak tumbuh otomatis lagi, agar ukurannya pas 60% */
+        }
+
+        /* Atur lebar untuk grup kategori (lebih kecil) */
         .filter-wrapper .filter-select-group {
-            width: 100% !important;
+            width: 38%;
+            /* Grup kategori mengambil sisa ruang (kurang sedikit untuk jarak/gap) */
         }
 
         main.main-content {
@@ -130,7 +143,7 @@
 
     <!-- ===== FORM UNTUK FILTER ===== -->
     <form action="{{ route('mobile.form_belanja_cepat.index') }}" method="GET" id="filter-form">
-        <div class="d-flex flex-wrap justify-content-between gap-2 mb-4 w-100 filter-wrapper">
+        <div class="d-flex flex-wrap justify-content-between gap-1 mb-4 w-100 w-sm-100 mx-auto filter-wrapper">
             <div class="d-flex align-items-center shadow-sm px-3 flex-grow-1 filter-input" style="background-color: #fff; height: 44px; border: 1px solid rgba(0, 0, 0, 0.38); border-radius: 8px;">
                 <span class="me-2" style="font-size: 1rem;">🔍</span>
                 <input type="text" name="search" class="form-control border-0 shadow-none p-0" placeholder="Cari Produk diinginkan...." value="{{ $searchQuery ?? '' }}" style="font-size: clamp(0.75rem, 1.5vw, 1rem); background-color: transparent;">
