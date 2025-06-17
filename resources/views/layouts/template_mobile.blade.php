@@ -208,7 +208,7 @@
                     <a href="{{ route('mobile.form_belanja_cepat.index') }}" class="nav-link px-3 {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">Form Cepat</a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0);" class="nav-link px-3 {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">Riwayat</a>
+                    <a href="{{ route('mobile.riwayat_belanja.index') }}" class="nav-link px-3 {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">Riwayat</a>
                 </li>
                 <li class="nav-item">
                     <a href="javascript:void(0);" class="nav-link px-3 {{ ($activeMenu ?? '') == 'profile' ? 'active' : '' }}">Profile</a>
@@ -239,10 +239,10 @@
             <i class="bi bi-cart"></i>
             <span>Keranjang</span>
         </a>
-        <a href="{{ route('mobile.form_belanja_cepat.index') }}"  class="footer-nav-btn center-btn {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">
+        <a href="{{ route('mobile.form_belanja_cepat.index') }}" class="footer-nav-btn center-btn {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">
             <img src="{{ asset('storage/logo/form_cepat.png') }}" alt="Form Cepat Aktif" style="width:44px; height:44px; object-fit:contain;" />
         </a>
-        <a href="javascript:void(0);" class="footer-nav-btn {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">
+        <a href="{{ route('mobile.riwayat_belanja.index') }}" class="footer-nav-btn {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">
             <i class="bi bi-list-ul"></i>
             <span>Riwayat</span>
         </a>

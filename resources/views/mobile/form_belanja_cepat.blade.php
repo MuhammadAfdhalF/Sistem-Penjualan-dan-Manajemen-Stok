@@ -10,9 +10,14 @@
 
     .product-card {
         border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.21);
         margin-bottom: 1rem;
         transition: box-shadow 0.2s ease-in-out;
+    }
+
+    /* Optional hover effect */
+    .product-card:hover {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     }
 
     .product-card.selected {
@@ -57,6 +62,13 @@
         transform: rotate(45deg);
     }
 
+    @media (max-width: 768px) {
+        .filter-wrapper {
+            margin-left: 0.75rem;
+            margin-right: 0.75rem;
+        }
+    }
+
     @media (max-width: 576px) {
 
 
@@ -65,6 +77,7 @@
         .filter-wrapper {
             /* Perintah ini tetap ada untuk memaksa filter menjadi satu baris */
             flex-wrap: nowrap !important;
+
         }
 
         /* Atur lebar untuk input pencarian (lebih besar) */
@@ -112,7 +125,7 @@
 @endpush
 
 @section('content')
-<div class="container-fluid px-0 px-lg-3 py-3 desktop-container">
+<div class="container-fluid px-0 px-lg-3 py-3 desktop-container " style="max-width: 1280px;">
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 ms-3 mt-3 d-block d-lg-none">
         <div>
@@ -143,7 +156,7 @@
 
     <!-- ===== FORM UNTUK FILTER ===== -->
     <form action="{{ route('mobile.form_belanja_cepat.index') }}" method="GET" id="filter-form">
-        <div class="d-flex flex-wrap justify-content-between gap-1 mb-4 w-100 w-sm-100 mx-auto filter-wrapper">
+        <div class="d-flex flex-wrap justify-content-between gap-1 mb-4 filter-wrapper">
             <div class="d-flex align-items-center shadow-sm px-3 flex-grow-1 filter-input" style="background-color: #fff; height: 44px; border: 1px solid rgba(0, 0, 0, 0.38); border-radius: 8px;">
                 <span class="me-2" style="font-size: 1rem;">🔍</span>
                 <input type="text" name="search" class="form-control border-0 shadow-none p-0" placeholder="Cari Produk diinginkan...." value="{{ $searchQuery ?? '' }}" style="font-size: clamp(0.75rem, 1.5vw, 1rem); background-color: transparent;">
@@ -182,13 +195,15 @@
             <!-- Produk (kiri) -->
             <div class="col-lg-8">
                 @forelse($produk as $p)
-                <div class="card product-card p-3 mb-3" data-produk-id="{{ $p->id }}">
-                    <div class="d-flex align-items-start gap-3">
-                        <input type="checkbox" class="custom-check mt-1 product-selector">
+                <div class="card product-card p-3 mb-2 shadow-sm" data-produk-id="{{ $p->id }}">
+                    <div class="d-flex align-items-center gap-3"> {{-- ubah align-items-start -> center --}}
+                        <div class="d-flex align-items-center" style="height: 100%;">
+                            <input type="checkbox" class="custom-check product-selector">
+                        </div>
                         <img src="{{ $p->gambar ? asset('storage/gambar_produk/' . $p->gambar) : asset('assets/img/no-image.jpg') }}" class="product-image" alt="{{ $p->nama_produk }}">
 
                         <div class="flex-grow-1">
-                            <h6 class="fw-semibold text-body mb-1 text-wrap">{{ $p->nama_produk }}</h6>
+                            <h6 class="fw-semibold text-body mb- text-wrap">{{ $p->nama_produk }}</h6>
 
                             <div class="text-muted small mb-1">
                                 @php
@@ -235,6 +250,7 @@
                         </div>
                     </div>
                 </div>
+
                 @empty
                 <div class="text-center py-5">
                     <p class="text-muted">Produk tidak ditemukan.</p>

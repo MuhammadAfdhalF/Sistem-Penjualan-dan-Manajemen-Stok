@@ -642,7 +642,7 @@
 
 
 {{-- Produk Grid --}}
-<div class="produk-grid mt-3">
+<div class="produk-grid mt-3" >
     @foreach($produk as $item)
     <div class="produk-card" data-detail-url="{{ route('mobile.detail_produk.index', $item->id) }}">
         <span class="hover-eye">

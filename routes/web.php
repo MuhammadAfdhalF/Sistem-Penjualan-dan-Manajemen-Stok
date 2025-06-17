@@ -28,6 +28,7 @@ use App\Http\Controllers\Mobile\FormBelanjaCepatController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Http\Controllers\Mobile\KeranjangMobileController;
 use App\Http\Controllers\Mobile\ProsesTransaksiController;
+use App\Http\Controllers\Mobile\RiwayatBelanjaController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -127,15 +128,14 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
 
     // form cepat
     Route::get('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'index'])->name('mobile.form_belanja_cepat.index');
-    Route::post('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'store'])->name('mobile.form_belanja_cepat.store');
-
-    // // 🔥 PERBAIKAN: Memisahkan rute untuk menampilkan konfirmasi dan menyimpan pesanan dari Form Cepat
-
-    // Rute ini dipanggil saat tombol "Checkout" di Form Cepat ditekan. Tugasnya hanya menampilkan halaman konfirmasi.
+    // Route::post('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'store'])->name('mobile.form_belanja_cepat.store');
     Route::post('/pelanggan-area/form_belanja_cepat/konfirmasi', [ProsesTransaksiController::class, 'formBelanjaCepat'])->name('mobile.form_belanja_cepat.konfirmasi');
-
-    // Rute ini dipanggil saat tombol "Buat Pesanan" di halaman konfirmasi ditekan. Tugasnya menyimpan pesanan ke database.
     Route::post('/pelanggan-area/form_belanja_cepat/simpan', [ProsesTransaksiController::class, 'formBelanjaCepatStore'])->name('mobile.form_belanja_cepat.store');
+
+
+    // riwayat
+        Route::get('/pelanggan-area/riwayat_belanja', [RiwayatBelanjaController::class, 'index'])->name('mobile.riwayat_belanja.index');
+
 });
 
 

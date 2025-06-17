@@ -1096,7 +1096,7 @@
 
 
     <!-- Daftar Cart Produk -->
-    <div class="container-fluid px-md-4 px-0">
+    <div class="container-fluid px-md-4 px-0" style="max-width: 1280px;">
         <div class="row">
             <!-- Kolom KIRI: Daftar Produk -->
             <div class="col-12 col-lg-8 col-xl-8">
