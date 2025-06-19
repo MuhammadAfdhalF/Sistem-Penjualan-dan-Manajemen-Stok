@@ -25,25 +25,51 @@
         font-size: 1.1rem;
         margin-bottom: 0.5rem;
     }
-    @media (max-width: 768px) {
-    .container-fluid {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
-}
 
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        main.main-content {
+            margin-bottom: 0px;
+            padding-bottom: 0px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        main.main-content {
+            margin-bottom: 0px;
+            padding-bottom: 0px;
+        }
+    }
+
+    @media (max-width: 1280px) and (orientation: landscape) {
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+    }
+
+    @media (min-width: 600px) and (max-width: 1024px) {
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid px-3 py-3" style="max-width: 1280px;">
+<div class="container-fluid py-2 px-2" style="max-width: 1280px;">
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 ms-3 mt-3 d-block d-lg-none">
         <div>
-            <h6 class="fw-bold fs-5 mb-1 text-body">Toko KZ Family</h6>
+            <h6 class="fw-bold mb-1 text-body">Toko KZ Family</h6>
             <small class="text-muted">Riwayat Belanja Anda</small>
         </div>
-        <div class="me-1">
+        <div class="me-3">
             <a href="{{ route('mobile.keranjang.index') }}" class="btn bg-white shadow rounded-3 d-flex align-items-center justify-content-center">
                 <i class="bi bi-cart text-dark" style="font-size: 1.2rem;"></i>
             </a>
@@ -125,7 +151,7 @@
                         @endif
             </ul>
 
-            <div class="d-flex justify-content-between align-items-center ms-3">
+            <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="d-flex align-items-center gap-2 text-small fw-semibold">
                     <i class="bi bi-wallet2"></i>
                     <span>Total Harga</span>
@@ -134,7 +160,10 @@
             </div>
 
             <div class="text-end mt-2">
-                <a href="#" class="small text-decoration-none" style="color: #135291;">Selengkapnya...</a>
+                <a href="{{ route('mobile.detail_riwayat_belanja.index', ['tipe' => $trx->tipe, 'id' => $trx->id]) }}">
+                    Selengkapnya...
+                </a>
+
             </div>
         </div>
     </div>

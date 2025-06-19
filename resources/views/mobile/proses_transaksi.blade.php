@@ -8,6 +8,7 @@
         padding-bottom: 0px;
     }
 
+
     .w-45 {
         width: 45% !important;
 
@@ -55,6 +56,14 @@
             margin-bottom: 0px;
             padding-bottom: 0px;
         }
+
+        .card.metode-pembayaran .btn {
+            font-size: 0.75rem !important;
+            padding: 0.5rem 0.7rem !important;
+            height: auto !important;
+            border-radius: 12px;
+        }
+
 
         .footer-mobile-nav {
             display: none !important;
@@ -136,7 +145,7 @@
         }
 
         .mobile-btn-small {
-            font-size: 0.95rem !important;
+            font-size: 0.85rem !important;
             padding: 0.5rem 0.6rem !important;
             height: 40px !important;
             width: 45% !important;
@@ -144,13 +153,26 @@
             text-align: center;
         }
     }
+
+
+    @media (max-width: 1280px) and (orientation: landscape) {
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+    }
+
+    @media (min-width: 600px) and (max-width: 1024px) {
+        main.main-content {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+    }
 </style>
 @endpush
-
-
 @section('content')
 
-<form action="{{ (isset($from_form_cepat) && $from_form_cepat) ? route('mobile.form_belanja_cepat.store') : route('mobile.proses_transaksi.store') }}" method="POST">
+<form action="{{ (isset($from_form_cepat) && $from_form_cepat) ? route('mobile.form_belanja_cepat.store') : route('mobile.proses_transaksi.store') }}" method="POST" class="fs-6">
     @csrf
 
     <input type="hidden" name="metode_pengambilan" id="metode_pengambilan" value="{{ old('metode_pengambilan') }}">
@@ -262,13 +284,18 @@
             <div class="card-header fw-bold bg-white"><i class="bi bi-wallet2 me-2"></i>Metode Pembayaran</div>
             <div class="card-body">
                 <p class="text-muted mb-2">Pilih metode pembayaran</p>
-                <div class="d-flex justify-content-center gap-2 flex-wrap">
-                    <button type="button" class="btn text-white btn-pembayaran" data-value="cod" style="background-color: #058DA9; flex-grow: 1;">COD</button>
-                    <button type="button" class="btn text-white btn-pembayaran" data-value="bayar_di_toko" style="background-color: #058DA9; flex-grow: 1;">Bayar di Toko</button>
-                    <button type="button" class="btn text-white btn-pembayaran" data-value="payment_gateway" style="background-color: #0057B2; flex-grow: 1;">Digital</button>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn w-45 text-white btn-pembayaran" data-value="cod"
+                        style="background-color:rgb(101, 149, 168);">COD</button>
+                    <button type="button" class="btn w-45 text-white btn-pembayaran" data-value="bayar_di_toko"
+                        style="background-color: #058DA9;">Bayar di Toko</button>
+                    <button type="button" class="btn w-45 text-white btn-pembayaran" data-value="payment_gateway"
+                        style="background-color: #0057B2;">Digital</button>
                 </div>
+
             </div>
         </div>
+
 
         <div class="card mb-1 shadow card-alamat" id="alamat-card" style="display: none;">
             <div class="card-body px-3 pt-3 pb-2">
@@ -292,6 +319,7 @@
     </div>
 </form>
 @endsection
+
 
 @push('scripts')
 <script>

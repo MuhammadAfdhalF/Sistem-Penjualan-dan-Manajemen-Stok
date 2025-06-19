@@ -70,10 +70,6 @@
     }
 
     @media (max-width: 576px) {
-
-
-
-
         .filter-wrapper {
             /* Perintah ini tetap ada untuk memaksa filter menjadi satu baris */
             flex-wrap: nowrap !important;

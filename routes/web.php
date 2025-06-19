@@ -24,6 +24,7 @@ use App\Http\Controllers\PaymentLogController;
 use App\Http\Controllers\Mobile\CobaController;
 
 use App\Http\Controllers\Mobile\DetailProdukController;
+use App\Http\Controllers\Mobile\DetailRiwayatBelanjaController;
 use App\Http\Controllers\Mobile\FormBelanjaCepatController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Http\Controllers\Mobile\KeranjangMobileController;
@@ -133,9 +134,12 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::post('/pelanggan-area/form_belanja_cepat/simpan', [ProsesTransaksiController::class, 'formBelanjaCepatStore'])->name('mobile.form_belanja_cepat.store');
 
 
-    // riwayat
-        Route::get('/pelanggan-area/riwayat_belanja', [RiwayatBelanjaController::class, 'index'])->name('mobile.riwayat_belanja.index');
+    // Riwayat Belanja
+    Route::get('/pelanggan-area/riwayat_belanja', [RiwayatBelanjaController::class, 'index'])->name('mobile.riwayat_belanja.index');
 
+    // Detail Riwayat Belanja
+    Route::get('/pelanggan-area/detail_riwayat_belanja/{tipe}/{id}', [DetailRiwayatBelanjaController::class, 'index'])
+        ->name('mobile.detail_riwayat_belanja.index');
 });
 
 
