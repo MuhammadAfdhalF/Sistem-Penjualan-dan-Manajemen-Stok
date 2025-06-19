@@ -35,6 +35,7 @@ class PelangganController extends Controller
             'umur'            => 'required|integer|min:1',
             'jenis_pelanggan' => 'required|in:Toko Kecil,Individu',
             'password'        => 'required|string|min:6|confirmed',
+            'foto_user'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ], [
             'nama.required'            => 'Nama harus diisi.',
             'email.required'           => 'Email harus diisi.',
@@ -51,9 +52,17 @@ class PelangganController extends Controller
             'password.required'        => 'Password harus diisi.',
             'password.min'             => 'Password minimal 6 karakter.',
             'password.confirmed'       => 'Konfirmasi password tidak cocok.',
+            'foto_user.image'          => 'File harus berupa gambar.',
+            'foto_user.mimes'          => 'Format gambar harus jpeg, png, atau jpg.',
+            'foto_user.max'            => 'Ukuran gambar maksimal 2MB.',
         ]);
 
         try {
+            $foto = null;
+            if ($request->hasFile('foto_user')) {
+                $foto = $request->file('foto_user')->store('foto_user', 'public');
+            }
+
             User::create([
                 'nama'            => $request->nama,
                 'email'           => $request->email,
@@ -63,6 +72,7 @@ class PelangganController extends Controller
                 'jenis_pelanggan' => $request->jenis_pelanggan,
                 'role'            => 'pelanggan',
                 'password'        => Hash::make($request->password),
+                'foto_user'       => $foto,
             ]);
 
             return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan.');
@@ -71,6 +81,7 @@ class PelangganController extends Controller
             return redirect()->back()->withInput()->with('error', 'Gagal menambahkan pelanggan.');
         }
     }
+
 
     public function show(string $id)
     {
@@ -107,6 +118,7 @@ class PelangganController extends Controller
                 'umur'            => 'required|integer|min:1',
                 'jenis_pelanggan' => 'required|in:Toko Kecil,Individu',
                 'password'        => 'nullable|string|min:6|confirmed',
+                'foto_user'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ], [
                 'nama.required'            => 'Nama harus diisi.',
                 'email.required'           => 'Email harus diisi.',
@@ -122,11 +134,19 @@ class PelangganController extends Controller
                 'jenis_pelanggan.in'       => 'Jenis pelanggan harus Toko Kecil atau Individu.',
                 'password.min'             => 'Password minimal 6 karakter.',
                 'password.confirmed'       => 'Konfirmasi password tidak cocok.',
+                'foto_user.image'          => 'File harus berupa gambar.',
+                'foto_user.mimes'          => 'Format gambar harus jpeg, png, atau jpg.',
+                'foto_user.max'            => 'Ukuran gambar maksimal 2MB.',
             ]);
 
             $data = $request->only(['nama', 'email', 'no_hp', 'alamat', 'umur', 'jenis_pelanggan']);
+
             if ($request->filled('password')) {
                 $data['password'] = Hash::make($request->password);
+            }
+
+            if ($request->hasFile('foto_user')) {
+                $data['foto_user'] = $request->file('foto_user')->store('foto_user', 'public');
             }
 
             $pelanggan->update($data);
@@ -149,6 +169,12 @@ class PelangganController extends Controller
     {
         try {
             $pelanggan = User::where('role', 'pelanggan')->findOrFail($id);
+
+            // Hapus file foto jika ada
+            if ($pelanggan->foto_user && \Storage::disk('public')->exists($pelanggan->foto_user)) {
+                \Storage::disk('public')->delete($pelanggan->foto_user);
+            }
+
             $pelanggan->delete();
 
             return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil dihapus.');

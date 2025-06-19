@@ -11,7 +11,7 @@ Halaman Tambah Pelanggan
 @endsection
 
 <head>
-     <title>Halaman Tambah Pelanggan</title>
+    <title>Halaman Tambah Pelanggan</title>
 </head>
 
 @section('content')
@@ -23,7 +23,7 @@ Halaman Tambah Pelanggan
         </div>
 
         <div class="card-body">
-            <form action="{{ route('pelanggan.store') }}" method="POST">
+            <form action="{{ route('pelanggan.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 {{-- Hidden role --}}
@@ -78,6 +78,15 @@ Halaman Tambah Pelanggan
                         <label for="alamat" class="form-label">Alamat</label>
                         <textarea name="alamat" id="alamat" class="form-control @error('alamat') is-invalid @enderror" rows="3" placeholder="Masukkan alamat pelanggan">{{ old('alamat') }}</textarea>
                         @error('alamat')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>
+
+                    <!-- Foto User -->
+                    <div class="col-md-6 mb-3">
+                        <label for="foto_user" class="form-label">Foto Pelanggan (Opsional)</label>
+                        <input type="file" name="foto_user" id="foto_user" class="form-control @error('foto_user') is-invalid @enderror">
+                        @error('foto_user')
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>

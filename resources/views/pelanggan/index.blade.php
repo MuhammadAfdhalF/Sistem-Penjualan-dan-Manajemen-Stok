@@ -11,7 +11,7 @@ Halaman Pelanggan
 @endsection
 
 <head>
-     <title>Halaman Pelanggan</title>
+    <title>Halaman Pelanggan</title>
 </head>
 
 @section('content')
@@ -29,6 +29,7 @@ Halaman Pelanggan
                     <thead>
                         <tr>
                             <th>No</th>
+                            <th>Foto</th> {{-- Tambahan --}}
                             <th>Nama</th>
                             <th>Email</th>
                             <th>No HP</th>
@@ -42,6 +43,33 @@ Halaman Pelanggan
                         @foreach ($pelanggan as $index => $item)
                         <tr>
                             <td>{{ $index + 1 }}</td>
+                            <td>
+                                @if($item->foto_user)
+                                <img src="{{ asset('storage/' . $item->foto_user) }}"
+                                    alt="Foto"
+                                    width="50"
+                                    height="50"
+                                    class="rounded-circle"
+                                    style="cursor: pointer; object-fit: cover;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#fotoModal{{ $item->id }}">
+
+                                <!-- Modal Foto -->
+                                <div class="modal fade" id="fotoModal{{ $item->id }}" tabindex="-1" aria-labelledby="fotoModalLabel{{ $item->id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                                        <div class="modal-content">
+                                            <div class="modal-body text-center p-2">
+                                                <img src="{{ asset('storage/' . $item->foto_user) }}" alt="Foto {{ $item->nama }}" class="img-fluid rounded">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @else
+                                <span class="text-muted">-</span>
+                                @endif
+                            </td>
+
+
                             <td>{{ $item->nama }}</td>
                             <td>{{ $item->email }}</td>
                             <td>{{ $item->no_hp }}</td>
@@ -56,7 +84,6 @@ Halaman Pelanggan
                                     <i class="ti ti-trash"></i>
                                 </button>
                             </td>
-
                         </tr>
 
                         <!-- Modal Konfirmasi Hapus -->

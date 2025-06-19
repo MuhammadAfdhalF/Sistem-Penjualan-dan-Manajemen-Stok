@@ -12,7 +12,7 @@ Halaman Edit Pelanggan
 @endsection
 
 <head>
-     <title>Halaman Edit Pelanggan</title>
+    <title>Halaman Edit Pelanggan</title>
 </head>
 
 @section('content')
@@ -24,7 +24,7 @@ Halaman Edit Pelanggan
         </div>
 
         <div class="card-body">
-            <form action="{{ route('pelanggan.update', $pelanggan->id) }}" method="POST">
+            <form action="{{ route('pelanggan.update', $pelanggan->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -79,6 +79,22 @@ Halaman Edit Pelanggan
                         @error('alamat')
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
+                    </div>
+
+                    <!-- Foto User -->
+                    <div class="col-md-6 mb-3">
+                        <label for="foto_user" class="form-label">Foto Pelanggan (Opsional)</label>
+                        <input type="file" name="foto_user" id="foto_user" class="form-control @error('foto_user') is-invalid @enderror">
+                        @error('foto_user')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
+
+                        @if ($pelanggan->foto_user)
+                        <div class="mt-2">
+                            <img src="{{ asset('storage/' . $pelanggan->foto_user) }}" alt="Foto Lama" width="80" class="rounded">
+                            <small class="d-block text-muted">Foto saat ini</small>
+                        </div>
+                        @endif
                     </div>
 
                     <!-- Password baru dengan toggle -->

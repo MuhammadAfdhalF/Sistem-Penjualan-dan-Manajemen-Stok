@@ -65,11 +65,30 @@
                             <td>{{ $index + 1 }}</td>
                             <td>
                                 @if ($item->gambar)
-                                <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}" alt="Gambar Produk" width="60" height="60" class="rounded-circle object-fit-cover">
+                                <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}"
+                                    alt="Gambar Produk"
+                                    width="60"
+                                    height="60"
+                                    class="rounded-circle object-fit-cover"
+                                    style="cursor: pointer;"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#gambarModal{{ $item->id }}">
+
+                                <!-- Modal Gambar Produk -->
+                                <div class="modal fade" id="gambarModal{{ $item->id }}" tabindex="-1" aria-labelledby="gambarModalLabel{{ $item->id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-sm">
+                                        <div class="modal-content">
+                                            <div class="modal-body text-center p-2">
+                                                <img src="{{ asset('storage/gambar_produk/' . $item->gambar) }}" alt="Gambar Produk" class="img-fluid rounded">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 @else
                                 <span class="text-muted">Tidak Ada</span>
                                 @endif
                             </td>
+
                             <td>{{ $item->nama_produk }}</td>
                             <td>{{ $item->deskripsi }}</td>
                             <td>

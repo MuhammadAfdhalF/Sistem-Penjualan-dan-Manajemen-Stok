@@ -211,7 +211,7 @@
                     <a href="{{ route('mobile.riwayat_belanja.index') }}" class="nav-link px-3 {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">Riwayat</a>
                 </li>
                 <li class="nav-item">
-                    <a href="javascript:void(0);" class="nav-link px-3 {{ ($activeMenu ?? '') == 'profile' ? 'active' : '' }}">Profile</a>
+                    <a href="{{ route('mobile.profile_pelanggan.index') }}" class="nav-link px-3 {{ ($activeMenu ?? '') == 'profile' ? 'active' : '' }}">Profile</a>
                 </li>
             </ul>
         </div>
@@ -246,7 +246,7 @@
             <i class="bi bi-list-ul"></i>
             <span>Riwayat</span>
         </a>
-        <a href="javascript:void(0);" class="footer-nav-btn {{ ($activeMenu ?? '') == 'profile' ? 'active' : '' }}">
+        <a href="{{ route('mobile.profile_pelanggan.index') }}" class="footer-nav-btn {{ ($activeMenu ?? '') == 'profile' ? 'active' : '' }}">
             <i class="bi bi-person"></i>
             <span>Profile</span>
         </a>

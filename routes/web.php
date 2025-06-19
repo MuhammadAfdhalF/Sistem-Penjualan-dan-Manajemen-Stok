@@ -28,6 +28,7 @@ use App\Http\Controllers\Mobile\DetailRiwayatBelanjaController;
 use App\Http\Controllers\Mobile\FormBelanjaCepatController;
 use App\Http\Controllers\Mobile\HomeController as MobileHomeController;
 use App\Http\Controllers\Mobile\KeranjangMobileController;
+use App\Http\Controllers\Mobile\ProfilePelangganController;
 use App\Http\Controllers\Mobile\ProsesTransaksiController;
 use App\Http\Controllers\Mobile\RiwayatBelanjaController;
 use App\Models\HargaProduk;
@@ -35,6 +36,11 @@ use App\Models\HargaProduk;
 Route::get('/', function () {
     return view('auth/login');
 });
+Route::post('/logout', function () {
+    Auth::logout();
+    return redirect('/');
+})->name('logout');
+
 
 Auth::routes();
 
@@ -140,6 +146,11 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     // Detail Riwayat Belanja
     Route::get('/pelanggan-area/detail_riwayat_belanja/{tipe}/{id}', [DetailRiwayatBelanjaController::class, 'index'])
         ->name('mobile.detail_riwayat_belanja.index');
+
+    // Riwayat Belanja
+    Route::get('/pelanggan-area/profile_pelanggan', [ProfilePelangganController::class, 'index'])->name('mobile.profile_pelanggan.index');
+    Route::get('/pelanggan-area/profile_pelanggan/edit', [ProfilePelangganController::class, 'edit'])->name('mobile.profile_pelanggan.edit');
+    Route::put('/pelanggan-area/profile_pelanggan/update', [ProfilePelangganController::class, 'update'])->name('mobile.profile_pelanggan.update');
 });
 
 
@@ -149,5 +160,5 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
 
 // fallback
 Route::fallback(function () {
-    return "Halaman tidak ada, akses halaman yang benar ya dek !!!";
+    return "Halaman tidak ada, akses halaman yang benar ya!!!";
 });

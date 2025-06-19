@@ -7,6 +7,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @method bool update(array $attributes = [], array $options = [])
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -25,6 +28,7 @@ class User extends Authenticatable
         'jenis_pelanggan',
         'role',
         'password',
+        'foto_user',
     ];
 
     /**
