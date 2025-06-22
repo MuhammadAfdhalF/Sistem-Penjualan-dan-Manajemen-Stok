@@ -783,7 +783,7 @@
                 <span class="main">Detail Produk</span>
             </div>
         </div>
-        <div class="desktop-flexbox">
+        <div class="desktop-flexbox shadow mt-2">
             <!-- Kolom Kiri: Gambar -->
             <div class="desktop-col desktop-img">
                 <div class="product-image-area">

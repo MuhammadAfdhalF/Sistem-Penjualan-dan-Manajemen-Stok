@@ -1119,8 +1119,8 @@
                     </div>
                     @else
                     @foreach($keranjangs as $item)
-                    <div class="card border-0 rounded-3 mb-3 px-3 py-2 position-relative w-100 cart-full-mobile"
-                        style="box-shadow: 0 6px 12px rgba(0,0,0,0.2);">
+                    <div class="card border-1 rounded-3 mb-2 px-3 py-2 position-relative w-100 cart-full-mobile"
+                        style="box-shadow: 0 3px 6px rgba(0,0,0,0.2);">
                         {{-- Checkbox + Gambar + Info --}}
                         <div class="d-flex flex-wrap align-items-center gap-3">
                             <div style="min-width: 28px;">

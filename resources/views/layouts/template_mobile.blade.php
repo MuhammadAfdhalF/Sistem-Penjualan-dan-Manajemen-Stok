@@ -18,6 +18,21 @@
             overflow-x: hidden;
         }
 
+        .footer-info .small {
+            font-size: 0.9rem;
+        }
+
+        .info-footer {
+            font-size: 0.88rem;
+            line-height: 1.5;
+            border-top: 1px solid #0f456f;
+        }
+
+        .info-footer a:hover {
+            text-decoration: none;
+            opacity: 0.85;
+        }
+
         .text-primary-custom {
             color: #135291 !important;
         }
@@ -182,6 +197,44 @@
                 /* <– disesuaikan dari sebelumnya 75 */
             }
         }
+
+        @media (max-width: 768px) {
+
+            /* Jam & HP berdampingan */
+            .footer-info .jam-operasional,
+            .footer-info .nomor-wa {
+                flex: 0 0 50% !important;
+                max-width: 50% !important;
+            }
+
+            /* Alamat di bawah, 100% lebar */
+            .footer-info .alamat-footer {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+                margin-top: 10px;
+            }
+
+            /* Perbaiki align center */
+            .footer-info .d-flex {
+                justify-content: center !important;
+                text-align: center;
+            }
+
+            /* Perkecil ukuran font khusus mobile */
+            .footer-info span,
+            .footer-info a {
+                font-size: 0.75rem !important;
+                /* kira-kira setara 12px */
+            }
+        }
+
+        /* Di desktop (lebih besar dari 991px) - hapus jarak bawah */
+        @media (min-width: 992px) {
+            .footer-info {
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+            }
+        }
     </style>
     @stack('head')
 </head>
@@ -193,7 +246,16 @@
             <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="Logo" style="height:58px;">
             <div>
                 <div class="header-greeting-title">Toko KZ Family</div>
-                <div class="header-greeting-subtitle">Katalog Produk</div>
+                <div class="header-greeting-subtitle">
+                    @switch($activeMenu)
+                    @case('home') Katalog Produk @break
+                    @case('keranjang') Keranjang Saya @break
+                    @case('formcepat') Form Belanja Cepat @break
+                    @case('riwayat') Riwayat Belanja Saya @break
+                    @case('profile') Profile Saya @break
+                    @default Toko KZ Family
+                    @endswitch
+                </div>
             </div>
         </div>
         <div class="d-flex align-items-center flex-grow-1 justify-content-center">
@@ -228,6 +290,43 @@
     <main class="main-content">
         @yield('content')
     </main>
+
+    <!-- Footer Informasi -->
+    <footer class="footer-info text-white pt-4 pb-5" style="background: #135291; z-index: 1; position: relative;">
+        <div class="container text-center">
+
+            <div class="row justify-content-center gy-3 mb-3 px-2">
+                <!-- Jam Operasional -->
+                <div class="col-6 col-md-4 d-flex justify-content-center align-items-center gap-2 text-center order-1 order-md-1">
+                    <i class="bi bi-clock-fill fs-5"></i>
+                    <span class="small">Setiap Hari, 08.00–21.00</span>
+                </div>
+
+                <!-- WhatsApp -->
+                <div class="col-6 col-md-4 d-flex justify-content-center align-items-center gap-2 text-center order-2 order-md-3">
+                    <i class="bi bi-whatsapp fs-5"></i>
+                    <a href="https://wa.me/6281234567890" class="small text-white text-decoration-underline">
+                        0852-6326-4699
+                    </a>
+                </div>
+
+                <!-- Alamat -->
+                <div class="col-12 col-md-4 d-flex justify-content-center align-items-center gap-2 text-center order-3 order-md-2">
+                    <i class="bi bi-geo-alt-fill fs-5"></i>
+                    <span class="small">Ophir Barat, Koto Baru, Luhak Nan Duo, Pasaman Barat</span>
+                </div>
+            </div>
+
+            <hr style="opacity: 0.2;">
+            <p class="small mb-0">© {{ date('Y') }} <strong>Toko KZ Family</strong>. All rights reserved.</p>
+        </div>
+    </footer>
+
+
+
+
+
+
 
     <!-- Footer NAV (Only mobile) -->
     <nav class="footer-mobile-nav d-flex justify-content-around align-items-center" style="display:flex;">
