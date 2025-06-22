@@ -34,8 +34,9 @@ use App\Http\Controllers\Mobile\RiwayatBelanjaController;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
-    return view('auth/login');
+    return redirect('/login');
 });
+
 Route::post('/logout', function () {
     Auth::logout();
     return redirect('/');

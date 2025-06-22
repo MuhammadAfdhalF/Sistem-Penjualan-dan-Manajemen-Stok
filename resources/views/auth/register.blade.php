@@ -9,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Liita&display=swap');
 
         body {
             font-family: 'Open Sans', sans-serif;
@@ -23,42 +24,34 @@
     </style>
 </head>
 
-<body class="login-bg min-h-screen h-screen flex flex-col justify-center items-center">
+<body class="login-bg min-h-screen flex items-center justify-center">
 
-    <!-- Main Card -->
-    <main class="main-frame-bg w-full max-w-[98vw] md:max-w-[90vw] lg:max-w-[80vw] xl:max-w-[70vw] 2xl:max-w-[1400px]
-    bg-white rounded-2xl shadow-2xl flex flex-col lg:flex-row my-2 md:my-8 min-h-[600px]">
+    <main class="flex flex-col lg:flex-row w-full max-w-[1380px] lg:h-[640px] h-auto mx-4 lg:mx-auto bg-white rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-sm">
 
-        <!-- LEFT SIDE -->
-        <section class="relative flex flex-col bg-white w-full lg:basis-[53.5%] justify-center">
-            <div class="w-full h-auto lg:h-[600px] bg-white px-2 pt-4 md:px-8 md:pt-6 flex flex-col justify-center">
-                <div class="flex flex-row items-center">
-                    <img
-                        src="{{ asset('storage/logo/logo_kz.png') }}"
-                        class="w-[36px] h-[36px] md:w-[80px] md:h-[80px] lg:w-[120px] lg:h-[120px] object-contain"
-                        alt="Logo KZ"
-                        width="120"
-                        height="120" />
-                    <span class="ml-2 md:ml-6 text-base md:text-2xl lg:text-3xl font-extrabold tracking-tight" style="font-family: Montserrat, sans-serif;">
-                        Daftar Akun Baru di Toko KZ Family
-                    </span>
-                </div>
-                <div class="flex flex-row items-end justify-start mt-2 md:mt-5 lg:mt-5">
-                    <img src="{{ asset('storage/logo/login_cuy.png') }}"
-                        class="w-full max-w-[320px] md:max-w-[500px] lg:max-w-[817px] h-auto object-contain"
-                        alt="Register Cuy" />
-                </div>
+        <!-- LEFT PANEL -->
+        <section class="w-full lg:w-[53.15%] bg-white flex flex-col justify-start items-start px-6 py-6 lg:px-12 lg:py-10">
+            <!-- Logo + Headline -->
+            <div class="flex flex-row items-center w-full mb-4 lg:mb-8">
+                <img src="{{ asset('storage/logo/logo_kz.png') }}" alt="Logo KZ" class="w-20 lg:w-28 h-auto">
+                <h1 class="ml-4 text-[1.165rem] lg:text-[1.575rem] font-extrabold text-black text-left" style="font-family: 'Liita', sans-serif;">
+                    Daftar Akun Baru di Toko KZ Family
+                </h1>
+            </div>
+
+            <!-- Gambar -->
+            <div class="w-full flex justify-center lg:justify-start mt-2 lg:mt-[-20px]">
+                <img src="{{ asset('storage/logo/login_cuy.png') }}" alt="Register Cuy"
+                    class="w-[360px] lg:w-[700px] h-[240px] lg:h-[380px] object-contain">
             </div>
         </section>
 
-        <!-- RIGHT SIDE -->
-        <!-- RIGHT SIDE -->
-        <section class="flex flex-col justify-center items-center w-full lg:basis-[46.5%] bg-[#7DBFD9]">
-            <div class="bg-white p-4 sm:p-6 lg:p-10 rounded-2xl w-full max-w-full sm:max-w-lg md:max-w-xl lg:max-w-[600px] mx-auto shadow-lg flex flex-col justify-center my-4 md:my-8 lg:my-0">
+        <!-- RIGHT PANEL -->
+        <section class="w-full lg:w-[46.85%] bg-[#7DBFD9]/90 flex items-center justify-center p-6 lg:p-12">
+            <div class="bg-white p-4 sm:p-6 lg:p-10 rounded-2xl w-full max-w-full sm:max-w-lg md:max-w-xl lg:max-w-[600px] mx-auto shadow-lg">
                 <h2 class="text-lg md:text-xl font-bold text-gray-700 mb-3 text-center">Daftar Akun Baru</h2>
                 <p class="text-sm md:text-base text-gray-700 mb-3 text-center">Isi data untuk membuat akun di Toko KZ Family</p>
-                <form action="{{ route('register') }}" method="POST"
-                    class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-gray-700 text-sm md:text-base">
+
+                <form action="{{ route('register') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full text-gray-700 text-sm md:text-base">
                     @csrf
 
                     <div>
@@ -90,7 +83,8 @@
 
                     <div>
                         <label for="umur" class="block mb-1 font-semibold text-sm">Umur</label>
-                        <input type="number" id="umur" name="umur" value="{{ old('umur') }}" placeholder="Masukkan umur" min="1" max="150"
+                        <input type="number" id="umur" name="umur" value="{{ old('umur') }}" placeholder="Masukkan umur"
+                            min="1" max="150"
                             class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('umur') border-red-500 @enderror" />
                         @error('umur')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
@@ -100,7 +94,7 @@
                     <div>
                         <label for="jenis_pelanggan" class="block mb-1 font-semibold text-sm">Jenis Pelanggan</label>
                         <select id="jenis_pelanggan" name="jenis_pelanggan"
-                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('jenis_pelanggan') border-red-500 @enderror">
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-blue-600 @error('jenis_pelanggan') border-red-500 @enderror">
                             <option value="">-- Pilih Jenis Pelanggan --</option>
                             <option value="Toko Kecil" {{ old('jenis_pelanggan') == 'Toko Kecil' ? 'selected' : '' }}>Toko Kecil</option>
                             <option value="Individu" {{ old('jenis_pelanggan') == 'Individu' ? 'selected' : '' }}>Individu</option>
@@ -149,7 +143,7 @@
                         @enderror
                     </div>
 
-                    <!-- Full width button and link -->
+                    <!-- Button & Link -->
                     <div class="col-span-1 md:col-span-2 flex flex-col gap-2 mt-2">
                         <button type="submit"
                             class="bg-[#57aed1] text-white text-sm md:text-base font-bold px-4 py-2 w-full rounded-lg hover:bg-[#001766] transition">
@@ -163,8 +157,6 @@
                 </form>
             </div>
         </section>
-
-
     </main>
 
     <script>
@@ -173,12 +165,10 @@
             const icon = btn.querySelector('i');
             if (input.type === "password") {
                 input.type = "text";
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
+                icon.classList.replace('fa-eye', 'fa-eye-slash');
             } else {
                 input.type = "password";
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
+                icon.classList.replace('fa-eye-slash', 'fa-eye');
             }
         }
     </script>
