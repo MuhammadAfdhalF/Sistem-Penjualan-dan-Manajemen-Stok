@@ -1385,23 +1385,33 @@
             });
 
             // Event ketika input jumlah diketik langsung
+            // Event ketika input jumlah diketik langsung
             document.querySelectorAll('.jumlah-per-satuan').forEach(input => {
                 input.addEventListener('input', function() {
                     hitungTotal();
 
                     const card = input.closest('.card');
                     const keranjangId = input.dataset.id;
-                    if (!keranjangId) return;
+                    // Tidak perlu produkId dari card, cukup keranjangId karena endpoint update berdasarkan keranjangId
+                    if (!keranjangId) return; // Penting: Pastikan data-id ada di input
 
                     const inputs = card.querySelectorAll('.jumlah-per-satuan');
                     const jumlahJson = {};
                     inputs.forEach(i => {
-                        const satuanId = i.dataset.satuan || i.name?.match(/\[(\d+)\]/)?.[1];
+                        const satuanId = i.dataset.satuan; // Pastikan data-satuan ada di input
                         const qty = parseFloat(i.value);
-                        if (satuanId && !isNaN(qty) && qty > 0) {
+                        if (satuanId && !isNaN(qty) && qty > 0) { // Masalah mungkin di sini kalau qty <= 0 tidak dikirim
                             jumlahJson[satuanId] = qty;
                         }
                     });
+
+                    // Pastikan jumlahJson tidak kosong, kalau kosong berarti user ingin menghapus semua kuantitas
+                    // Ini akan ditangani oleh backend untuk menghapus item
+                    if (Object.keys(jumlahJson).length === 0) {
+                        // Jika semua kuantitas 0, kita akan kirim ini ke backend juga
+                        // Backend akan menafsirkannya sebagai permintaan hapus
+                    }
+
 
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                     const baseUrl = "{{ url('/pelanggan-area/keranjang') }}";
@@ -1422,13 +1432,44 @@
                             if (!res.ok || !data.success) {
                                 console.error('RESPON STATUS:', res.status);
                                 alert(data.message || 'Update gagal.');
+
+                                // --- BAGIAN INI SANGAT PENTING ---
+                                if (data.revert_jumlah_json) {
+                                    for (const sId in data.revert_jumlah_json) {
+                                        const revertedQty = data.revert_jumlah_json[sId];
+                                        const targetInput = card.querySelector(`.jumlah-per-satuan[data-satuan="${sId}"]`);
+                                        if (targetInput) {
+                                            targetInput.value = revertedQty;
+                                        }
+                                    }
+                                }
+                                // --- END OF BAGIAN PENTING ---
+
+                                // Setelah nilai dikembalikan, hitung ulang total
+                                hitungTotal();
+
                             } else {
                                 console.log('Update berhasil');
+                                // Jika update berhasil, pastikan nilai-nilai input saat ini adalah nilai "valid terakhir"
+                                // (ini penting untuk skenario jika user mengedit lagi setelah sukses)
+                                // Anda bisa menambahkan `data-old-value` ke input jika mau.
+                                // Contoh:
+                                // inputs.forEach(i => {
+                                //    i.dataset.oldValue = i.value;
+                                // });
+                                // Atau cukup mengandalkan data di database yang akan diambil jika ada validasi dari checkout.
                             }
                         })
                         .catch(err => {
                             console.error('Update error:', err);
                             alert('Terjadi kesalahan saat update jumlah.');
+                            // Pertimbangkan juga untuk mengembalikan nilai input ke terakhir yang berhasil
+                            // jika terjadi error koneksi atau server lain.
+                            // Misalnya:
+                            // if (input.dataset.oldValue) {
+                            //     input.value = input.dataset.oldValue;
+                            //     hitungTotal();
+                            // }
                         });
                 });
             });
@@ -1444,6 +1485,7 @@
             // Jalankan pertama kali
             hitungTotal();
             updateCheckoutForms();
+
         });
     </script>
 

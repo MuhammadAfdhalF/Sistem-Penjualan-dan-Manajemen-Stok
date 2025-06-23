@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\Log;
+
+
 class KeranjangMobileController extends Controller
 {
     // TAMPILKAN KERANJANG PELANGGAN (index)
@@ -51,118 +54,136 @@ class KeranjangMobileController extends Controller
         $produk_ids = $request->input('produk_id', []);
         $jumlah_jsons = $request->input('jumlah_json', []);
 
-        // Log awal request (optional)
+        // Log input awal untuk debugging
         \Log::info('[KERANJANG MOBILE] store input', [
             'produk_ids'    => $produk_ids,
             'jumlah_jsons'  => $jumlah_jsons,
             'request_all'   => $request->all(),
         ]);
 
-        DB::beginTransaction();
+        DB::beginTransaction(); // Memulai transaksi database
         try {
             foreach ($produk_ids as $i => $produk_id) {
                 $jumlah_json = $jumlah_jsons[$i] ?? null;
-                \Log::info('[KERANJANG MOBILE] Loop produk', [
+                Log::info('[KERANJANG MOBILE] Loop produk', [
                     'index'             => $i,
                     'produk_id'         => $produk_id,
                     'jumlah_json_raw'   => $jumlah_json,
                 ]);
-                if (!$produk_id || !$jumlah_json) continue;
 
-                // Pastikan $jumlah_json selalu array associative satuan_id => qty
+                // Lewati jika produk_id atau jumlah_json kosong
+                if (!$produk_id || !$jumlah_json) {
+                    continue;
+                }
+
+                // Pastikan $jumlah_json adalah array asosiatif satuan_id => qty
                 $daftarJumlah = is_array($jumlah_json)
                     ? $jumlah_json
                     : json_decode($jumlah_json, true);
 
-                // Safety jika decode gagal
-                if (!is_array($daftarJumlah)) $daftarJumlah = [];
-                \Log::info('[KERANJANG MOBILE] jumlah_json parsed', [
-                    'produk_id'   => $produk_id,
-                    'daftarJumlah' => $daftarJumlah,
-                ]);
-
-                if (empty($daftarJumlah)) continue;
-
-                // --- CEK DAN KURANGI STOK ----
-                foreach ($daftarJumlah as $satuan_id => $qty) {
-                    $qty = floatval($qty);
-                    if ($qty <= 0) continue;
-
-                    $satuan = \App\Models\Satuan::find($satuan_id);
-                    $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                    $jumlahUtama = $qty * $konversi;
-
-                    $produk = \App\Models\Produk::find($produk_id);
-                    if ($produk) {
-                        if ($produk->stok < $jumlahUtama) {
-                            DB::rollBack();
-                            $msg = "Stok tidak cukup untuk produk {$produk->nama_produk}.";
-                            if ($request->ajax()) {
-                                return response()->json(['success' => false, 'message' => $msg], 400);
-                            }
-                            return redirect()->back()->with('error', $msg);
-                        }
-                        $produk->stok -= $jumlahUtama;
-                        $produk->save();
-
-                        // Catat log stok keluar (optional)
-                        \App\Models\Stok::create([
-                            'produk_id' => $produk_id,
-                            'satuan_id' => $satuan_id,
-                            'jenis' => 'keluar',
-                            'jumlah' => $jumlahUtama,
-                            'keterangan' => 'Masuk keranjang (mobile): ' . ($user->nama ?? 'User #' . $user->id),
-                        ]);
-                    }
+                // Safety jika decode gagal atau bukan array
+                if (!is_array($daftarJumlah)) {
+                    $daftarJumlah = [];
                 }
 
+                Log::info('[KERANJANG MOBILE] jumlah_json parsed', [
+                    'produk_id'     => $produk_id,
+                    'daftarJumlah'  => $daftarJumlah,
+                ]);
+
+                // Lewati jika daftar jumlah kosong setelah parsing
+                if (empty($daftarJumlah)) {
+                    continue;
+                }
+
+                // --- START: LOGIKA PENGECEKAN STOK ---
+                $produk = Produk::with('satuans')->find($produk_id);
+                if (!$produk) {
+                    DB::rollBack();
+                    $msg = 'Produk tidak ditemukan.';
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'message' => $msg], 404);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
+
+                $totalJumlahDimintaUtama = 0;
+                foreach ($daftarJumlah as $satuan_id => $qty) {
+                    $qty = floatval($qty);
+                    if ($qty <= 0) continue; // Abaikan jumlah nol atau negatif
+
+                    $satuan = $produk->satuans->firstWhere('id', $satuan_id);
+                    $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
+                    $totalJumlahDimintaUtama += $qty * $konversi;
+                }
+
+                // Lakukan pengecekan stok di sini
+                if ($produk->stok < $totalJumlahDimintaUtama) {
+                    DB::rollBack();
+                    $stokTersediaFormatted = $produk->tampilkanStok3Tingkatan($produk->stok);
+                    $msg = "Stok tidak cukup untuk produk '{$produk->nama_produk}'. Stok tersedia: {$stokTersediaFormatted}.";
+
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'message' => $msg], 400);
+                    }
+                    return redirect()->back()->with('error', $msg);
+                }
+                // --- END: LOGIKA PENGECEKAN STOK ---
+
+
                 // Gabungkan jumlah per satuan jika sudah ada di keranjang
-                $keranjang = \App\Models\Keranjang::where('user_id', $user->id)
+                $keranjang = Keranjang::where('user_id', $user->id)
                     ->where('produk_id', $produk_id)
                     ->first();
 
                 if ($keranjang) {
+                    // Jika item sudah ada, gabungkan jumlah per satuan
                     $existing = $keranjang->jumlah_json;
-                    if (is_string($existing)) $existing = json_decode($existing, true);
-                    if (!is_array($existing)) $existing = [];
+                    // Pastikan $existing adalah array (karena model cast ke array)
+                    if (!is_array($existing)) {
+                        $existing = [];
+                    }
 
                     foreach ($daftarJumlah as $satuan_id => $qty) {
-                        $qty = floatval($qty);
+                        $qty = floatval($qty); // Pastikan qty adalah float
                         if (isset($existing[$satuan_id])) {
                             $existing[$satuan_id] += $qty;
                         } else {
                             $existing[$satuan_id] = $qty;
                         }
                     }
-                    $keranjang->jumlah_json = $existing;
-                    $keranjang->save();
-                    \Log::info('[KERANJANG MOBILE] Keranjang updated', [
+                    $keranjang->jumlah_json = $existing; // Update kolom jumlah_json
+                    $keranjang->save(); // Simpan perubahan ke database
+                    Log::info('[KERANJANG MOBILE] Keranjang updated', [
                         'produk_id' => $produk_id,
                         'jumlah_json_final' => $keranjang->jumlah_json,
                     ]);
                 } else {
-                    $baru = \App\Models\Keranjang::create([
+                    // Jika item belum ada, buat entri keranjang baru
+                    $baru = Keranjang::create([
                         'user_id' => $user->id,
                         'produk_id' => $produk_id,
-                        'jumlah_json' => $daftarJumlah,
+                        'jumlah_json' => $daftarJumlah, // Simpan daftar jumlah per satuan
                     ]);
-                    \Log::info('[KERANJANG MOBILE] Keranjang created', [
+                    Log::info('[KERANJANG MOBILE] Keranjang created', [
                         'produk_id' => $produk_id,
                         'jumlah_json_final' => $baru->jumlah_json,
                     ]);
                 }
             }
-            DB::commit();
+            DB::commit(); // Komit transaksi jika semua operasi berhasil
 
+            // Respons berdasarkan jenis permintaan (AJAX atau HTTP biasa)
             if ($request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Produk dimasukkan ke keranjang anda']);
             }
             return redirect()->route('mobile.keranjang.index')->with('success', 'Item berhasil ditambahkan ke keranjang.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('[KERANJANG MOBILE] ERROR: ' . $e->getMessage(), [
+            DB::rollBack(); // Rollback transaksi jika terjadi kesalahan
+            Log::error('[KERANJANG MOBILE] ERROR: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
+            // Respons error
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -173,137 +194,126 @@ class KeranjangMobileController extends Controller
         }
     }
 
-    // UPDATE JUMLAH ITEM DI KERANJANG
+    // UPDATE JUMLAH ITEM DI KERANJANG   */
     public function update(Request $request, $id)
     {
         $user = Auth::user();
 
+        // Cari item keranjang berdasarkan ID dan user ID
         $keranjang = Keranjang::where('user_id', $user->id)->findOrFail($id);
 
-        $oldJumlah = $keranjang->jumlah_json;
-        if (is_string($oldJumlah)) $oldJumlah = json_decode($oldJumlah, true);
-        if (!is_array($oldJumlah)) $oldJumlah = [];
+        // Ambil input jumlah baru dari request
+        $inputJumlahBaru = $request->input('jumlah_json');
+
+        // Pastikan input di-decode jika berupa string JSON
+        if (is_string($inputJumlahBaru)) {
+            $jumlahBaru = json_decode($inputJumlahBaru, true);
+        } else {
+            $jumlahBaru = $inputJumlahBaru;
+        }
+
+        // Validasi format jumlah
+        if (!is_array($jumlahBaru)) {
+            $msg = 'Format jumlah tidak valid.';
+            $revertJumlahJson = json_decode($keranjang->getRawOriginal('jumlah_json'), true) ?? [];
+            return response()->json(['success' => false, 'message' => $msg, 'revert_jumlah_json' => $revertJumlahJson], 400);
+        }
+
+        // Filter dan normalisasi input: pastikan hanya angka positif
+        $jumlahBaruFiltered = collect($jumlahBaru)
+            ->filter(fn($qty) => is_numeric($qty) && $qty >= 0)
+            ->map(fn($qty) => floatval($qty))
+            ->toArray();
+
+        // Jika array $jumlahBaruFiltered menjadi kosong setelah filter,
+        // (misal, jika inputnya tidak ada angka sama sekali),
+        // maka kita set menjadi array kosong secara eksplisit.
+        if (empty($jumlahBaruFiltered)) {
+            $jumlahBaruFiltered = [];
+        }
 
         DB::beginTransaction();
         try {
-            // 1. Kembalikan stok dari jumlah lama
-            foreach ($oldJumlah as $satuan_id => $qty) {
-                $qty = floatval($qty);
-                if ($qty <= 0) continue;
-
-                $satuan = \App\Models\Satuan::find($satuan_id);
-                $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                $jumlahUtama = $qty * $konversi;
-
-                $produk = Produk::find($keranjang->produk_id);
-                if ($produk) {
-                    $produk->stok += $jumlahUtama;
-                    $produk->save();
-
-                    \App\Models\Stok::create([
-                        'produk_id'  => $produk->id,
-                        'satuan_id'  => $satuan_id,
-                        'jenis'      => 'masuk',
-                        'jumlah'     => $jumlahUtama,
-                        'keterangan' => 'Restok sebelum update keranjang (mobile): ' . ($user->nama ?? 'User #' . $user->id),
-                    ]);
-                }
-            }
-
-            // 2. Ambil input baru
-            $input = $request->input('jumlah_json');
-            if (is_string($input)) {
-                $jumlahBaru = json_decode($input, true);
-            } else {
-                $jumlahBaru = $input;
-            }
-
-            if (!is_array($jumlahBaru)) {
-                DB::rollBack();
-                $msg = 'Format jumlah tidak valid.';
-                return $request->ajax()
-                    ? response()->json(['success' => false, 'message' => $msg], 400)
-                    : redirect()->back()->with('error', $msg);
-            }
-
-            // 3. Filter dan normalisasi input
-            $jumlahBaru = collect($jumlahBaru)
-                ->filter(fn($qty) => is_numeric($qty) && $qty > 0)
-                ->map(fn($qty) => floatval($qty))
-                ->toArray();
-
-            if (empty($jumlahBaru)) {
-                DB::rollBack();
-                $msg = 'Jumlah tidak boleh kosong.';
-                return $request->ajax()
-                    ? response()->json(['success' => false, 'message' => $msg], 400)
-                    : redirect()->back()->with('error', $msg);
-            }
-
-            // 4. Cek stok baru dan kurangi
-            $produk = Produk::find($keranjang->produk_id);
+            $produk = Produk::with('satuans')->find($keranjang->produk_id);
             if (!$produk) {
                 DB::rollBack();
                 $msg = 'Produk tidak ditemukan.';
-                return $request->ajax()
-                    ? response()->json(['success' => false, 'message' => $msg], 404)
-                    : redirect()->back()->with('error', $msg);
+                $revertJumlahJson = json_decode($keranjang->getRawOriginal('jumlah_json'), true) ?? [];
+                return response()->json(['success' => false, 'message' => $msg, 'revert_jumlah_json' => $revertJumlahJson], 404);
             }
 
-            $totalPengurangan = 0;
-            foreach ($jumlahBaru as $satuan_id => $qty) {
-                $satuan = \App\Models\Satuan::find($satuan_id);
-                $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                $jumlahUtama = $qty * $konversi;
-                $totalPengurangan += $jumlahUtama;
+            $totalNewJumlahUtama = 0;
+            foreach ($jumlahBaruFiltered as $satuan_id => $qty) {
+                $satuan = $produk->satuans->firstWhere('id', $satuan_id);
+                if (!$satuan) {
+                    DB::rollBack();
+                    $msg = 'Satuan tidak valid untuk produk ini.';
+                    $revertJumlahJson = json_decode($keranjang->getRawOriginal('jumlah_json'), true) ?? [];
+                    return response()->json(['success' => false, 'message' => $msg, 'revert_jumlah_json' => $revertJumlahJson], 400);
+                }
+                $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
+                $totalNewJumlahUtama += $qty * $konversi;
             }
 
-            if ($produk->stok < $totalPengurangan) {
+            // Lakukan pengecekan stok
+            if ($totalNewJumlahUtama > $produk->stok) {
                 DB::rollBack();
-                $msg = "Stok tidak cukup untuk produk {$produk->nama_produk}.";
-                return $request->ajax()
-                    ? response()->json(['success' => false, 'message' => $msg], 400)
-                    : redirect()->back()->with('error', $msg);
+                $stokTersediaFormatted = $produk->tampilkanStok3Tingkatan($produk->stok);
+                $msg = "Jumlah yang diminta untuk produk '{$produk->nama_produk}' melebihi stok tersedia. Stok: {$stokTersediaFormatted}.";
+
+                // --- START PERUBAHAN DI SINI ---
+                // Hitung jumlah maksimal yang tersedia dalam setiap satuan
+                $maxAvailableQuantities = [];
+                // Sortir satuan berdasarkan konversi ke satuan utama (dari besar ke kecil)
+                // agar jika stok hanya 10 liter, dan ada satuan Box=12 liter, maka Box akan jadi 0
+                // dan Liter akan menjadi 10.
+                $satuansSorted = $produk->satuans->sortByDesc('konversi_ke_satuan_utama');
+                $remainingStokUtama = $produk->stok;
+
+                foreach ($satuansSorted as $satuan) {
+                    $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
+                    if ($konversi > 0) {
+                        $qtyInThisUnit = floor($remainingStokUtama / $konversi);
+                        if ($qtyInThisUnit > 0) {
+                            $maxAvailableQuantities[$satuan->id] = $qtyInThisUnit;
+                            $remainingStokUtama -= ($qtyInThisUnit * $konversi);
+                        } else {
+                            $maxAvailableQuantities[$satuan->id] = 0;
+                        }
+                    } else {
+                        $maxAvailableQuantities[$satuan->id] = 0;
+                    }
+                }
+                // --- END PERUBAHAN DI SINI ---
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $msg,
+                    'revert_jumlah_json' => $maxAvailableQuantities, // KIRIMKAN INI!
+                ], 400);
             }
 
-            // 5. Kurangi stok dan simpan log
-            foreach ($jumlahBaru as $satuan_id => $qty) {
-                $satuan = \App\Models\Satuan::find($satuan_id);
-                $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-                $jumlahUtama = $qty * $konversi;
-
-                $produk->stok -= $jumlahUtama;
-                $produk->save();
-
-                \App\Models\Stok::create([
-                    'produk_id'  => $produk->id,
-                    'satuan_id'  => $satuan_id,
-                    'jenis'      => 'keluar',
-                    'jumlah'     => $jumlahUtama,
-                    'keterangan' => 'Update keranjang (mobile): ' . ($user->nama ?? 'User #' . $user->id),
-                ]);
-            }
-
-            // 6. Simpan ke keranjang
-            $keranjang->jumlah_json = $jumlahBaru;
+            // Simpan jumlah baru ke keranjang
+            $keranjang->jumlah_json = $jumlahBaruFiltered;
             $keranjang->save();
 
             DB::commit();
 
-            if ($request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Jumlah berhasil diupdate']);
-            }
-
-            return redirect()->route('mobile.keranjang.index')->with('success', 'Jumlah item di keranjang berhasil diperbarui.');
+            return response()->json(['success' => true, 'message' => 'Jumlah berhasil diupdate']);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('[KERANJANG UPDATE] ERROR: ' . $e->getMessage(), [
+            Log::error('[KERANJANG UPDATE] ERROR: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
             $msg = 'Gagal update keranjang: ' . $e->getMessage();
-            return $request->ajax()
-                ? response()->json(['success' => false, 'message' => $msg], 500)
-                : redirect()->back()->with('error', $msg);
+
+            // Untuk error umum, kita masih bisa mengirim revert ke nilai lama di DB
+            $revertJumlahJson = json_decode($keranjang->getRawOriginal('jumlah_json'), true) ?? [];
+            return response()->json([
+                'success' => false,
+                'message' => $msg,
+                'revert_jumlah_json' => $revertJumlahJson
+            ], 500);
         }
     }
 
@@ -312,36 +322,15 @@ class KeranjangMobileController extends Controller
     public function destroy($id)
     {
         $user = Auth::user();
+        // Cari dan hapus item keranjang
         $item = Keranjang::where('user_id', $user->id)->findOrFail($id);
 
-        $jumlahJson = $item->jumlah_json;
-        if (is_string($jumlahJson)) $jumlahJson = json_decode($jumlahJson, true);
-        if (!is_array($jumlahJson)) $jumlahJson = [];
+        // --- BAGIAN INI DIHAPUS: TIDAK ADA PENGEMBALIAN STOK SAAT MENGHAPUS DARI KERANJANG ---
+        // Logika pengembalian stok telah dihapus.
+        // Karena stok tidak dikurangi saat masuk keranjang, tidak perlu dikembalikan saat dihapus.
 
-        $produk = Produk::find($item->produk_id);
+        $item->delete(); // Hapus item dari keranjang
 
-        foreach ($jumlahJson as $satuan_id => $qty) {
-            $qty = floatval($qty);
-            if ($qty <= 0) continue;
-            $satuan = \App\Models\Satuan::find($satuan_id);
-            $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
-            $jumlahUtama = $qty * $konversi;
-            if ($produk) {
-                $produk->stok += $jumlahUtama;
-                $produk->save();
-
-                \App\Models\Stok::create([
-                    'produk_id'  => $item->produk_id,
-                    'satuan_id'  => $satuan_id,
-                    'jenis'      => 'masuk',
-                    'jumlah'     => $jumlahUtama,
-                    'keterangan' => 'Hapus keranjang (mobile): ' . ($user->nama ?? 'User #' . $user->id) . ' - Stok Dikembalikan',
-                ]);
-            }
-        }
-
-        $item->delete();
-
-        return redirect()->route('mobile.keranjang.index')->with('success', 'Item berhasil dihapus dari keranjang dan stok dikembalikan.');
+        return redirect()->route('mobile.keranjang.index')->with('success', 'Item berhasil dihapus dari keranjang.');
     }
 }

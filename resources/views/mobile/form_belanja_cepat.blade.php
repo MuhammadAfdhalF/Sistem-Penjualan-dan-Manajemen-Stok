@@ -314,47 +314,52 @@
             }).format(angka);
         }
 
+        // Fungsi untuk menghitung dan memperbarui total produk dan harga
         function calculateTotal() {
             let totalProduk = 0;
             let totalHarga = 0;
 
             document.querySelectorAll('.product-card.selected').forEach(card => {
-                let hasValue = false;
+                let hasValue = false; // Menandakan apakah produk ini memiliki setidaknya satu kuantitas > 0
                 card.querySelectorAll('.satuan-group').forEach(group => {
                     const jumlahInput = group.querySelector('.jumlah-input');
                     const satuanSelect = group.querySelector('.satuan-select');
-                    const jumlah = parseInt(jumlahInput.value) || 0;
+                    const jumlah = parseInt(jumlahInput.value) || 0; // Ambil nilai kuantitas
 
                     if (jumlah > 0) {
-                        hasValue = true;
+                        hasValue = true; // Produk ini memiliki kuantitas
                         const selectedOption = satuanSelect.options[satuanSelect.selectedIndex];
                         const harga = parseFloat(selectedOption.getAttribute('data-harga')) || 0;
-                        totalHarga += jumlah * harga;
+                        totalHarga += jumlah * harga; // Tambahkan ke total harga
                     }
                 });
                 if (hasValue) {
-                    totalProduk++;
+                    totalProduk++; // Hanya hitung produk jika memiliki kuantitas > 0
                 }
             });
 
+            // Perbarui tampilan total di desktop dan mobile
             document.getElementById('total-produk-desktop').textContent = `${totalProduk} produk`;
             document.getElementById('total-harga-desktop').textContent = formatRupiah(totalHarga);
             document.getElementById('total-produk-mobile').textContent = `${totalProduk} produk`;
             document.getElementById('total-harga-mobile').textContent = formatRupiah(totalHarga);
         }
 
+        // Fungsi untuk menangani interaksi pada input kuantitas dan checkbox produk
         function handleInteraction(event) {
             const card = event.target.closest('.product-card');
             if (!card) return;
 
             const selector = card.querySelector('.product-selector');
             let isAnyInputFilled = false;
+            // Periksa apakah ada input kuantitas yang lebih dari 0
             card.querySelectorAll('.jumlah-input').forEach(input => {
                 if ((parseInt(input.value) || 0) > 0) {
                     isAnyInputFilled = true;
                 }
             });
 
+            // Set status checkbox dan kelas 'selected' pada kartu
             if (isAnyInputFilled) {
                 selector.checked = true;
                 card.classList.add('selected');
@@ -362,115 +367,277 @@
                 selector.checked = false;
                 card.classList.remove('selected');
             }
+            // Setelah interaksi, hitung ulang total
             calculateTotal();
         }
 
+        // Fungsi untuk mengikat event pada grup satuan (input +, -, select, tambah, hapus)
         function bindSatuanGroupEvents(group) {
-            group.addEventListener('input', handleInteraction);
-            group.addEventListener('click', function(e) {
+            const card = group.closest('.product-card'); // Dapatkan card induk
+
+            group.addEventListener('input', handleInteraction); // Event input pada grup
+            group.addEventListener('click', function(e) { // Event klik pada tombol + dan -
                 const target = e.target;
                 const input = target.closest('.input-group')?.querySelector('.jumlah-input');
 
                 if (!input) return;
                 let val = parseInt(input.value) || 0;
-                if (target.classList.contains('btn-minus') && val > 0) {
-                    input.value = val - 1;
+                if (target.classList.contains('btn-minus')) {
+                    input.value = Math.max(0, val - 1); // Pastikan tidak kurang dari 0
                 }
                 if (target.classList.contains('btn-plus')) {
                     input.value = val + 1;
                 }
-                handleInteraction(e);
+                handleInteraction(e); // Panggil handleInteraction setelah perubahan nilai
             });
 
             const tambahBtn = group.querySelector('.tambah-jumlah');
             const hapusBtn = group.querySelector('.hapus-jumlah');
 
-            tambahBtn.addEventListener('click', function() {
-                const clone = group.cloneNode(true);
-                const wrapper = group.closest('.jumlah-satuan-wrapper');
+            // Event listener untuk tombol tambah satuan
+            if (tambahBtn) {
+                tambahBtn.addEventListener('click', function() {
+                    const wrapper = group.closest('.jumlah-satuan-wrapper');
+                    // Cek apakah select satuan saat ini sudah dipilih (tidak "--pilih--") atau unik
+                    // Ini opsional, bisa dihilangkan jika Anda mengizinkan duplikasi atau default
+                    // Misalnya, jika Anda tidak ingin menambah baris jika satuan yang sedang dipilih belum diisi
+                    // const currentSatuanSelect = group.querySelector('.satuan-select');
+                    // if (!currentSatuanSelect.value) {
+                    //     alert('Pilih satuan untuk baris ini terlebih dahulu.');
+                    //     return;
+                    // }
 
-                clone.querySelector('.jumlah-input').value = '';
-                clone.querySelector('.hapus-jumlah').classList.remove('d-none');
+                    const clone = group.cloneNode(true); // Kloning grup satuan
 
-                wrapper.appendChild(clone);
-                bindSatuanGroupEvents(clone);
-            });
+                    // Reset nilai input pada kloningan
+                    clone.querySelector('.jumlah-input').value = '';
+                    // Reset pilihan satuan ke opsi pertama (atau default)
+                    clone.querySelector('.satuan-select').selectedIndex = 0;
+                    // Tampilkan tombol hapus untuk grup yang baru dikloning
+                    clone.querySelector('.hapus-jumlah')?.classList.remove('d-none');
 
-            hapusBtn.addEventListener('click', function() {
-                const wrapper = group.closest('.jumlah-satuan-wrapper');
-                if (wrapper.querySelectorAll('.satuan-group').length > 1) {
-                    group.remove();
+                    wrapper.appendChild(clone); // Tambahkan kloningan ke DOM
+                    bindSatuanGroupEvents(clone); // Ikat event untuk elemen kloningan baru
+
+                    // Setelah menambah grup baru, perbarui total dan status seleksi
                     handleInteraction({
-                        target: wrapper
+                        target: clone.querySelector('.jumlah-input')
                     });
-                }
-            });
+                });
+            }
+
+            // Event listener untuk tombol hapus satuan
+            if (hapusBtn) {
+                hapusBtn.addEventListener('click', function() {
+                    const wrapper = group.closest('.jumlah-satuan-wrapper');
+                    const allSatuanGroups = wrapper.querySelectorAll('.satuan-group');
+
+                    // Hanya izinkan penghapusan jika ada lebih dari satu grup satuan
+                    if (allSatuanGroups.length > 1) {
+                        group.remove(); // Hapus grup dari DOM
+                        // Setelah menghapus grup, perbarui total dan status seleksi
+                        handleInteraction({
+                            target: wrapper
+                        }); // Panggil dengan wrapper sebagai target
+                    } else {
+                        // Jika hanya satu grup tersisa, reset nilainya menjadi 0
+                        const inputToReset = group.querySelector('.jumlah-input');
+                        if (inputToReset) {
+                            inputToReset.value = 0;
+                            handleInteraction({
+                                target: inputToReset
+                            });
+                        }
+                    }
+                });
+            }
         }
 
+        // Ikat event untuk semua grup satuan yang ada saat halaman dimuat
         document.querySelectorAll('.satuan-group').forEach(bindSatuanGroupEvents);
 
+        // Event listener untuk checkbox produk utama (select/deselect)
         document.querySelectorAll('.product-selector').forEach(selector => {
             selector.addEventListener('change', function() {
                 const card = this.closest('.product-card');
                 if (this.checked) {
                     card.classList.add('selected');
+                    // Jika dicentang, pastikan ada setidaknya 1 di input pertama
                     const firstInput = card.querySelector('.jumlah-input');
                     if (!(parseInt(firstInput.value) > 0)) {
                         firstInput.value = 1;
                     }
                 } else {
                     card.classList.remove('selected');
+                    // Jika tidak dicentang, kosongkan semua input kuantitas
                     card.querySelectorAll('.jumlah-input').forEach(input => input.value = '');
+                    // Sembunyikan tombol hapus untuk semua grup selain yang pertama
+                    const allSatuanGroups = card.querySelectorAll('.satuan-group');
+                    for (let i = 1; i < allSatuanGroups.length; i++) {
+                        allSatuanGroups[i].remove();
+                    }
+                    // Reset input pertama dan sembunyikan tombol hapus jika ada
+                    const firstSatuanGroup = allSatuanGroups[0];
+                    if (firstSatuanGroup) {
+                        firstSatuanGroup.querySelector('.jumlah-input').value = '';
+                        firstSatuanGroup.querySelector('.hapus-jumlah')?.classList.add('d-none');
+                    }
                 }
-                calculateTotal();
+                calculateTotal(); // Perbarui total setelah perubahan
             });
         });
 
+        // Event listener untuk submit form checkout
         mainForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // Mencegah submit form default
 
-            const dataContainer = document.getElementById('form-data-container');
-            dataContainer.innerHTML = '';
+            const productsToCheckout = [];
+            let hasSelectedProductWithQuantity = false;
 
-            let produkIndex = 0;
+            // Kumpulkan data produk yang dipilih dengan kuantitas > 0
             document.querySelectorAll('.product-card.selected').forEach(card => {
                 const produkId = card.getAttribute('data-produk-id');
                 const jumlahJson = {};
-                let hasValidQuantity = false;
+                let hasValidQuantityForThisProduct = false;
 
                 card.querySelectorAll('.satuan-group').forEach(group => {
                     const jumlah = parseInt(group.querySelector('.jumlah-input').value) || 0;
                     const satuanId = group.querySelector('.satuan-select').value;
-                    if (jumlah > 0) {
-                        jumlahJson[satuanId] = (jumlahJson[satuanId] || 0) + jumlah;
-                        hasValidQuantity = true;
+                    if (jumlah > 0) { // Hanya tambahkan kuantitas yang > 0
+                        jumlahJson[satuanId] = jumlah;
+                        hasValidQuantityForThisProduct = true;
                     }
                 });
 
-                if (hasValidQuantity) {
-                    const produkIdInput = document.createElement('input');
-                    produkIdInput.type = 'hidden';
-                    produkIdInput.name = `produk_data[${produkIndex}][produk_id]`;
-                    produkIdInput.value = produkId;
-                    dataContainer.appendChild(produkIdInput);
-
-                    for (const [satuanId, qty] of Object.entries(jumlahJson)) {
-                        const jumlahInput = document.createElement('input');
-                        jumlahInput.type = 'hidden';
-                        jumlahInput.name = `produk_data[${produkIndex}][jumlah_json][${satuanId}]`;
-                        jumlahInput.value = qty;
-                        dataContainer.appendChild(jumlahInput);
-                    }
-                    produkIndex++;
+                if (hasValidQuantityForThisProduct) {
+                    productsToCheckout.push({
+                        produk_id: produkId,
+                        jumlah_json: jumlahJson
+                    });
+                    hasSelectedProductWithQuantity = true;
+                } else {
+                    // Jika card ini terpilih tapi tidak ada qty > 0, uncheck di frontend
+                    const selector = card.querySelector('.product-selector');
+                    if (selector) selector.checked = false;
+                    card.classList.remove('selected');
                 }
             });
 
-            if (produkIndex === 0) {
-                alert('Silakan pilih dan isi jumlah produk terlebih dahulu.');
+            // Validasi di frontend: harus ada minimal satu produk dengan kuantitas
+            if (!hasSelectedProductWithQuantity) {
+                alert('Pilih minimal satu produk dengan jumlah lebih dari 0 sebelum melanjutkan.');
                 return;
             }
 
-            this.submit();
+            // Lakukan Validasi Stok melalui AJAX ke backend
+            fetch("{{ route('mobile.form_belanja_cepat.validateCheckout') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        products_to_checkout: productsToCheckout
+                    })
+                })
+                .then(async response => {
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        // Jika validasi gagal, tampilkan alert dan kembalikan tampilan
+                        alert('Checkout gagal: ' + data.message);
+
+                        if (data.revert_data) {
+                            for (const prodId in data.revert_data) {
+                                const maxQuantities = data.revert_data[prodId];
+                                const targetCard = document.querySelector(`.product-card[data-produk-id="${prodId}"]`);
+                                if (targetCard) {
+                                    // Hapus semua satuan-group yang ada kecuali yang pertama
+                                    const existingSatuanGroups = targetCard.querySelectorAll('.satuan-group');
+                                    for (let i = 1; i < existingSatuanGroups.length; i++) {
+                                        existingSatuanGroups[i].remove();
+                                    }
+                                    // Reset input di satuan-group pertama
+                                    const firstSatuanGroup = existingSatuanGroups[0];
+                                    if (firstSatuanGroup) {
+                                        firstSatuanGroup.querySelector('.jumlah-input').value = '';
+                                        firstSatuanGroup.querySelector('.satuan-select').selectedIndex = 0; // Pilih opsi pertama
+                                        firstSatuanGroup.querySelector('.hapus-jumlah')?.classList.add('d-none'); // Sembunyikan tombol hapus
+                                    }
+
+                                    // Iterasi dan set kuantitas maksimal yang tersedia
+                                    let currentGroupIndex = 0;
+                                    for (const satuanId in maxQuantities) {
+                                        const qty = maxQuantities[satuanId];
+                                        if (qty > 0) { // Hanya isi jika qty > 0
+                                            let targetGroup;
+                                            // Gunakan grup pertama jika masih kosong, atau kloning jika sudah terisi/perlu grup baru
+                                            if (currentGroupIndex === 0 && firstSatuanGroup && firstSatuanGroup.querySelector('.jumlah-input').value === '') {
+                                                targetGroup = firstSatuanGroup;
+                                            } else {
+                                                targetGroup = firstSatuanGroup.cloneNode(true);
+                                                targetCard.querySelector('.jumlah-satuan-wrapper').appendChild(targetGroup);
+                                                // Re-bind events untuk grup baru
+                                                bindSatuanGroupEvents(targetGroup);
+                                            }
+
+                                            // Set jumlah dan satuan yang benar di grup target
+                                            targetGroup.querySelector('.jumlah-input').value = qty;
+                                            targetGroup.querySelector('.satuan-select').value = satuanId;
+                                            targetGroup.querySelector('.hapus-jumlah')?.classList.remove('d-none');
+                                            currentGroupIndex++;
+                                        }
+                                    }
+
+                                    // Jika semua kuantitas menjadi 0 setelah revert, pastikan checkbox tidak dicentang
+                                    let totalRevertedQty = 0;
+                                    for (const sId in maxQuantities) {
+                                        totalRevertedQty += maxQuantities[sId];
+                                    }
+                                    if (totalRevertedQty === 0) {
+                                        targetCard.classList.remove('selected');
+                                        const selector = targetCard.querySelector('.product-selector');
+                                        if (selector) selector.checked = false;
+                                    } else {
+                                        // Jika ada kuantitas > 0 setelah revert, pastikan card selected
+                                        targetCard.classList.add('selected');
+                                        const selector = targetCard.querySelector('.product-selector');
+                                        if (selector) selector.checked = true;
+                                    }
+                                }
+                            }
+                        }
+                        // Setelah nilai dikembalikan, hitung ulang total
+                        calculateTotal();
+                    } else {
+                        // Jika validasi sukses, kumpulkan data untuk submit form utama
+                        const dataContainer = document.getElementById('form-data-container');
+                        dataContainer.innerHTML = ''; // Bersihkan kontainer
+
+                        // Tambahkan input hidden untuk data produk yang akan dikirim ke halaman konfirmasi
+                        productsToCheckout.forEach((productData, index) => {
+                            const produkIdInput = document.createElement('input');
+                            produkIdInput.type = 'hidden';
+                            produkIdInput.name = `produk_data[${index}][produk_id]`;
+                            produkIdInput.value = productData.produk_id;
+                            dataContainer.appendChild(produkIdInput);
+
+                            for (const [satuanId, qty] of Object.entries(productData.jumlah_json)) {
+                                const jumlahInput = document.createElement('input');
+                                jumlahInput.type = 'hidden';
+                                jumlahInput.name = `produk_data[${index}][jumlah_json][${satuanId}]`;
+                                jumlahInput.value = qty;
+                                dataContainer.appendChild(jumlahInput);
+                            }
+                        });
+
+                        mainForm.submit(); // Lanjutkan submit form yang sebenarnya
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saat validasi checkout:', error);
+                    alert('Terjadi kesalahan saat melakukan validasi checkout. Silakan coba lagi.');
+                });
         });
 
         // ===============================================
@@ -480,28 +647,32 @@
         const filterForm = document.getElementById('filter-form');
         let debounceTimer;
 
-        // Hapus logic submit otomatis jika search input dikosongkan secara manual
-        // agar tidak konflik dengan tombol reset.
         searchInput.addEventListener('input', function() {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
-                // Hanya submit jika input tidak kosong.
-                if (searchInput.value.trim() !== '') {
+                if (searchInput.value.trim() !== '' || filterForm.querySelector('select[name="kategori"]').value !== '') {
                     filterForm.submit();
                 }
             }, 500);
         });
 
-        // Handle jika user menekan enter di search box
         filterForm.addEventListener('submit', function(e) {
-            if (searchInput.value.trim() === '') {
-                const kategori = filterForm.querySelector('select[name="kategori"]').value;
-                if (kategori === '') {
-                    e.preventDefault(); // Mencegah submit jika keduanya kosong
-                    window.location.href = "{{ route('mobile.form_belanja_cepat.index') }}"; // Arahkan ke URL bersih
-                }
+            // Jika search input kosong dan kategori juga kosong, cegah submit
+            if (searchInput.value.trim() === '' && filterForm.querySelector('select[name="kategori"]').value === '') {
+                e.preventDefault();
+                // Arahkan ke URL bersih untuk menghapus parameter query lama
+                window.location.href = "{{ route('mobile.form_belanja_cepat.index') }}";
             }
         });
+
+        // Panggil inisialisasi pada load DOM untuk mengeset status terpilih
+        // dan menghitung total berdasarkan kondisi awal
+        document.querySelectorAll('.product-card').forEach(card => {
+            handleInteraction({
+                target: card.querySelector('.jumlah-input') || card.querySelector('.product-selector')
+            });
+        });
+        calculateTotal();
     });
 </script>
 @endpush

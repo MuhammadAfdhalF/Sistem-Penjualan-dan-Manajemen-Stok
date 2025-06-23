@@ -139,6 +139,7 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     // Route::post('/pelanggan-area/form_belanja_cepat', [FormBelanjaCepatController::class, 'store'])->name('mobile.form_belanja_cepat.store');
     Route::post('/pelanggan-area/form_belanja_cepat/konfirmasi', [ProsesTransaksiController::class, 'formBelanjaCepat'])->name('mobile.form_belanja_cepat.konfirmasi');
     Route::post('/pelanggan-area/form_belanja_cepat/simpan', [ProsesTransaksiController::class, 'formBelanjaCepatStore'])->name('mobile.form_belanja_cepat.store');
+    Route::post('/pelanggan-area/form_belanja_cepat/validate-checkout', [FormBelanjaCepatController::class, 'validateCheckout'])->name('mobile.form_belanja_cepat.validateCheckout'); // <--- TAMBAHKAN INI
 
 
     // Riwayat Belanja
