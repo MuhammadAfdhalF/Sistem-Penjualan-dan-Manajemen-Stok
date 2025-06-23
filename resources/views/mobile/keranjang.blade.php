@@ -1111,7 +1111,7 @@
 
                 <div class="cart-badge-all-desktop d-flex align-items-center ms-2 mb-3">
                     <div class="form-check d-flex align-items-center" style="position: relative;">
-                        <input class="form-check-input select-all custom-check-desktop me-2" type="checkbox" id="selectAllDesktop" checked>
+                        <input class="form-check-input select-all custom-check-desktop me-2" type="checkbox" id="selectAllDesktop">
                         <label class="form-check-label fw-bold" for="selectAllDesktop" style="font-size: 1.1rem;">
                             Pilih Semua
                         </label>
@@ -1134,8 +1134,7 @@
                             <div style="min-width: 28px;">
                                 <input type="checkbox"
                                     class="custom-check-item item-checkbox checkbox-margin-mobile"
-                                    data-id="{{ $item->id }}"
-                                    checked>
+                                    data-id="{{ $item->id }}">
                             </div>
 
                             <div class="border rounded-3 overflow-hidden shadow-sm"
@@ -1147,32 +1146,90 @@
 
                             <div class="flex-grow-1">
                                 <div class="fw-bold fs-6 text-dark mb-1">{{ $item->produk->nama_produk }}</div>
-                                <div class="fw-semibold text-dark mb-1">Rp {{ number_format($item->produk->hargaProduks->first()->harga, 0, ',', '.') }}</div>
-                                <div class="text-muted fw-semibold small mb-1">Jumlah :</div>
-                                <div class="d-flex align-items-center gap-2 ms-auto flex-wrap justify-content-end">
-                                    @foreach($item->produk->satuans()->orderByDesc('konversi_ke_satuan_utama')->get() as $satuan)
+                                <div class="text-muted small mb-1">
                                     @php
-                                    $harga = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id)?->harga ?? 0;
-                                    $jumlah = $item->jumlah_json[$satuan->id] ?? 0;
+                                    // Kumpulkan semua harga satuan untuk tampilan di keranjang
+                                    $hargaList = $item->produk->satuans->map(function($satuan) use ($item) {
+                                    $hargaObj = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id);
+                                    if ($hargaObj) {
+                                    return 'Rp ' . number_format($hargaObj->harga, 0, ',', '.') . '/' . $satuan->nama_satuan;
+                                    }
+                                    return null;
+                                    })->filter()->toArray();
                                     @endphp
-                                    <div class="d-flex align-items-center gap-1">
-                                        <span class="text-lowercase" style="font-size: 0.84rem; min-width: 28px;">{{ strtolower($satuan->nama_satuan) }}</span>
-                                        <div class="input-counter d-flex align-items-center border rounded overflow-hidden">
-                                            <button type="button" class="btn btn-sm px-2 py-1 border-0 bg-light minus-btn">−</button>
-                                            <input type="number"
-                                                class="form-control jumlah-per-satuan text-center border-0"
-                                                value="{{ $jumlah }}"
-                                                min="0"
-                                                data-id="{{ $item->id }}"
-                                                data-satuan="{{ $satuan->id }}"
-                                                data-harga="{{ $harga }}"
-                                                data-produk-id="{{ $item->produk->id }}"
-                                                style="width: 44px; height: 32px; font-size: 0.85rem; box-shadow: none;">
+                                    {!! implode('<br>', $hargaList) !!}
+                                </div>
 
-                                            <button type="button" class="btn btn-sm px-2 py-1 border-0 bg-light plus-btn">+</button>
+                                <div class="text-muted fw-semibold small mb-2">Jumlah :</div>
+                                <div class="jumlah-satuan-wrapper text-end">
+                                    {{-- Jika item keranjang punya data jumlah_json --}}
+                                    @if(!empty($item->jumlah_json))
+                                    {{-- Loop untuk setiap satuan yang sudah ada di keranjang --}}
+                                    @foreach($item->jumlah_json as $satuanId => $jumlah)
+                                    @php
+                                    $currentSatuan = $item->produk->satuans->firstWhere('id', $satuanId);
+                                    $hargaSatuan = $item->produk->hargaProduks->firstWhere('satuan_id', $satuanId);
+                                    @endphp
+                                    @if($currentSatuan && $hargaSatuan)
+                                    <div class="row gx-2 align-items-center satuan-group mb-2 justify-content-end">
+                                        <div class="col-auto">
+                                            <div class="input-group input-group-sm" style="border: none;">
+                                                <button class="btn btn-sm bg-light border-0 minus-btn" type="button" style="font-size: 0.75rem;">−</button>
+                                                <input type="text" class="form-control text-center jumlah-input bg-light border-0" placeholder="0" value="{{ $jumlah }}"
+                                                    data-keranjang-id="{{ $item->id }}" data-satuan-id="{{ $currentSatuan->id }}" data-harga-satuan="{{ $hargaSatuan->harga }}"
+                                                    data-produk-id="{{ $item->produk->id }}" style="width: 45px; font-size: 0.75rem;">
+                                                <button class="btn btn-sm bg-light border-0 plus-btn" type="button" style="font-size: 0.75rem;">+</button>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto" style="width: 80px;">
+                                            <select class="form-select form-select-sm border-0 bg-light satuan-select" style="font-size: 0.75rem;">
+                                                @foreach($item->produk->satuans as $satuan)
+                                                @php
+                                                $optHargaSatuan = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id);
+                                                @endphp
+                                                <option value="{{ $satuan->id }}" data-harga="{{ $optHargaSatuan->harga ?? 0 }}" @if($satuan->id == $currentSatuan->id) selected @endif>{{ $satuan->nama_satuan }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-auto" style="width: 40px;">
+                                            <button type="button" class="btn btn-sm btn-light text-success tambah-jumlah w-100" style="font-size: 0.75rem;"><i class="bi bi-plus-lg"></i></button>
+                                        </div>
+                                        <div class="col-auto" style="width: 40px;">
+                                            <button type="button" class="btn btn-sm btn-light text-danger hapus-jumlah w-100 {{ count($item->jumlah_json) == 1 ? 'd-none' : '' }}" style="font-size: 0.75rem;"><i class="bi bi-x-lg"></i></button>
                                         </div>
                                     </div>
+                                    @endif
                                     @endforeach
+                                    @else
+                                    {{-- Default satu baris jika keranjang_item.jumlah_json kosong --}}
+                                    <div class="row gx-2 align-items-center satuan-group mb-2 justify-content-end">
+                                        <div class="col-auto">
+                                            <div class="input-group input-group-sm" style="border: none;">
+                                                <button class="btn btn-sm bg-light border-0 minus-btn" type="button" style="font-size: 0.75rem;">−</button>
+                                                <input type="text" class="form-control text-center jumlah-input bg-light border-0" placeholder="0" value="0"
+                                                    data-keranjang-id="{{ $item->id }}" data-satuan-id="{{ $item->produk->satuans->first()->id ?? '' }}" data-harga-satuan="{{ $item->produk->hargaProduks->first()->harga ?? 0 }}"
+                                                    data-produk-id="{{ $item->produk->id }}" style="width: 45px; font-size: 0.75rem;">
+                                                <button class="btn btn-sm bg-light border-0 plus-btn" type="button" style="font-size: 0.75rem;">+</button>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto" style="width: 80px;">
+                                            <select class="form-select form-select-sm border-0 bg-light satuan-select" style="font-size: 0.75rem;">
+                                                @foreach($item->produk->satuans as $satuan)
+                                                @php
+                                                $optHargaSatuan = $item->produk->hargaProduks->firstWhere('satuan_id', $satuan->id);
+                                                @endphp
+                                                <option value="{{ $satuan->id }}" data-harga="{{ $optHargaSatuan->harga ?? 0 }}">{{ $satuan->nama_satuan }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-auto" style="width: 40px;">
+                                            <button type="button" class="btn btn-sm btn-light text-success tambah-jumlah w-100" style="font-size: 0.75rem;"><i class="bi bi-plus-lg"></i></button>
+                                        </div>
+                                        <div class="col-auto" style="width: 40px;">
+                                            <button type="button" class="btn btn-sm btn-light text-danger hapus-jumlah w-100 d-none" style="font-size: 0.75rem;"><i class="bi bi-x-lg"></i></button>
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
 
                             </div>
@@ -1228,11 +1285,12 @@
 
                 </div>
             </div>
+
             <!-- Footer Mobile -->
             <div class="cart-footer-bar">
                 <div class="footer-left">
                     <label class="footer-checkbox-custom">
-                        <input type="checkbox" class="select-all" checked>
+                        <input type="checkbox" class="select-all">
                         <span class="footer-checkbox-box"></span>
                     </label>
                     <span class="footer-label">Pilih Semua</span>
@@ -1268,13 +1326,217 @@
     </div>
     </div>
 
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Menambahkan event listener untuk SEMUA elemen dengan kelas "select-all"
+            document.querySelectorAll('.select-all').forEach(function(selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                        // Pastikan checkbox item diperbarui sesuai "Pilih Semua"
+                        checkbox.checked = isChecked;
+
+                        const card = checkbox.closest('.card');
+                        if (isChecked) {
+                            card.classList.add('selected');
+                            // Saat dicentang via "Pilih Semua", JANGAN reset ke 1.
+                            // Biarkan jumlah_json terakhir dari backend yang berlaku.
+                            // Cukup panggil hitungTotal() dan updateCheckoutForms()
+                        } else {
+                            card.classList.remove('selected');
+                            // Saat di-uncheck via "Pilih Semua", JANGAN reset jumlah/hapus baris.
+                            // Cukup hapus kelas 'selected'
+                        }
+                    });
+                    hitungTotal(); // Hitung ulang total setelah semua checkbox diperbarui
+                    updateCheckoutForms(); // Perbarui form checkout
+                });
+            });
+
+
+
+
             function formatRupiah(angka) {
                 return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
+            // Fungsi untuk mengikat event pada grup satuan (input +, -, select, tambah, hapus)
+            function bindSatuanGroupEvents(group) {
+                const card = group.closest('.card'); // Dapatkan card induk
+
+                // Event input pada jumlah-input (ketika diketik atau diubah oleh tombol +/-)
+                const jumlahInput = group.querySelector('.jumlah-input');
+                if (jumlahInput) {
+                    jumlahInput.addEventListener('input', function() {
+                        updateItemAndTotal(card);
+                    });
+                }
+
+                // Event klik pada tombol + dan -
+                group.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Hentikan event propagation agar tidak memicu click pada card induk
+
+                    const input = group.querySelector('.jumlah-input'); // Ambil input jumlah yang relevan
+                    if (!input) return; // Pastikan input ditemukan
+
+                    let val = parseInt(input.value) || 0;
+                    let changed = false; // Flag untuk menandakan apakah nilai input berubah
+
+                    // Menggunakan .closest() untuk deteksi tombol yang lebih robust
+                    if (e.target.closest('.minus-btn')) {
+                        input.value = Math.max(0, val - 1);
+                        changed = true;
+                    } else if (e.target.closest('.plus-btn')) {
+                        input.value = val + 1;
+                        changed = true;
+                    }
+
+                    // Hanya panggil dispatchEvent jika nilai input memang berubah karena tombol +/- 
+                    if (changed) {
+                        input.dispatchEvent(new Event('input'));
+                    }
+                });
+
+                // Event change pada select satuan
+                const satuanSelect = group.querySelector('.satuan-select');
+                if (satuanSelect) {
+                    satuanSelect.addEventListener('change', function(e) {
+                        e.stopPropagation(); // Hentikan propagation untuk select juga
+                        const selectedOption = this.options[this.selectedIndex];
+                        const harga = parseFloat(selectedOption.getAttribute('data-harga')) || 0;
+                        const associatedJumlahInput = this.closest('.satuan-group').querySelector('.jumlah-input');
+                        if (associatedJumlahInput) {
+                            associatedJumlahInput.dataset.hargaSatuan = harga;
+                        }
+                        updateItemAndTotal(card);
+                    });
+                }
+
+                const tambahBtn = group.querySelector('.tambah-jumlah');
+                const hapusBtn = group.querySelector('.hapus-jumlah');
+
+                // Event listener untuk tombol tambah satuan
+                if (tambahBtn) {
+                    tambahBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Hentikan propagation
+                        const wrapper = group.closest('.jumlah-satuan-wrapper');
+                        const clone = group.cloneNode(true);
+
+                        // Reset nilai input pada kloningan
+                        clone.querySelector('.jumlah-input').value = '';
+                        // Reset pilihan satuan ke opsi pertama (atau default)
+                        clone.querySelector('.satuan-select').selectedIndex = 0;
+                        // Pastikan data-harga-satuan di input yang dikloning juga direset ke harga default satuan pertama
+                        const defaultHarga = parseFloat(clone.querySelector('.satuan-select option:first-child')?.getAttribute('data-harga')) || 0;
+                        clone.querySelector('.jumlah-input').dataset.hargaSatuan = defaultHarga;
+
+                        // Tampilkan tombol hapus untuk grup yang baru dikloning
+                        clone.querySelector('.hapus-jumlah')?.classList.remove('d-none');
+
+                        wrapper.appendChild(clone); // Tambahkan kloningan ke DOM
+                        bindSatuanGroupEvents(clone); // Ikat event untuk elemen kloningan baru
+
+                        // Pastikan tombol hapus untuk semua grup sudah terlihat jika ada lebih dari 1
+                        wrapper.querySelectorAll('.hapus-jumlah').forEach(btn => btn.classList.remove('d-none'));
+
+                        updateItemAndTotal(card);
+                    });
+                }
+
+                // Event listener untuk tombol hapus satuan
+                if (hapusBtn) {
+                    hapusBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Hentikan propagation
+                        const wrapper = group.closest('.jumlah-satuan-wrapper');
+                        const allSatuanGroups = wrapper.querySelectorAll('.satuan-group');
+
+                        if (allSatuanGroups.length > 1) {
+                            group.remove(); // Hapus grup dari DOM
+                            // Jika setelah dihapus hanya sisa satu grup, sembunyikan tombol hapusnya
+                            if (wrapper.querySelectorAll('.satuan-group').length === 1) {
+                                wrapper.querySelector('.hapus-jumlah')?.classList.add('d-none');
+                            }
+                        } else {
+                            // Jika hanya satu grup tersisa, reset nilainya menjadi 0
+                            const inputToReset = group.querySelector('.jumlah-input');
+                            const selectToReset = group.querySelector('.satuan-select');
+                            if (inputToReset) {
+                                inputToReset.value = 0;
+                                if (selectToReset) selectToReset.selectedIndex = 0; // Reset select ke opsi pertama
+                            }
+                            group.querySelector('.hapus-jumlah')?.classList.add('d-none'); // Selalu sembunyikan jika hanya 1
+                        }
+                        updateItemAndTotal(card);
+                    });
+                }
+            }
+
+            // Fungsi utama untuk memperbarui item keranjang di backend dan menghitung total
+            function updateItemAndTotal(card) {
+                const keranjangId = card.querySelector('.item-checkbox').dataset.id;
+                if (!keranjangId) return;
+
+                let totalHargaProduk = 0;
+                const jumlahJson = {};
+                let isAnyQuantityGreaterThanZero = false;
+
+                card.querySelectorAll('.satuan-group').forEach(group => {
+                    const jumlahInput = group.querySelector('.jumlah-input');
+                    const satuanSelect = group.querySelector('.satuan-select');
+                    const satuanId = satuanSelect.value;
+                    const jumlah = parseInt(jumlahInput.value) || 0;
+
+                    // Selalu tambahkan satuan ke jumlahJson, bahkan jika jumlahnya 0
+                    jumlahJson[satuanId] = jumlah;
+
+                    if (jumlah > 0 && satuanId) {
+                        isAnyQuantityGreaterThanZero = true;
+                        const harga = parseFloat(jumlahInput.dataset.hargaSatuan) || 0;
+                        totalHargaProduk += jumlah * harga;
+                    }
+                });
+
+                // Update status checkbox dan class 'selected'
+                const checkbox = card.querySelector('.item-checkbox');
+                if (isAnyQuantityGreaterThanZero) {
+                    checkbox.checked = true;
+                    card.classList.add('selected');
+                } else {
+                    checkbox.checked = false;
+                    card.classList.remove('selected');
+                }
+
+                // Kirim update ke backend
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const baseUrl = "{{ url('/pelanggan-area/keranjang') }}";
+
+                fetch(`${baseUrl}/${keranjangId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            jumlah_json: jumlahJson
+                        })
+                    })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok || !data.success) {
+                            console.error('RESPON STATUS:', res.status);
+                            alert(data.message || 'Update gagal.');
+                        } else {
+                            hitungTotal();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Update error:', err);
+                        alert('Terjadi kesalahan saat update jumlah.');
+                    });
+            }
+
+            // Fungsi untuk menghitung dan memperbarui total produk dan harga
             function hitungTotal() {
                 let total = 0;
                 let adaYangDipilih = false;
@@ -1283,20 +1545,18 @@
                     const checkbox = card.querySelector('.item-checkbox');
                     if (checkbox && checkbox.checked) {
                         adaYangDipilih = true;
-                        const inputs = card.querySelectorAll('.jumlah-per-satuan');
-                        inputs.forEach(input => {
-                            const jumlah = parseFloat(input.value) || 0;
-                            const harga = parseFloat(input.dataset.harga) || 0;
+                        card.querySelectorAll('.satuan-group').forEach(group => {
+                            const jumlahInput = group.querySelector('.jumlah-input');
+                            const harga = parseFloat(jumlahInput.dataset.hargaSatuan) || 0;
+                            const jumlah = parseInt(jumlahInput.value) || 0;
                             total += jumlah * harga;
                         });
                     }
                 });
 
-                // Update tampilan total
                 document.getElementById('totalKeranjang').textContent = formatRupiah(total);
                 document.getElementById('totalKeranjangDesktop').textContent = formatRupiah(total);
 
-                // Toggle tombol checkout
                 const formMobile = document.getElementById('checkoutForm');
                 const formDesktop = document.getElementById('checkoutFormDesktop');
 
@@ -1307,8 +1567,9 @@
                 if (btnDesktop) btnDesktop.disabled = !adaYangDipilih;
             }
 
+            // Fungsi untuk mengupdate input hidden di form checkout
             function updateCheckoutForms() {
-                const selected = document.querySelectorAll('.item-checkbox:checked');
+                const selectedCards = document.querySelectorAll('.card.selected');
                 const formMobile = document.getElementById('checkoutForm');
                 const formDesktop = document.getElementById('checkoutFormDesktop');
 
@@ -1317,21 +1578,22 @@
                 formDesktop?.querySelectorAll('input[name="keranjang_id[]"]').forEach(e => e.remove());
 
                 // Tambahkan input hidden baru
-                selected.forEach(cb => {
-                    const id = cb.dataset.id;
-                    if (!id) return;
+                selectedCards.forEach(card => {
+                    const keranjangId = card.querySelector('.item-checkbox').dataset.id;
+                    if (!keranjangId) return;
 
                     const inputMobile = document.createElement('input');
                     inputMobile.type = 'hidden';
                     inputMobile.name = 'keranjang_id[]';
-                    inputMobile.value = id;
+                    inputMobile.value = keranjangId;
                     formMobile?.appendChild(inputMobile);
 
-                    const inputDesktop = inputMobile.cloneNode();
+                    const inputDesktop = inputMobile.cloneNode(true);
                     formDesktop?.appendChild(inputDesktop);
                 });
             }
 
+            // Fungsi untuk memvalidasi tombol checkout hanya aktif jika ada yang dipilih
             function preventSubmitIfEmpty(formId) {
                 const form = document.getElementById(formId);
                 if (!form) return;
@@ -1345,145 +1607,79 @@
                 });
             }
 
-            // Checkbox per item
-            document.querySelector('.cart-list')?.addEventListener('change', function(e) {
-                if (e.target.classList.contains('item-checkbox')) {
-                    hitungTotal();
-                    updateCheckoutForms();
-                }
-            });
+            // Ikat event untuk validasi checkout
+            preventSubmitIfEmpty('checkoutForm');
+            preventSubmitIfEmpty('checkoutFormDesktop');
 
-            // Checkbox "pilih semua"
-            document.querySelectorAll('.select-all').forEach(master => {
-                master.addEventListener('change', function() {
-                    const checked = this.checked;
-                    document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = checked);
-                    document.querySelectorAll('.select-all').forEach(sa => sa.checked = checked);
-                    hitungTotal();
-                    updateCheckoutForms();
-                });
-            });
+            // --- Inisialisasi Event Listeners ---
+            // Ikat event untuk semua grup satuan yang ada saat halaman dimuat
+            document.querySelectorAll('.satuan-group').forEach(bindSatuanGroupEvents);
 
-            // Tombol + -
-            document.querySelectorAll('.input-counter').forEach(wrapper => {
-                const input = wrapper.querySelector('.jumlah-per-satuan');
-                const minus = wrapper.querySelector('.minus-btn');
-                const plus = wrapper.querySelector('.plus-btn');
+            // Event listener untuk checkbox produk individual (select/deselect)
+            document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const card = this.closest('.card');
 
-                minus.addEventListener('click', () => {
-                    let val = parseInt(input.value) || 0;
-                    if (val > parseInt(input.min || 0)) {
-                        input.value = val - 1;
-                        input.dispatchEvent(new Event('input'));
+                    if (this.checked) {
+                        card.classList.add('selected');
+                        // Saat dicentang:
+                        // Kita TIDAK PERLU lagi memaksa nilai menjadi 1 di sini.
+                        // Logika `updateItemAndTotal` akan menjaga jumlah yang ada di input field.
+                        // Jika user mengaktifkan kembali checkbox, kita asumsikan jumlah yang
+                        // terakhir kali mereka set (dan tersimpan di `jumlah_json` di DOM)
+                        // harus tetap digunakan.
+                        // kita hanya perlu memastikan class 'selected' ditambahkan
+                        // dan kemudian update total.
+                    } else {
+                        // Saat di-UNCHECK:
+                        // Cukup hapus kelas 'selected'.
+                        // JANGAN RESET jumlah_input ke 0 atau hapus group satuan.
+                        // Data ini harusnya tetap ada, hanya tidak dihitung.
+                        card.classList.remove('selected');
                     }
-                });
-
-                plus.addEventListener('click', () => {
-                    let val = parseInt(input.value) || 0;
-                    input.value = val + 1;
-                    input.dispatchEvent(new Event('input'));
-                });
-            });
-
-            // Event ketika input jumlah diketik langsung
-            document.querySelectorAll('.jumlah-per-satuan').forEach(input => {
-                input.addEventListener('input', function() {
-                    hitungTotal();
-
-                    const card = input.closest('.card');
-                    const keranjangId = input.dataset.id;
-                    if (!keranjangId) return;
-
-                    const inputs = card.querySelectorAll('.jumlah-per-satuan');
-                    const jumlahJson = {};
-                    inputs.forEach(i => {
-                        const satuanId = i.dataset.satuan;
-                        const qty = parseFloat(i.value);
-                        if (satuanId && !isNaN(qty) && qty > 0) {
-                            jumlahJson[satuanId] = qty;
-                        }
-                    });
-
-                    // If all quantities are 0, backend should handle it as deletion.
-                    // No specific client-side action needed here beyond sending the update.
-
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                    const baseUrl = "{{ url('/pelanggan-area/keranjang') }}";
-
-                    fetch(`${baseUrl}/${keranjangId}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                jumlah_json: jumlahJson
-                            })
-                        })
-                        .then(async res => {
-                            const data = await res.json();
-                            if (!res.ok || !data.success) {
-                                console.error('RESPON STATUS:', res.status);
-                                alert(data.message || 'Update gagal.');
-
-                                if (data.revert_jumlah_json) {
-                                    for (const sId in data.revert_jumlah_json) {
-                                        const revertedQty = data.revert_jumlah_json[sId];
-                                        const targetInput = card.querySelector(`.jumlah-per-satuan[data-satuan="${sId}"]`);
-                                        if (targetInput) {
-                                            targetInput.value = revertedQty;
-                                        }
-                                    }
-                                }
-                                hitungTotal(); // Recalculate total after reverting
-                            } else {
-                                console.log('Update berhasil');
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Update error:', err);
-                            alert('Terjadi kesalahan saat update jumlah.');
-                        });
+                    hitungTotal(); // Panggil hitungTotal() untuk memperbarui total
+                    updateCheckoutForms(); // Perbarui form checkout
+                    // Penting: Kita TIDAK memanggil updateItemAndTotal() di sini.
+                    // updateItemAndTotal() hanya dipanggil ketika jumlah_input atau satuan_select berubah.
+                    // Perubahan checkbox hanya memengaruhi perhitungan total lokal.
                 });
             });
 
-            // Tambahkan event listener untuk mengarahkan ke halaman detail produk
+            // Event listener untuk mengarahkan ke halaman detail produk
             document.querySelectorAll('.card').forEach(card => {
                 card.addEventListener('click', function(event) {
-                    // Cek apakah yang diklik adalah elemen interaktif di dalam kartu
                     const interactiveElements = [
                         '.custom-check-item', // Checkbox
                         '.minus-btn', // Tombol minus
                         '.plus-btn', // Tombol plus
-                        '.btn-remove', // Tombol hapus (form)
-                        'input[type="number"]' // Input angka (jumlah)
+                        '.tambah-jumlah', // Tombol tambah satuan
+                        '.hapus-jumlah', // Tombol hapus satuan
+                        '.jumlah-input', // Input angka (jumlah)
+                        '.satuan-select', // Dropdown satuan
+                        'form button[type="submit"]', // Tombol submit dalam form, e.g. tombol delete
+                        'a' // Any anchor tag inside the card that should handle its own navigation
                     ];
 
-                    // Periksa apakah target klik adalah salah satu elemen interaktif atau turunannya
                     let isInteractiveClick = false;
                     for (const selector of interactiveElements) {
+                        // Gunakan .closest() di sini juga untuk memastikan deteksi yang akurat
                         if (event.target.closest(selector)) {
                             isInteractiveClick = true;
                             break;
                         }
                     }
 
-                    // Jika bukan klik pada elemen interaktif, arahkan ke detail produk
                     if (!isInteractiveClick) {
-                        // Ambil ID produk dari data-id pada input jumlah pertama di dalam card
-                        const produkIdInput = card.querySelector('.jumlah-per-satuan');
-                        if (produkIdInput) {
-                            const produkId = produkIdInput.dataset.produkId; // Pastikan Anda menambahkan data-produk-id ke input jumlah
-                            // Ubah rute ke halaman detail produk
+                        const produkIdInput = card.querySelector('.jumlah-input');
+                        if (produkIdInput && produkIdInput.dataset.produkId) {
+                            const produkId = produkIdInput.dataset.produkId;
                             window.location.href = `{{ url('/pelanggan-area/detail_produk') }}/${produkId}`;
                         } else {
-                            console.warn('Produk ID tidak ditemukan di kartu ini.');
+                            console.warn('Produk ID tidak ditemukan di kartu ini atau data-produk-id belum disetel.');
                         }
                     }
                 });
             });
-
             // Validasi form sebelum submit
             preventSubmitIfEmpty('checkoutForm');
             preventSubmitIfEmpty('checkoutFormDesktop');
@@ -1496,9 +1692,11 @@
             hitungTotal();
             updateCheckoutForms();
 
+            // Ikat event untuk semua grup satuan yang ada saat halaman dimuat
+            // Ini harus tetap di sini agar fungsionalitas +/-/select satuan bekerja
+            document.querySelectorAll('.satuan-group').forEach(bindSatuanGroupEvents);
         });
     </script>
-
 
 
     @endsection
