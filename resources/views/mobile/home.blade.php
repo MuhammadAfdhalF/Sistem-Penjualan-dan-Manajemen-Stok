@@ -38,7 +38,9 @@
         }
     }
 
-    .image-banner {
+    /* Styles for the banner carousel container */
+    .image-banner-carousel-container {
+        /* MENGGANTI .image-banner */
         width: 90%;
         max-width: 900px;
         height: 250px;
@@ -47,16 +49,19 @@
         border-radius: 5px;
         box-shadow: 2px 8px 46px rgba(0, 0, 0, 0.34);
         display: flex;
+        /* keep flex for centering if content is smaller */
         align-items: center;
         justify-content: center;
         background: #fff;
         position: relative;
     }
 
-    .image-banner img {
+    .image-banner-carousel-container .carousel-item img {
+        /* target gambar di dalam carousel */
         width: 100%;
         height: 100%;
         object-fit: cover;
+        /* default to cover */
         display: block;
     }
 
@@ -92,7 +97,6 @@
 
     .produk-img {
         height: 210px !important;
-        /* perbesar dari sebelumnya, misal 210px */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -102,7 +106,6 @@
 
     .produk-img img {
         max-height: 185px !important;
-        /* perbesar dari sebelumnya, misal 185px */
         width: auto !important;
         object-fit: contain;
         display: block;
@@ -145,14 +148,18 @@
             display: none !important;
         }
 
-        .image-banner {
+        /* Responsive styles for the banner carousel container */
+        .image-banner-carousel-container {
+            /* MENGGANTI .image-banner */
             height: 120px;
             border-radius: 15px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .image-banner img {
-            object-fit: contain;
+        .image-banner-carousel-container .carousel-item img {
+            /* target gambar di dalam carousel */
+            object-fit: contain !important;
+            /* enforce contain for mobile */
         }
 
         #filterForm {
@@ -162,17 +169,13 @@
             gap: 4px !important;
             width: 100%;
             flex-wrap: wrap !important;
-            /* Biar X bisa turun kalau sempit */
         }
 
         #filterForm input.form-control,
         #filterForm select.form-select {
             font-size: 0.53rem !important;
-            /* Lebih kecil lagi */
             padding: 2px 5px !important;
-            /* Ramping */
             height: 26px !important;
-            /* Ramping */
             border-radius: 7px !important;
             flex: 1 1 0 !important;
             min-width: 0 !important;
@@ -183,12 +186,10 @@
             white-space: nowrap !important;
             overflow: hidden !important;
             max-width: 34vw !important;
-            /* Lebih kecil, biar ga nabrak */
         }
 
         #filterForm .btn-danger {
             width: 22px !important;
-            /* Lebih kecil */
             height: 22px !important;
             min-width: 0 !important;
             min-height: 0 !important;
@@ -220,7 +221,6 @@
             border-radius: 8px !important;
             box-shadow: none !important;
             background: #fff !important;
-            /* Agar tidak ada background aneh */
         }
 
         .produk-card {
@@ -269,42 +269,31 @@
             padding-top: 0 !important;
         }
 
-
         .greet-card {
             display: flex !important;
         }
 
-        .image-banner {
-            max-width: 100% !important;
-            width: 100% !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-        }
-
-        .container-fluid,
-        .produk-grid {
-            max-width: 100vw !important;
-            width: 100vw !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin: 0 auto !important;
-        }
-
         .produk-grid {
             grid-template-columns: repeat(4, 1fr) !important;
-            /* Atur jadi 5-6 kolom */
         }
 
-        .produk-nama {
-            font-size: 0.78rem !important;
-            min-height: 12px;
+        .produk-card {
+            min-height: 170px !important;
+            padding: 9px 6px !important;
         }
 
+        .produk-img {
+            height: 115px !important;
+        }
+
+        .produk-img img {
+            max-height: 100px !important;
+        }
+
+        .produk-nama,
         .produk-desc,
-        .produk-info-row,
-        .produk-harga,
-        .produk-stok {
-            font-size: 0.59rem !important;
+        .produk-info-row {
+            font-size: 0.89rem !important;
         }
 
         #filterForm {
@@ -330,7 +319,6 @@
             min-width: 110px !important;
             width: 150px !important;
         }
-
 
         #filterForm .btn-danger {
             width: 42px !important;
@@ -441,7 +429,11 @@
             display: none;
             position: absolute;
             top: 8px;
+            bottom: unset;
+            /* ensure it's not affected by previous rules */
             right: 10px;
+            left: unset;
+            /* ensure it's not affected by previous rules */
             z-index: 3;
             font-size: 1.24rem;
             color: #4f4f4f;
@@ -536,7 +528,8 @@
 
     /* Banner lebih pendek, object-fit: contain */
     @media (max-width: 1024px) {
-        .image-banner {
+        .image-banner-carousel-container {
+            /* MENGGANTI .image-banner */
             height: 120px !important;
             min-height: 90px !important;
             max-height: 150px !important;
@@ -545,16 +538,18 @@
             box-shadow: 0 1.5px 9px rgba(0, 0, 0, 0.12);
         }
 
-        .image-banner img {
+        .image-banner-carousel-container .carousel-item img {
+            /* target gambar di dalam carousel */
             object-fit: contain !important;
             width: 100% !important;
             height: 100% !important;
             display: block;
         }
 
-        /* Banner lebih pendek, object-fit: contain */
+        /* Banner lebih pendek, object-fit: contain (redundant, but keeping structure if you had another one) */
         @media (max-width: 1024px) {
-            .image-banner {
+            .image-banner-carousel-container {
+                /* MENGGANTI .image-banner */
                 height: 170px !important;
                 /* Naikkan height banner */
                 min-height: 150px !important;
@@ -564,7 +559,8 @@
                 border-radius: 13px !important;
             }
 
-            .image-banner img {
+            .image-banner-carousel-container .carousel-item img {
+                /* target gambar di dalam carousel */
                 object-fit: contain !important;
                 width: 100% !important;
                 height: 100% !important;
@@ -580,8 +576,6 @@
                 margin-top: 0 !important;
             }
         }
-
-
     }
 </style>
 @endpush
@@ -598,15 +592,48 @@
         </div>
     </div>
     <a href="{{ route('mobile.keranjang.index') }}" class="btn btn-outline-secondary mt-3">
-        <i class="bi bi-cart text-dark"></i> <!-- Ini bikin ikon jadi hitam -->
-    </a>
+        <i class="bi bi-cart text-dark"></i> </a>
 
 </div>
 
-{{-- Banner --}}
-<div class="image-banner mb-4">
-    <img src="{{ asset('storage/logo/Spanduk KZ Family 2.png') }}" alt="Banner Image">
+{{-- Banner Carousel --}}
+{{-- Mengganti div .image-banner statis dengan carousel dinamis --}}
+@if($banners->isNotEmpty())
+<div id="bannerCarousel" class="carousel slide image-banner-carousel-container mb-4" data-bs-ride="carousel" data-bs-interval="2000">
+    <div class="carousel-indicators">
+        @foreach($banners as $index => $banner)
+        <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="{{ $index }}" class="{{ $loop->first ? 'active' : '' }}" aria-current="{{ $loop->first ? 'true' : 'false' }}" aria-label="Slide {{ $index + 1 }}"></button>
+        @endforeach
+    </div>
+    <div class="carousel-inner rounded">
+        @foreach($banners as $banner)
+        <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
+            {{-- Gambar di dalam carousel akan menggunakan styles dari .image-banner-carousel-container .carousel-item img --}}
+            <img src="{{ asset('storage/' . $banner->gambar_url) }}" class="d-block w-100" alt="{{ $banner->nama_banner }}">
+            {{-- Jika ada kolom link_url di banner, Anda bisa membuatnya clickable di sini --}}
+            {{-- @if($banner->link_url)
+                        <a href="{{ $banner->link_url }}" class="stretched-link"></a>
+            @endif --}}
+        </div>
+        @endforeach
+    </div>
+    @if($banners->count() > 1) {{-- Hanya tampilkan kontrol jika ada lebih dari 1 banner --}}
+    <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+    @endif
 </div>
+@else
+{{-- Opsional: Placeholder jika tidak ada banner aktif --}}
+<div class="image-banner-carousel-container mb-4 d-flex align-items-center justify-content-center text-muted">
+    Tidak ada promosi menarik saat ini.
+</div>
+@endif
 
 {{-- Search & Filter --}}
 <div class="container-fluid px-3">
@@ -637,10 +664,6 @@
         @endif
     </form>
 </div>
-
-
-
-
 
 {{-- Produk Grid --}}
 <div class="produk-grid mt-3">
@@ -684,10 +707,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.produk-card').forEach(function(card) {
             card.addEventListener('click', function(e) {
-                // Arahkan ke detail di semua device (tidak perlu cek mobile lagi)
                 window.location = this.getAttribute('data-detail-url');
             });
-            // Tambah tab index biar bisa diakses pakai keyboard (opsional)
             card.setAttribute('tabindex', '0');
             card.style.outline = 'none';
             card.addEventListener('keydown', function(e) {

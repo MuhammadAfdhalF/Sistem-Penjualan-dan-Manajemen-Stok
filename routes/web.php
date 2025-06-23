@@ -1,6 +1,6 @@
 <?php
 
-
+use App\Http\Controllers\BannerController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\ProdukController;
@@ -95,6 +95,8 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     // keuangan
     Route::resource('keuangan', KeuanganController::class);
 
+    // Banner
+    Route::resource('banner', BannerController::class);
 
 
 

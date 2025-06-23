@@ -220,6 +220,27 @@
                     '>',
             });
 
+            // ================================================================
+            // KODE BARU UNTUK ALERT OTOMATIS HILANG DIMULAI DI SINI
+            // ================================================================
+
+            // Fungsi untuk menyembunyikan alert setelah beberapa detik
+            function hideAlert(alertId, delay = 4000) { // delay dalam milidetik (4000 ms = 4 detik)
+                const $alert = $(alertId);
+                if ($alert.length) { // Pastikan elemen alert ada di DOM
+                    setTimeout(function() {
+                        $alert.fadeOut('slow', function() {
+                            $(this).remove(); // Hapus elemen dari DOM setelah fade out
+                        });
+                    }, delay);
+                }
+            }
+
+            // Panggil fungsi untuk alert success dan error
+            hideAlert('#success-alert', 4000); // Sembunyikan alert success setelah 4 detik
+            hideAlert('#error-alert', 5000); // Sembunyikan alert error setelah 5 detik (bisa diatur beda)
+
+
             // ... kode DataTables dan alert...
 
             const sidebar = document.getElementById('pc-sidebar');

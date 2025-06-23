@@ -62,8 +62,15 @@ class DashboardController extends Controller
 
         // Hitung produk terjual gabungan offline + online
 
+        // Tahun saat ini untuk filter produk terlaris
+        $tahunSaatIni = Carbon::now()->year; // <-- Tambahkan baris ini
+
+        // Hitung produk terjual gabungan offline + online
+
         // Eager load produk untuk efisiensi
-        $offlineDetails = TransaksiOfflineDetail::with('produk')->get();
+        $offlineDetails = TransaksiOfflineDetail::with('produk')
+            ->whereYear('created_at', $tahunSaatIni) // <-- Tambahkan filter tahun di sini
+            ->get();
 
         $produkTerjual = [];
 
@@ -87,7 +94,9 @@ class DashboardController extends Controller
         }
 
 
-        $onlineDetails = TransaksiOnlineDetail::with('produk')->get();
+        $onlineDetails = TransaksiOnlineDetail::with('produk')
+            ->whereYear('created_at', $tahunSaatIni) // <-- Tambahkan filter tahun di sini
+            ->get();
 
         foreach ($onlineDetails as $detail) {
             $produkId = $detail->produk_id;

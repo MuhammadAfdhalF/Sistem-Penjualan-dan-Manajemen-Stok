@@ -8,8 +8,9 @@ use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;  // BARIS INI PENTING UNTUK MENGATASI ERROR 'Log'
 
-use Illuminate\Support\Facades\Log;
+
 
 
 class KeranjangMobileController extends Controller
@@ -55,7 +56,7 @@ class KeranjangMobileController extends Controller
         $jumlah_jsons = $request->input('jumlah_json', []);
 
         // Log input awal untuk debugging
-        \Log::info('[KERANJANG MOBILE] store input', [
+        Log::info('[KERANJANG MOBILE] store input', [
             'produk_ids'    => $produk_ids,
             'jumlah_jsons'  => $jumlah_jsons,
             'request_all'   => $request->all(),

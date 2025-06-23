@@ -7,6 +7,8 @@ use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Jenssegers\Agent\Agent; // Pastikan ini ada jika Anda menggunakan Agent
 use Illuminate\Validation\ValidationException; // Tambahkan ini
+use Illuminate\Support\Facades\Session; // BARIS INI DITAMBAHKAN!
+use App\Models\User; // Tambahkan ini juga, agar model User bisa dikenali
 
 class LoginController extends Controller
 {
@@ -24,7 +26,7 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
-        \Session::forget('url.intended');
+        Session::forget('url.intended');
         if ($user->role === 'admin') {
             return redirect('/dashboard');
         }
