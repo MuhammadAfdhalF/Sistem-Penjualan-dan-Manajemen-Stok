@@ -1166,6 +1166,7 @@
                                                 data-id="{{ $item->id }}"
                                                 data-satuan="{{ $satuan->id }}"
                                                 data-harga="{{ $harga }}"
+                                                data-produk-id="{{ $item->produk->id }}"
                                                 style="width: 44px; height: 32px; font-size: 0.85rem; box-shadow: none;">
 
                                             <button type="button" class="btn btn-sm px-2 py-1 border-0 bg-light plus-btn">+</button>
@@ -1385,33 +1386,26 @@
             });
 
             // Event ketika input jumlah diketik langsung
-            // Event ketika input jumlah diketik langsung
             document.querySelectorAll('.jumlah-per-satuan').forEach(input => {
                 input.addEventListener('input', function() {
                     hitungTotal();
 
                     const card = input.closest('.card');
                     const keranjangId = input.dataset.id;
-                    // Tidak perlu produkId dari card, cukup keranjangId karena endpoint update berdasarkan keranjangId
-                    if (!keranjangId) return; // Penting: Pastikan data-id ada di input
+                    if (!keranjangId) return;
 
                     const inputs = card.querySelectorAll('.jumlah-per-satuan');
                     const jumlahJson = {};
                     inputs.forEach(i => {
-                        const satuanId = i.dataset.satuan; // Pastikan data-satuan ada di input
+                        const satuanId = i.dataset.satuan;
                         const qty = parseFloat(i.value);
-                        if (satuanId && !isNaN(qty) && qty > 0) { // Masalah mungkin di sini kalau qty <= 0 tidak dikirim
+                        if (satuanId && !isNaN(qty) && qty > 0) {
                             jumlahJson[satuanId] = qty;
                         }
                     });
 
-                    // Pastikan jumlahJson tidak kosong, kalau kosong berarti user ingin menghapus semua kuantitas
-                    // Ini akan ditangani oleh backend untuk menghapus item
-                    if (Object.keys(jumlahJson).length === 0) {
-                        // Jika semua kuantitas 0, kita akan kirim ini ke backend juga
-                        // Backend akan menafsirkannya sebagai permintaan hapus
-                    }
-
+                    // If all quantities are 0, backend should handle it as deletion.
+                    // No specific client-side action needed here beyond sending the update.
 
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                     const baseUrl = "{{ url('/pelanggan-area/keranjang') }}";
@@ -1433,7 +1427,6 @@
                                 console.error('RESPON STATUS:', res.status);
                                 alert(data.message || 'Update gagal.');
 
-                                // --- BAGIAN INI SANGAT PENTING ---
                                 if (data.revert_jumlah_json) {
                                     for (const sId in data.revert_jumlah_json) {
                                         const revertedQty = data.revert_jumlah_json[sId];
@@ -1443,34 +1436,51 @@
                                         }
                                     }
                                 }
-                                // --- END OF BAGIAN PENTING ---
-
-                                // Setelah nilai dikembalikan, hitung ulang total
-                                hitungTotal();
-
+                                hitungTotal(); // Recalculate total after reverting
                             } else {
                                 console.log('Update berhasil');
-                                // Jika update berhasil, pastikan nilai-nilai input saat ini adalah nilai "valid terakhir"
-                                // (ini penting untuk skenario jika user mengedit lagi setelah sukses)
-                                // Anda bisa menambahkan `data-old-value` ke input jika mau.
-                                // Contoh:
-                                // inputs.forEach(i => {
-                                //    i.dataset.oldValue = i.value;
-                                // });
-                                // Atau cukup mengandalkan data di database yang akan diambil jika ada validasi dari checkout.
                             }
                         })
                         .catch(err => {
                             console.error('Update error:', err);
                             alert('Terjadi kesalahan saat update jumlah.');
-                            // Pertimbangkan juga untuk mengembalikan nilai input ke terakhir yang berhasil
-                            // jika terjadi error koneksi atau server lain.
-                            // Misalnya:
-                            // if (input.dataset.oldValue) {
-                            //     input.value = input.dataset.oldValue;
-                            //     hitungTotal();
-                            // }
                         });
+                });
+            });
+
+            // Tambahkan event listener untuk mengarahkan ke halaman detail produk
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', function(event) {
+                    // Cek apakah yang diklik adalah elemen interaktif di dalam kartu
+                    const interactiveElements = [
+                        '.custom-check-item', // Checkbox
+                        '.minus-btn', // Tombol minus
+                        '.plus-btn', // Tombol plus
+                        '.btn-remove', // Tombol hapus (form)
+                        'input[type="number"]' // Input angka (jumlah)
+                    ];
+
+                    // Periksa apakah target klik adalah salah satu elemen interaktif atau turunannya
+                    let isInteractiveClick = false;
+                    for (const selector of interactiveElements) {
+                        if (event.target.closest(selector)) {
+                            isInteractiveClick = true;
+                            break;
+                        }
+                    }
+
+                    // Jika bukan klik pada elemen interaktif, arahkan ke detail produk
+                    if (!isInteractiveClick) {
+                        // Ambil ID produk dari data-id pada input jumlah pertama di dalam card
+                        const produkIdInput = card.querySelector('.jumlah-per-satuan');
+                        if (produkIdInput) {
+                            const produkId = produkIdInput.dataset.produkId; // Pastikan Anda menambahkan data-produk-id ke input jumlah
+                            // Ubah rute ke halaman detail produk
+                            window.location.href = `{{ url('/pelanggan-area/detail_produk') }}/${produkId}`;
+                        } else {
+                            console.warn('Produk ID tidak ditemukan di kartu ini.');
+                        }
+                    }
                 });
             });
 
