@@ -64,6 +64,32 @@
         @method('PUT')
         <h5 class="text-center fw-bold mb-4 page-title">Edit Profil Anda</h5>
 
+        {{-- Tambahkan alert untuk pesan success/error --}}
+        @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+        @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+        @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Oops!</strong> Ada masalah dengan input Anda.
+            <ul>
+                @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+
+
         {{-- FOTO PROFIL --}}
         <div class="mb-4 text-center">
             <label for="foto_user" style="cursor: pointer; position: relative; display: inline-block;">
@@ -85,45 +111,70 @@
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Nama</label>
-            <input type="text" class="form-control" name="nama" value="{{ old('nama', $user->nama) }}" required>
+            <input type="text" class="form-control @error('nama') is-invalid @enderror" name="nama" value="{{ old('nama', $user->nama) }}" required>
+            @error('nama')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Email</label>
-            <input type="email" class="form-control" name="email" value="{{ old('email', $user->email) }}" required>
+            <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email', $user->email) }}" required>
+            @error('email')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Nomor Hp</label>
-            <input type="text" class="form-control" name="no_hp" value="{{ old('no_hp', $user->no_hp) }}" required>
+            <input type="text" class="form-control @error('no_hp') is-invalid @enderror" name="no_hp" value="{{ old('no_hp', $user->no_hp) }}" required>
+            @error('no_hp')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
+        {{-- Ganti input Umur dengan Tanggal Lahir --}}
         <div class="mb-3">
-            <label class="form-label fw-semibold ms-2">Umur</label>
-            <input type="number" class="form-control" name="umur" value="{{ old('umur', $user->umur) }}" required>
+            <label class="form-label fw-semibold ms-2">Tanggal Lahir</label>
+            <input type="date" class="form-control @error('tanggal_lahir') is-invalid @enderror" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir?->format('Y-m-d')) }}" required>
+            @error('tanggal_lahir')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Jenis Pelanggan</label>
-            <select class="form-control" name="jenis_pelanggan" required>
-                <option value="Toko Kecil" {{ $user->jenis_pelanggan == 'Toko Kecil' ? 'selected' : '' }}>Toko Kecil</option>
-                <option value="Individu" {{ $user->jenis_pelanggan == 'Individu' ? 'selected' : '' }}>Individu</option>
+            <select class="form-control @error('jenis_pelanggan') is-invalid @enderror" name="jenis_pelanggan" required>
+                <option value="Toko Kecil" {{ old('jenis_pelanggan', $user->jenis_pelanggan) == 'Toko Kecil' ? 'selected' : '' }}>Toko Kecil</option>
+                <option value="Individu" {{ old('jenis_pelanggan', $user->jenis_pelanggan) == 'Individu' ? 'selected' : '' }}>Individu</option>
             </select>
+            @error('jenis_pelanggan')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Alamat</label>
-            <textarea class="form-control" name="alamat" rows="3" required>{{ old('alamat', $user->alamat) }}</textarea>
+            <textarea class="form-control @error('alamat') is-invalid @enderror" name="alamat" rows="3" required>{{ old('alamat', $user->alamat) }}</textarea>
+            @error('alamat')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Password Baru</label>
-            <input type="password" class="form-control" name="password" placeholder="Biarkan kosong jika tidak diubah">
+            <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="Biarkan kosong jika tidak diubah">
+            @error('password')
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Konfirmasi Password</label>
-            <input type="password" class="form-control" name="password_confirmation" placeholder="Ulangi password baru">
+            <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" placeholder="Ulangi password baru">
+            @error('password_confirmation') {{-- Pastikan ini juga dicek jika ada error --}}
+            <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="d-flex justify-content-between mt-4">

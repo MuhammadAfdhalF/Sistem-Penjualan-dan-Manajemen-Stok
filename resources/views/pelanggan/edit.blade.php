@@ -5,10 +5,10 @@ Halaman Edit Pelanggan
 @endsection
 
 @section('breadcrumb')
-<li class="breadcrumb-item">Sistem Manajemen Stok</li>
+<li class="breadcrumb-item">Sistem Manajemen Pelanggan</li> {{-- Mengubah dari Stok ke Pelanggan --}}
 <li class="breadcrumb-item"><a href="{{ route('pelanggan.index') }}" style="opacity: 0.5;">Pelanggan</a></li>
 <li class="breadcrumb-item"><a href="{{ route('pelanggan.create') }}" style="opacity: 0.5;">Tambah Data Pelanggan</a></li>
-<li class="breadcrumb-item"><strong><a href="">Edit Data Pelanggan</a></strong></li>
+<li class="breadcrumb-item"><strong><a href="#">Edit Data Pelanggan</a></strong></li>
 @endsection
 
 <head>
@@ -24,6 +24,20 @@ Halaman Edit Pelanggan
         </div>
 
         <div class="card-body">
+            {{-- Tambahkan alert untuk pesan success/error --}}
+            @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
+            @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
+
             <form action="{{ route('pelanggan.update', $pelanggan->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
@@ -53,10 +67,11 @@ Halaman Edit Pelanggan
                         @enderror
                     </div>
 
+                    {{-- Ganti input umur dengan tanggal_lahir --}}
                     <div class="col-md-6 mb-3">
-                        <label for="umur" class="form-label">Umur</label>
-                        <input type="number" name="umur" id="umur" class="form-control @error('umur') is-invalid @enderror" placeholder="Masukkan umur pelanggan" value="{{ old('umur', $pelanggan->umur) }}" min="1">
-                        @error('umur')
+                        <label for="tanggal_lahir" class="form-label">Tanggal Lahir</label>
+                        <input type="date" name="tanggal_lahir" id="tanggal_lahir" class="form-control @error('tanggal_lahir') is-invalid @enderror" value="{{ old('tanggal_lahir', $pelanggan->tanggal_lahir?->format('Y-m-d')) }}">
+                        @error('tanggal_lahir')
                         <small class="text-danger">{{ $message }}</small>
                         @enderror
                     </div>

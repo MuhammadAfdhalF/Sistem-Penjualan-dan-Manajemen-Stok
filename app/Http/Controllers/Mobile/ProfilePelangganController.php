@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon; 
 
 class ProfilePelangganController extends Controller
 {
@@ -52,13 +53,34 @@ class ProfilePelangganController extends Controller
                 'email'           => 'required|email|unique:users,email,' . $user->id,
                 'no_hp'           => 'required|unique:users,no_hp,' . $user->id,
                 'alamat'          => 'required|string',
-                'umur'            => 'required|integer|min:1',
+                // 'umur'            => 'required|integer|min:1', // <-- Dihapus
+                'tanggal_lahir'   => 'required|date|before_or_equal:' . Carbon::now()->subYears(1)->format('Y-m-d'), // <-- Ditambahkan
                 'jenis_pelanggan' => 'required|in:Toko Kecil,Individu',
                 'password'        => 'nullable|string|min:6|confirmed',
                 'foto_user'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ], [
+                'nama.required'            => 'Nama harus diisi.',
+                'email.required'           => 'Email harus diisi.',
+                'email.email'              => 'Format email tidak valid.',
+                'email.unique'             => 'Email sudah digunakan.',
+                'no_hp.required'           => 'Nomor HP harus diisi.',
+                'no_hp.unique'             => 'Nomor HP sudah digunakan.',
+                'alamat.required'          => 'Alamat harus diisi.',
+                'tanggal_lahir.required'   => 'Tanggal lahir harus diisi.',
+                'tanggal_lahir.date'       => 'Tanggal lahir harus berupa format tanggal yang valid.',
+                'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh di masa depan dan minimal 1 tahun yang lalu (untuk umur minimal 1 tahun).',
+                'jenis_pelanggan.required' => 'Jenis pelanggan harus diisi.',
+                'jenis_pelanggan.in'       => 'Jenis pelanggan harus Toko Kecil atau Individu.',
+                'password.min'             => 'Password minimal 6 karakter.',
+                'password.confirmed'       => 'Konfirmasi password tidak cocok.',
+                'foto_user.image'          => 'File harus berupa gambar.',
+                'foto_user.mimes'          => 'Format gambar harus jpeg, png, atau jpg.',
+                'foto_user.max'            => 'Ukuran gambar maksimal 2MB.',
             ]);
 
-            $data = $request->only(['nama', 'email', 'no_hp', 'alamat', 'umur', 'jenis_pelanggan']);
+            // Gunakan $request->only() untuk mendapatkan data yang relevan
+            // Hapus 'umur' dan tambahkan 'tanggal_lahir'
+            $data = $request->only(['nama', 'email', 'no_hp', 'alamat', 'tanggal_lahir', 'jenis_pelanggan']);
 
             if ($request->filled('password')) {
                 $data['password'] = Hash::make($request->password);

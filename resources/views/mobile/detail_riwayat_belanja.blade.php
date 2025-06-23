@@ -137,11 +137,11 @@
 @endpush
 
 @section('content')
-<form>
+<form class="mx-auto" style="max-width: 1280px;">
     <input type="hidden" name="metode_pengambilan" id="metode_pengambilan" value="{{ $transaksi->metode_pengambilan }}">
     <input type="hidden" name="metode_pembayaran" id="metode_pembayaran" value="{{ $transaksi->metode_pembayaran }}">
 
-    <div class="container-fluid px-0 px-md-4 py-2" style="max-width: 1280px;">
+    <div class="container-fluid px-0 px-md-4 py-2">
         <div class="bg-white shadow-sm mb-1 d-block d-lg-none header-transaksi-mobile">
             <div class="px-3 py-2">
                 <a href="#" onclick="history.back()" class="text-dark">

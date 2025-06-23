@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon; // Pastikan Carbon diimport untuk validasi tanggal
 
 class PelangganController extends Controller
 {
@@ -32,7 +33,7 @@ class PelangganController extends Controller
             'email'           => 'required|email|unique:users',
             'no_hp'           => 'required|unique:users',
             'alamat'          => 'required|string',
-            'umur'            => 'required|integer|min:1',
+            'tanggal_lahir'   => 'required|date|before_or_equal:' . Carbon::now()->subYears(1)->format('Y-m-d'), // Validasi tanggal lahir
             'jenis_pelanggan' => 'required|in:Toko Kecil,Individu',
             'password'        => 'required|string|min:6|confirmed',
             'foto_user'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -44,9 +45,9 @@ class PelangganController extends Controller
             'no_hp.required'           => 'Nomor HP harus diisi.',
             'no_hp.unique'             => 'Nomor HP sudah digunakan.',
             'alamat.required'          => 'Alamat harus diisi.',
-            'umur.required'            => 'Umur harus diisi.',
-            'umur.integer'             => 'Umur harus berupa angka.',
-            'umur.min'                 => 'Umur minimal 1.',
+            'tanggal_lahir.required'   => 'Tanggal lahir harus diisi.',
+            'tanggal_lahir.date'       => 'Tanggal lahir harus berupa format tanggal yang valid.',
+            'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh di masa depan dan minimal 1 tahun yang lalu (untuk umur minimal 1 tahun).',
             'jenis_pelanggan.required' => 'Jenis pelanggan harus diisi.',
             'jenis_pelanggan.in'       => 'Jenis pelanggan harus Toko Kecil atau Individu.',
             'password.required'        => 'Password harus diisi.',
@@ -68,7 +69,7 @@ class PelangganController extends Controller
                 'email'           => $request->email,
                 'no_hp'           => $request->no_hp,
                 'alamat'          => $request->alamat,
-                'umur'            => $request->umur,
+                'tanggal_lahir'   => $request->tanggal_lahir, // Menggunakan tanggal_lahir
                 'jenis_pelanggan' => $request->jenis_pelanggan,
                 'role'            => 'pelanggan',
                 'password'        => Hash::make($request->password),
@@ -115,7 +116,7 @@ class PelangganController extends Controller
                 'email'           => 'required|email|unique:users,email,' . $pelanggan->id,
                 'no_hp'           => 'required|unique:users,no_hp,' . $pelanggan->id,
                 'alamat'          => 'required|string',
-                'umur'            => 'required|integer|min:1',
+                'tanggal_lahir'   => 'required|date|before_or_equal:' . Carbon::now()->subYears(1)->format('Y-m-d'), // Validasi tanggal lahir
                 'jenis_pelanggan' => 'required|in:Toko Kecil,Individu',
                 'password'        => 'nullable|string|min:6|confirmed',
                 'foto_user'       => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -127,9 +128,9 @@ class PelangganController extends Controller
                 'no_hp.required'           => 'Nomor HP harus diisi.',
                 'no_hp.unique'             => 'Nomor HP sudah digunakan.',
                 'alamat.required'          => 'Alamat harus diisi.',
-                'umur.required'            => 'Umur harus diisi.',
-                'umur.integer'             => 'Umur harus berupa angka.',
-                'umur.min'                 => 'Umur minimal 1.',
+                'tanggal_lahir.required'   => 'Tanggal lahir harus diisi.',
+                'tanggal_lahir.date'       => 'Tanggal lahir harus berupa format tanggal yang valid.',
+                'tanggal_lahir.before_or_equal' => 'Tanggal lahir tidak boleh di masa depan dan minimal 1 tahun yang lalu (untuk umur minimal 1 tahun).',
                 'jenis_pelanggan.required' => 'Jenis pelanggan harus diisi.',
                 'jenis_pelanggan.in'       => 'Jenis pelanggan harus Toko Kecil atau Individu.',
                 'password.min'             => 'Password minimal 6 karakter.',
@@ -139,13 +140,18 @@ class PelangganController extends Controller
                 'foto_user.max'            => 'Ukuran gambar maksimal 2MB.',
             ]);
 
-            $data = $request->only(['nama', 'email', 'no_hp', 'alamat', 'umur', 'jenis_pelanggan']);
+            // Gunakan $request->only() untuk mendapatkan data yang relevan
+            $data = $request->only(['nama', 'email', 'no_hp', 'alamat', 'tanggal_lahir', 'jenis_pelanggan']);
 
             if ($request->filled('password')) {
                 $data['password'] = Hash::make($request->password);
             }
 
             if ($request->hasFile('foto_user')) {
+                // Hapus foto lama jika ada
+                if ($pelanggan->foto_user && \Storage::disk('public')->exists($pelanggan->foto_user)) {
+                    \Storage::disk('public')->delete($pelanggan->foto_user);
+                }
                 $data['foto_user'] = $request->file('foto_user')->store('foto_user', 'public');
             }
 

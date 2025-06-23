@@ -82,11 +82,10 @@
                     </div>
 
                     <div>
-                        <label for="umur" class="block mb-1 font-semibold text-sm">Umur</label>
-                        <input type="number" id="umur" name="umur" value="{{ old('umur') }}" placeholder="Masukkan umur"
-                            min="1" max="150"
-                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('umur') border-red-500 @enderror" />
-                        @error('umur')
+                        <label for="tanggal_lahir" class="block mb-1 font-semibold text-sm">Tanggal Lahir</label>
+                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}"
+                            class="w-full border rounded-lg px-3 py-2 text-sm md:text-base placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 @error('tanggal_lahir') border-red-500 @enderror" />
+                        @error('tanggal_lahir')
                         <small class="text-red-500 text-xs mt-1">{{ $message }}</small>
                         @enderror
                     </div>

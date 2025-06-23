@@ -24,17 +24,31 @@ Halaman Pelanggan
             </div>
         </div>
         <div class="card-body">
+            {{-- Tambahkan alert untuk pesan success/error --}}
+            @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
+            @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            @endif
+
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Foto</th> {{-- Tambahan --}}
+                            <th>Foto</th>
                             <th>Nama</th>
                             <th>Email</th>
                             <th>No HP</th>
                             <th>Alamat</th>
-                            <th>Umur</th>
+                            <th>Umur</th> {{-- Label tetap 'Umur' --}}
                             <th>Jenis</th>
                             <th>Opsi</th>
                         </tr>
@@ -68,13 +82,11 @@ Halaman Pelanggan
                                 <span class="text-muted">-</span>
                                 @endif
                             </td>
-
-
                             <td>{{ $item->nama }}</td>
                             <td>{{ $item->email }}</td>
                             <td>{{ $item->no_hp }}</td>
                             <td>{{ $item->alamat }}</td>
-                            <td>{{ $item->umur }}</td>
+                            <td>{{ $item->umur ?? '-' }}</td> {{-- Mengakses 'umur' via accessor, tampilkan '-' jika null --}}
                             <td>{{ $item->jenis_pelanggan }}</td>
                             <td>
                                 <a href="{{ route('pelanggan.edit', $item->id) }}" class="btn btn-warning btn-sm" title="Edit">
