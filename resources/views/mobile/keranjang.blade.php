@@ -1328,43 +1328,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Menambahkan event listener untuk SEMUA elemen dengan kelas "select-all"
-            document.querySelectorAll('.select-all').forEach(function(selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
-                    const isChecked = this.checked;
-                    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-                        // Pastikan checkbox item diperbarui sesuai "Pilih Semua"
-                        checkbox.checked = isChecked;
 
-                        const card = checkbox.closest('.card');
-                        if (isChecked) {
-                            card.classList.add('selected');
-                            // Saat dicentang via "Pilih Semua", JANGAN reset ke 1.
-                            // Biarkan jumlah_json terakhir dari backend yang berlaku.
-                            // Cukup panggil hitungTotal() dan updateCheckoutForms()
-                        } else {
-                            card.classList.remove('selected');
-                            // Saat di-uncheck via "Pilih Semua", JANGAN reset jumlah/hapus baris.
-                            // Cukup hapus kelas 'selected'
-                        }
-                    });
-                    hitungTotal(); // Hitung ulang total setelah semua checkbox diperbarui
-                    updateCheckoutForms(); // Perbarui form checkout
-                });
-            });
-
-
-
-
+            // Fungsi utilitas untuk memformat Rupiah
             function formatRupiah(angka) {
                 return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
             }
 
             // Fungsi untuk mengikat event pada grup satuan (input +, -, select, tambah, hapus)
             function bindSatuanGroupEvents(group) {
-                const card = group.closest('.card'); // Dapatkan card induk
+                const card = group.closest('.card');
 
-                // Event input pada jumlah-input (ketika diketik atau diubah oleh tombol +/-)
                 const jumlahInput = group.querySelector('.jumlah-input');
                 if (jumlahInput) {
                     jumlahInput.addEventListener('input', function() {
@@ -1372,17 +1345,15 @@
                     });
                 }
 
-                // Event klik pada tombol + dan -
                 group.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Hentikan event propagation agar tidak memicu click pada card induk
+                    e.stopPropagation();
 
-                    const input = group.querySelector('.jumlah-input'); // Ambil input jumlah yang relevan
-                    if (!input) return; // Pastikan input ditemukan
+                    const input = group.querySelector('.jumlah-input');
+                    if (!input) return;
 
                     let val = parseInt(input.value) || 0;
-                    let changed = false; // Flag untuk menandakan apakah nilai input berubah
+                    let changed = false;
 
-                    // Menggunakan .closest() untuk deteksi tombol yang lebih robust
                     if (e.target.closest('.minus-btn')) {
                         input.value = Math.max(0, val - 1);
                         changed = true;
@@ -1391,17 +1362,15 @@
                         changed = true;
                     }
 
-                    // Hanya panggil dispatchEvent jika nilai input memang berubah karena tombol +/- 
                     if (changed) {
                         input.dispatchEvent(new Event('input'));
                     }
                 });
 
-                // Event change pada select satuan
                 const satuanSelect = group.querySelector('.satuan-select');
                 if (satuanSelect) {
                     satuanSelect.addEventListener('change', function(e) {
-                        e.stopPropagation(); // Hentikan propagation untuk select juga
+                        e.stopPropagation();
                         const selectedOption = this.options[this.selectedIndex];
                         const harga = parseFloat(selectedOption.getAttribute('data-harga')) || 0;
                         const associatedJumlahInput = this.closest('.satuan-group').querySelector('.jumlah-input');
@@ -1415,10 +1384,9 @@
                 const tambahBtn = group.querySelector('.tambah-jumlah');
                 const hapusBtn = group.querySelector('.hapus-jumlah');
 
-                // Event listener untuk tombol tambah satuan
                 if (tambahBtn) {
                     tambahBtn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Hentikan propagation
+                        e.stopPropagation();
                         const wrapper = group.closest('.jumlah-satuan-wrapper');
                         const clone = group.cloneNode(true);
 
@@ -1443,10 +1411,9 @@
                     });
                 }
 
-                // Event listener untuk tombol hapus satuan
                 if (hapusBtn) {
                     hapusBtn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Hentikan propagation
+                        e.stopPropagation();
                         const wrapper = group.closest('.jumlah-satuan-wrapper');
                         const allSatuanGroups = wrapper.querySelectorAll('.satuan-group');
 
@@ -1524,15 +1491,90 @@
                     .then(async res => {
                         const data = await res.json();
                         if (!res.ok || !data.success) {
-                            console.error('RESPON STATUS:', res.status);
-                            alert(data.message || 'Update gagal.');
-                        } else {
+                            alert(data.message || 'Update gagal.'); // Tampilkan alert dari backend
+
+                            // --- START PERUBAHAN UTAMA DI SINI ---
+                            // Jika ada data revert_jumlah_json, terapkan ke input fields
+                            if (data.revert_jumlah_json) {
+                                // Untuk memastikan grup satuan yang ditampilkan adalah yang relevan dari revert_jumlah_json
+                                // kita perlu sedikit lebih cerdas:
+                                // 1. Hapus semua grup satuan yang ada kecuali yang pertama
+                                // 2. Set nilai grup pertama sesuai data revert
+                                // 3. Tambahkan grup baru jika ada satuan lain di revert_jumlah_json
+
+                                const jumlahSatuanWrapper = card.querySelector('.jumlah-satuan-wrapper');
+                                const existingGroups = jumlahSatuanWrapper.querySelectorAll('.satuan-group');
+
+                                // Hapus semua kecuali grup pertama
+                                for (let i = existingGroups.length - 1; i > 0; i--) {
+                                    existingGroups[i].remove();
+                                }
+                                const firstGroup = existingGroups[0];
+                                // Pastikan tombol hapus untuk grup pertama disembunyikan jika hanya satu grup nantinya
+                                firstGroup.querySelector('.hapus-jumlah')?.classList.add('d-none');
+
+                                let isFirstGroupSet = false;
+                                for (const satuanId in data.revert_jumlah_json) {
+                                    const availableQty = data.revert_jumlah_json[satuanId];
+
+                                    if (!isFirstGroupSet) {
+                                        // Set grup pertama
+                                        const jumlahInputFirst = firstGroup.querySelector('.jumlah-input');
+                                        const satuanSelectFirst = firstGroup.querySelector('.satuan-select');
+
+                                        if (jumlahInputFirst && satuanSelectFirst) {
+                                            jumlahInputFirst.value = availableQty;
+                                            satuanSelectFirst.value = satuanId;
+                                            // Update data-harga-satuan di input agar konsisten
+                                            const selectedOption = satuanSelectFirst.options[satuanSelectFirst.selectedIndex];
+                                            jumlahInputFirst.dataset.hargaSatuan = parseFloat(selectedOption.getAttribute('data-harga')) || 0;
+                                        }
+                                        isFirstGroupSet = true;
+                                    } else {
+                                        // Kloning grup pertama dan tambahkan untuk satuan lainnya
+                                        const clone = firstGroup.cloneNode(true);
+                                        const jumlahInputClone = clone.querySelector('.jumlah-input');
+                                        const satuanSelectClone = clone.querySelector('.satuan-select');
+
+                                        if (jumlahInputClone && satuanSelectClone) {
+                                            jumlahInputClone.value = availableQty;
+                                            satuanSelectClone.value = satuanId;
+                                            const selectedOption = satuanSelectClone.options[satuanSelectClone.selectedIndex];
+                                            jumlahInputClone.dataset.hargaSatuan = parseFloat(selectedOption.getAttribute('data-harga')) || 0;
+                                        }
+                                        clone.querySelector('.hapus-jumlah')?.classList.remove('d-none'); // Tampilkan tombol hapus
+                                        jumlahSatuanWrapper.appendChild(clone);
+                                        bindSatuanGroupEvents(clone); // Ikat event untuk kloningan baru
+                                    }
+                                }
+
+                                // Pastikan tombol hapus untuk semua grup sudah terlihat jika ada lebih dari 1
+                                if (Object.keys(data.revert_jumlah_json).length > 1) {
+                                    jumlahSatuanWrapper.querySelectorAll('.hapus-jumlah').forEach(btn => btn.classList.remove('d-none'));
+                                } else if (Object.keys(data.revert_jumlah_json).length === 1) {
+                                    // Jika hanya ada satu satuan yang direvert (atau setelah revert hanya ada satu), pastikan tombol hapus tersembunyi
+                                    jumlahSatuanWrapper.querySelector('.hapus-jumlah')?.classList.add('d-none');
+                                }
+                            }
+                            // --- END PERUBAHAN UTAMA DI SINI ---
+
+                            // Setelah semua input di-reset/diperbarui, panggil hitungTotal untuk memperbarui UI
+                            // dan updateCheckoutForms untuk sinkronisasi form.
                             hitungTotal();
+                            updateCheckoutForms();
+
+                        } else {
+                            // Jika sukses, hitung total dan update form checkout seperti biasa
+                            hitungTotal();
+                            updateCheckoutForms();
                         }
                     })
                     .catch(err => {
                         console.error('Update error:', err);
                         alert('Terjadi kesalahan saat update jumlah.');
+                        // Untuk keamanan, mungkin perlu juga mengupdate total secara konservatif.
+                        hitungTotal();
+                        updateCheckoutForms();
                     });
             }
 
@@ -1607,13 +1649,27 @@
                 });
             }
 
-            // Ikat event untuk validasi checkout
-            preventSubmitIfEmpty('checkoutForm');
-            preventSubmitIfEmpty('checkoutFormDesktop');
-
             // --- Inisialisasi Event Listeners ---
             // Ikat event untuk semua grup satuan yang ada saat halaman dimuat
             document.querySelectorAll('.satuan-group').forEach(bindSatuanGroupEvents);
+
+            // Event listener untuk SEMUA elemen "Pilih Semua" (desktop dan mobile)
+            document.querySelectorAll('.select-all').forEach(function(selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                        const card = checkbox.closest('.card');
+                        if (isChecked) {
+                            card.classList.add('selected');
+                        } else {
+                            card.classList.remove('selected');
+                        }
+                    });
+                    hitungTotal();
+                    updateCheckoutForms();
+                });
+            });
 
             // Event listener untuk checkbox produk individual (select/deselect)
             document.querySelectorAll('.item-checkbox').forEach(checkbox => {
@@ -1622,26 +1678,11 @@
 
                     if (this.checked) {
                         card.classList.add('selected');
-                        // Saat dicentang:
-                        // Kita TIDAK PERLU lagi memaksa nilai menjadi 1 di sini.
-                        // Logika `updateItemAndTotal` akan menjaga jumlah yang ada di input field.
-                        // Jika user mengaktifkan kembali checkbox, kita asumsikan jumlah yang
-                        // terakhir kali mereka set (dan tersimpan di `jumlah_json` di DOM)
-                        // harus tetap digunakan.
-                        // kita hanya perlu memastikan class 'selected' ditambahkan
-                        // dan kemudian update total.
                     } else {
-                        // Saat di-UNCHECK:
-                        // Cukup hapus kelas 'selected'.
-                        // JANGAN RESET jumlah_input ke 0 atau hapus group satuan.
-                        // Data ini harusnya tetap ada, hanya tidak dihitung.
                         card.classList.remove('selected');
                     }
-                    hitungTotal(); // Panggil hitungTotal() untuk memperbarui total
-                    updateCheckoutForms(); // Perbarui form checkout
-                    // Penting: Kita TIDAK memanggil updateItemAndTotal() di sini.
-                    // updateItemAndTotal() hanya dipanggil ketika jumlah_input atau satuan_select berubah.
-                    // Perubahan checkbox hanya memengaruhi perhitungan total lokal.
+                    hitungTotal();
+                    updateCheckoutForms();
                 });
             });
 
@@ -1680,6 +1721,7 @@
                     }
                 });
             });
+
             // Validasi form sebelum submit
             preventSubmitIfEmpty('checkoutForm');
             preventSubmitIfEmpty('checkoutFormDesktop');
@@ -1691,12 +1733,7 @@
             // Jalankan pertama kali
             hitungTotal();
             updateCheckoutForms();
-
-            // Ikat event untuk semua grup satuan yang ada saat halaman dimuat
-            // Ini harus tetap di sini agar fungsionalitas +/-/select satuan bekerja
-            document.querySelectorAll('.satuan-group').forEach(bindSatuanGroupEvents);
         });
     </script>
-
 
     @endsection
