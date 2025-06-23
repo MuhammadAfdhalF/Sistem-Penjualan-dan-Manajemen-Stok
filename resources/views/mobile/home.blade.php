@@ -597,9 +597,10 @@
             <div class="text-muted" style="font-size:0.95rem;">Katalog produk</div>
         </div>
     </div>
-    <button class="btn btn-outline-secondary mt-3">
+    <a href="{{ route('mobile.keranjang.index') }}" class="btn btn-outline-secondary mt-3">
         <i class="bi bi-cart text-dark"></i> <!-- Ini bikin ikon jadi hitam -->
-    </button>
+    </a>
+
 </div>
 
 {{-- Banner --}}
@@ -642,7 +643,7 @@
 
 
 {{-- Produk Grid --}}
-<div class="produk-grid mt-3" >
+<div class="produk-grid mt-3">
     @foreach($produk as $item)
     <div class="produk-card" data-detail-url="{{ route('mobile.detail_produk.index', $item->id) }}">
         <span class="hover-eye">

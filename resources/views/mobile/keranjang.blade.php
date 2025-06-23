@@ -1073,6 +1073,13 @@
                 margin-bottom: 5rem !important;
             }
         }
+
+        /* Hide footer info on mobile and tablet */
+        @media (max-width: 1024px) {
+            .footer-info {
+                display: none;
+            }
+        }
     </style>
     @endpush
 
@@ -1086,9 +1093,10 @@
                 <div class="text-muted" style="font-size:0.95rem;">Keranjang Saya</div>
             </div>
         </div>
-        <button class="btn btn-outline-secondary">
+        <a href="{{ route('mobile.keranjang.index') }}" class="btn btn-outline-secondary me-2">
             <i class="bi bi-cart text-dark"></i> <!-- Ini bikin ikon jadi hitam -->
-        </button>
+        </a>
+
 
     </div>
 

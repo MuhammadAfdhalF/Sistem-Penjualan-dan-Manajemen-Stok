@@ -305,7 +305,7 @@
                 <!-- WhatsApp -->
                 <div class="col-6 col-md-4 d-flex justify-content-center align-items-center gap-2 text-center order-2 order-md-3">
                     <i class="bi bi-whatsapp fs-5"></i>
-                    <a href="https://wa.me/6281234567890" class="small text-white text-decoration-underline">
+                    <a href="https://wa.me/6285263264699" class="small text-white text-decoration-none">
                         0852-6326-4699
                     </a>
                 </div>
@@ -313,15 +313,17 @@
                 <!-- Alamat -->
                 <div class="col-12 col-md-4 d-flex justify-content-center align-items-center gap-2 text-center order-3 order-md-2">
                     <i class="bi bi-geo-alt-fill fs-5"></i>
-                    <span class="small">Ophir Barat, Koto Baru, Luhak Nan Duo, Pasaman Barat</span>
+                    <a href="https://www.google.com/maps/place/KZ+Family+Ophir/@0.0269374,99.8146812,17z/data=!3m1!4b1!4m6!3m5!1s0x302a7ff85c9f1619:0x92f29e6e1199cce0!8m2!3d0.0269374!4d99.8172561!16s%2Fg%2F11vb7jnx9k?entry=ttu&g_ep=EgoyMDI1MDYxNy4wIKXMDSoASAFQAw%3D%3D"
+                        class="small text-white text-decoration-none" target="_blank">
+                        Ophir Barat, Koto Baru, Luhak Nan Duo, Pasaman Barat
+                    </a>
                 </div>
             </div>
 
             <hr style="opacity: 0.2;">
-            <p class="small mb-0">© {{ date('Y') }} <strong>Toko KZ Family</strong>. All rights reserved.</p>
+            <p class="small mb-0 ">© {{ date('Y') }} <strong>Toko KZ Family</strong>. All rights reserved.</p>
         </div>
     </footer>
-
 
 
 
@@ -339,17 +341,27 @@
             <span>Keranjang</span>
         </a>
         <a href="{{ route('mobile.form_belanja_cepat.index') }}" class="footer-nav-btn center-btn {{ ($activeMenu ?? '') == 'formcepat' ? 'active' : '' }}">
-            <img src="{{ asset('storage/logo/form_cepat.png') }}" alt="Form Cepat Aktif" style="width:44px; height:44px; object-fit:contain;" />
+            <img src="{{ asset('storage/logo/' . (($activeMenu ?? '') == 'formcepat' ? 'form_cepat_biru.png' : 'form_cepat.png')) }}"
+                alt="Form Cepat Aktif"
+                style="width:44px; height:44px; object-fit:contain;" />
         </a>
+
         <a href="{{ route('mobile.riwayat_belanja.index') }}" class="footer-nav-btn {{ ($activeMenu ?? '') == 'riwayat' ? 'active' : '' }}">
             <i class="bi bi-list-ul"></i>
             <span>Riwayat</span>
         </a>
         <a href="{{ route('mobile.profile_pelanggan.index') }}" class="footer-nav-btn {{ ($activeMenu ?? '') == 'profile' ? 'active' : '' }}">
-            <i class="bi bi-person"></i>
+            <!-- Cek apakah foto ada, jika tidak tampilkan ikon -->
+            @if(auth()->user()->foto_user)
+            <img src="{{ asset('storage/' . auth()->user()->foto_user) }}" alt="Foto Profile" style="width:44px; height:44px; border-radius:50%; object-fit:cover;">
+            @else
+            <i class="bi bi-person" style="font-size: 1.5rem;"></i>
+            @endif
             <span>Profile</span>
         </a>
+
     </nav>
+
 
     @stack('body')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

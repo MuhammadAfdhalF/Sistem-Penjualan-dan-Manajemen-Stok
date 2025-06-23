@@ -117,6 +117,13 @@
             padding-top: 0 !important;
         }
     }
+
+    /* Hide footer info on mobile and tablet */
+    @media (max-width: 1024px) {
+        .footer-info {
+            display: none;
+        }
+    }
 </style>
 @endpush
 
