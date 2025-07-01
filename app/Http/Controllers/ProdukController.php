@@ -129,7 +129,6 @@ class ProdukController extends Controller
             ]);
 
             DB::commit();
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('produk.index', $produk->id)
                 ->with('success', 'Produk berhasil disimpan. Silakan tambahkan harga.');
@@ -259,7 +258,6 @@ class ProdukController extends Controller
             ]);
 
             DB::commit();
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil diperbarui.');
         } catch (\Exception $e) {
@@ -290,7 +288,6 @@ class ProdukController extends Controller
 
             DB::commit();
 
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('produk.index')->with('success', 'Data produk berhasil dihapus.');
         } catch (\Exception $e) {

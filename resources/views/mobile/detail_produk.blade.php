@@ -17,7 +17,8 @@
     body,
     .flex-main {
         min-height: 100vh;
-        height: 100vh;
+        height: auto;
+        /* <--- UBAH INI DARI 100vh MENJADI auto */
         width: 100vw;
         display: flex;
         flex-direction: column;
@@ -108,9 +109,12 @@
 
     .container-detail {
         flex: 1 0 auto;
+        /* Ini sudah benar untuk mengisi sisa ruang */
         width: 100vw;
         background: #f7f7f7;
         box-sizing: border-box;
+        padding-bottom: 30px;
+        /* Pertahankan atau sesuaikan nilai ini */
     }
 
     .footer-fixed {
@@ -121,8 +125,11 @@
         box-shadow: 0 -2px 16px #bfe0f7a8;
         z-index: 1000;
         padding: 18px 0 18px 0;
+        /* Padding vertikal yang sudah ada */
         display: flex;
         justify-content: center;
+        padding-top: 20px;
+        /* <--- TAMBAHKAN INI untuk jarak dari atas footer */
     }
 
     .btn-keranjang {
@@ -516,6 +523,10 @@
             padding: 28px 0 40px 0;
             min-height: 80vh;
             background: #fff;
+            margin-bottom: 5px;
+            /* Margin bottom untuk tablet */
+            /* <-- Tambahkan margin-bottom di sini untuk desktop */
+
         }
 
         .desktop-col {
@@ -648,7 +659,10 @@
         display: flex;
         justify-content: center;
         margin-top: 16px;
+        margin-bottom: 24px;
+        /* <--- Pertahankan atau sesuaikan nilai ini */
     }
+
 
     @media (max-width: 1000px) and (orientation: landscape) {
         main.main-content {
@@ -694,13 +708,19 @@
         }
 
         .desktop-flexbox {
-            flex-direction: column !important;
-            gap: 22px !important;
-            padding: 16px 0 20px 0 !important;
-            max-width: 96vw !important;
-            min-width: 0 !important;
-            width: 98vw !important;
-            box-sizing: border-box;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 48px;
+            width: 100vw;
+            max-width: 1450px;
+            margin: 0 auto;
+            padding: 28px 0 40px 0;
+            min-height: 80vh;
+            background: #fff;
+            margin-bottom: 5px !important;
+         
         }
 
         .desktop-img,
@@ -752,7 +772,8 @@
 
         .order-btn-wrapper {
             margin-top: 18px !important;
-            margin-bottom: 6px !important;
+            margin-bottom: 24px !important;
+            /* <--- Pertahankan atau sesuaikan nilai ini */
         }
 
         .footer-fixed {

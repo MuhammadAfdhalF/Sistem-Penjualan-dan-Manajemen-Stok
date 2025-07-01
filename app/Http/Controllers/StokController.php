@@ -124,7 +124,6 @@ class StokController extends Controller
             $produk->save();
 
             DB::commit();
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('stok.index')->with('success', 'Data stok berhasil disimpan.');
         } catch (\Exception $e) {
@@ -203,7 +202,6 @@ class StokController extends Controller
             $produk->save();
             DB::commit();
 
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('stok.index')->with('success', 'Data stok berhasil diperbarui.');
         } catch (\Exception $e) {
@@ -227,7 +225,6 @@ class StokController extends Controller
             $stok->delete();
 
             DB::commit();
-            Artisan::call('produk:update-dailyusage-rop');
 
             return redirect()->route('stok.index')->with('success', 'Data stok berhasil dihapus.');
         } catch (\Exception $e) {

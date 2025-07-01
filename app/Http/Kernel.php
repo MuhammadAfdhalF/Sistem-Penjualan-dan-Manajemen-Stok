@@ -77,6 +77,10 @@ class Kernel extends HttpKernel
 
     protected function schedule(Schedule $schedule)
     {
+        // setiap hari
         $schedule->command('produk:update-dailyusage-rop')->dailyAt('00:01');
+
+        // setiap tgl 1
+        // $schedule->command('produk:update-dailyusage-rop')->monthlyOn(1, '00:01');
     }
 }

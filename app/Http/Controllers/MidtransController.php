@@ -341,8 +341,6 @@ class MidtransController extends Controller
                         Log::info('Webhook: Keranjang pengguna dibersihkan.');
                     }
 
-                    Artisan::call('produk:update-dailyusage-rop');
-                    Log::info('Webhook: Perintah Artisan produk:update-dailyusage-rop dijalankan.');
                 } else {
                     // Transaksi sudah ada di DB (misal dari status pending sebelumnya)
                     // Cukup update status pembayaran saja

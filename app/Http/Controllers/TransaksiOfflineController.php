@@ -177,7 +177,6 @@ class TransaksiOfflineController extends Controller
                 ]);
             }
 
-            Artisan::call('produk:update-dailyusage-rop');
 
             Keuangan::create([
                 'transaksi_id' => $transaksi->id,
@@ -328,7 +327,6 @@ class TransaksiOfflineController extends Controller
                 ]);
             }
 
-            \Artisan::call('produk:update-dailyusage-rop');
             \DB::commit();
 
             return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil diperbarui.');
@@ -382,7 +380,6 @@ class TransaksiOfflineController extends Controller
             // Hapus transaksi
             $transaksi->delete();
 
-            Artisan::call('produk:update-dailyusage-rop');
             DB::commit();
 
             return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil dihapus.');

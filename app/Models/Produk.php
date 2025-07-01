@@ -57,7 +57,9 @@ class Produk extends Model
 
     public function isStokDiBawahROP(): bool
     {
-        return $this->stok <= $this->rop;
+        // Menggunakan ROP yang dibulatkan ke atas untuk perbandingan yang lebih aman
+        // ini penting karena tampilkanStok3Tingkatan juga pakai round/ceil
+        return $this->stok <= ceil($this->rop);
     }
 
     public function getCalculatedRopAttribute(): float
@@ -134,37 +136,74 @@ class Produk extends Model
 
     /**
      * Tampilkan stok dengan pecahan satuan berdasarkan level satuan.
-     * 
-     * Menggunakan satuan dari relasi satuans() yang sudah didefinisikan.
+     * * Menggunakan satuan dari relasi satuans() yang sudah didefinisikan.
      */
     public function tampilkanStok3Tingkatan(float|int $stok): string
     {
-        $stokInt = (int) $stok;
-        $satuans = $this->satuans()->orderByDesc('konversi_ke_satuan_utama')->get();
+        // Bulatkan dan jadikan integer untuk memastikan perhitungan yang akurat
+        $stokDalamSatuanUtama = (int) round($stok);
 
+        // Asumsi relasi 'satuans' sudah di-eager load atau diakses dengan benar
+        // Pastikan satuan diurutkan dari konversi terbesar ke terkecil
+        $satuans = $this->satuans->sortByDesc('konversi_ke_satuan_utama');
+
+        // Jika tidak ada satuan yang terdefinisi untuk produk ini
         if ($satuans->isEmpty()) {
-            // Kalau tidak ada satuan, cukup tampilkan stok saja
-            return (string) $stokInt;
+            return (string) $stokDalamSatuanUtama;
         }
 
         $result = [];
+        $remainingStok = $stokDalamSatuanUtama;
+        $primaryUnitName = null;
+        $hasAnyUnit = false; // Flag untuk mengecek apakah ada satuan yang terdefinisi
+
+        // Cari nama satuan utama (konversi_ke_satuan_utama = 1)
         foreach ($satuans as $satuan) {
-            if ($satuan->konversi_ke_satuan_utama <= 0) continue;
-
-            $jumlah = intdiv($stokInt, $satuan->konversi_ke_satuan_utama);
-            $stokInt %= $satuan->konversi_ke_satuan_utama;
-
-            if ($jumlah > 0) {
-                $result[] = $jumlah . ' ' . $satuan->nama_satuan;
+            if ($satuan->konversi_ke_satuan_utama > 0) { // Pastikan satuan valid
+                $hasAnyUnit = true;
+                if ($satuan->konversi_ke_satuan_utama == 1) {
+                    $primaryUnitName = $satuan->nama_satuan;
+                }
             }
         }
 
-        // Jika sisa stok ada (lebih kecil dari satuan terkecil)
-        if ($stokInt > 0) {
-            $result[] = $stokInt; // Tidak ada satuan utama, hanya angka saja
+        // Jika tidak ada satuan valid sama sekali, kembalikan hanya angka
+        if (!$hasAnyUnit) {
+            return (string) $stokDalamSatuanUtama;
         }
 
-        return $result ? implode(' ', $result) : '0';
+        // Iterasi melalui satuan dari yang terbesar ke terkecil
+        foreach ($satuans as $satuan) {
+            if ($satuan->konversi_ke_satuan_utama <= 0) continue; // Lewati konversi yang tidak valid
+
+            // Hindari memproses satuan utama di sini, akan ditangani terpisah untuk sisa
+            // Ini untuk memastikan output "X satuan_besar Y satuan_utama" bukan "X satuan_besar 0 satuan_utama Y satuan_utama"
+            if ($satuan->konversi_ke_satuan_utama == 1 && $primaryUnitName) {
+                continue;
+            }
+
+            $jumlah = floor($remainingStok / $satuan->konversi_ke_satuan_utama);
+
+            if ($jumlah > 0) {
+                $result[] = $jumlah . ' ' . $satuan->nama_satuan;
+                $remainingStok -= ($jumlah * $satuan->konversi_ke_satuan_utama);
+            }
+        }
+
+        // Tangani sisa stok yang pasti dalam satuan utama
+        if ($remainingStok > 0) {
+            $result[] = $remainingStok . ' ' . ($primaryUnitName ?: 'unit'); // Default ke 'unit' jika nama satuan utama tidak ditemukan
+        }
+        // Jika stok awal 0, atau setelah konversi semua jadi 0, dan belum ada hasil yang ditambahkan
+        elseif (empty($result) && $stokDalamSatuanUtama == 0) {
+            return '0' . ($primaryUnitName ? ' ' . $primaryUnitName : '');
+        }
+        // Jika stok awal > 0 tapi lebih kecil dari semua satuan yang terdefinisi (misal: stok 5, tapi terkecil 10)
+        elseif (empty($result) && $stokDalamSatuanUtama > 0) {
+            return $stokDalamSatuanUtama . ' ' . ($primaryUnitName ?: 'unit');
+        }
+
+        return implode(' ', $result);
     }
 
     public function getStokBertingkatAttribute(): string

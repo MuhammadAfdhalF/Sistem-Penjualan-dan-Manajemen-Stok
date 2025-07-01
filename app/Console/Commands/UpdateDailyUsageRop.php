@@ -17,26 +17,41 @@ class UpdateDailyUsageRop extends Command
     public function handle()
     {
         $periodeHari = 30;
-        $tanggalMulai = Carbon::now()->subDays($periodeHari)->startOfDay();
+        // Ubah baris ini: Ambil 30 hari terakhir TERMASUK hari ini.
+        // Jadi, kita melihat 29 hari ke belakang dari hari ini.
+        $tanggalMulai = Carbon::now()->subDays($periodeHari - 1)->startOfDay(); 
 
         $produkList = Produk::all();
 
         foreach ($produkList as $produk) {
-            // Ambil penjualan harian offline selama 30 hari (array tanggal => qty dalam satuan utama)
+            // --- DEBUGGING UNTUK PRODUK ID 1 SAJA (HAPUS SETELAH FIX) ---
+            if ($produk->id == 1) { 
+                Log::debug("Processing Produk ID: {$produk->id}");
+                Log::debug("Tanggal Mulai Periode (Adjusted): {$tanggalMulai->format('Y-m-d H:i:s')}");
+            }
+            // --- AKHIR DEBUGGING ---
+
             $penjualanOfflinePerHari = TransaksiOfflineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
                 $q->where('tanggal', '>=', $tanggalMulai);
             })
                 ->where('produk_id', $produk->id)
                 ->get()
                 ->groupBy(function ($item) {
+                    // --- DEBUGGING START ---
+                    if ($item->produk_id == 1) Log::debug("  Offline Grouping Date: " . $item->transaksi->tanggal->format('Y-m-d'));
+                    // --- DEBUGGING END ---
                     return $item->transaksi->tanggal->format('Y-m-d');
                 })
                 ->map(function ($items) {
                     $total = 0;
                     foreach ($items as $detail) {
                         $jumlahArr = $detail->jumlah_json;
-                        if (!is_array($jumlahArr)) continue;
-
+                        if (!is_array($jumlahArr)) {
+                            // --- DEBUGGING START ---
+                            if ($detail->produk_id == 1) Log::warning("  Jumlah JSON is not an array for Offline Detail ID: {$detail->id}. Type: " . gettype($jumlahArr));
+                            // --- DEBUGGING END ---
+                            continue;
+                        }
                         foreach ($jumlahArr as $satuanId => $qty) {
                             $satuan = \App\Models\Satuan::find($satuanId);
                             $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
@@ -46,21 +61,32 @@ class UpdateDailyUsageRop extends Command
                     return $total;
                 });
 
-            // Ambil penjualan harian online selama 30 hari
+            // --- DEBUGGING START ---
+            if ($produk->id == 1) Log::debug("  Penjualan Offline Per Hari for Produk ID {$produk->id}: " . json_encode($penjualanOfflinePerHari->toArray()));
+            // --- DEBUGGING END ---
+
+
             $penjualanOnlinePerHari = TransaksiOnlineDetail::whereHas('transaksi', function ($q) use ($tanggalMulai) {
                 $q->where('tanggal', '>=', $tanggalMulai);
             })
                 ->where('produk_id', $produk->id)
                 ->get()
                 ->groupBy(function ($item) {
+                    // --- DEBUGGING START ---
+                    if ($item->produk_id == 1) Log::debug("  Online Grouping Date: " . $item->transaksi->tanggal->format('Y-m-d'));
+                    // --- DEBUGGING END ---
                     return $item->transaksi->tanggal->format('Y-m-d');
                 })
                 ->map(function ($items) {
                     $total = 0;
                     foreach ($items as $detail) {
                         $jumlahArr = $detail->jumlah_json;
-                        if (!is_array($jumlahArr)) continue;
-
+                        if (!is_array($jumlahArr)) {
+                            // --- DEBUGGING START ---
+                            if ($detail->produk_id == 1) Log::warning("  Jumlah JSON is not an array for Online Detail ID: {$detail->id}. Type: " . gettype($jumlahArr));
+                            // --- DEBUGGING END ---
+                            continue;
+                        }
                         foreach ($jumlahArr as $satuanId => $qty) {
                             $satuan = \App\Models\Satuan::find($satuanId);
                             $konversi = $satuan ? $satuan->konversi_ke_satuan_utama : 1;
@@ -69,11 +95,13 @@ class UpdateDailyUsageRop extends Command
                     }
                     return $total;
                 });
+            
+            // --- DEBUGGING START ---
+            if ($produk->id == 1) Log::debug("  Penjualan Online Per Hari for Produk ID {$produk->id}: " . json_encode($penjualanOnlinePerHari->toArray()));
+            // --- DEBUGGING END ---
 
-            // Gabungkan penjualan per hari offline + online
+
             $penjualanGabungan = [];
-
-            // Buat array tanggal lengkap selama periode untuk memastikan semua hari dihitung (termasuk yg 0)
             for ($i = 0; $i < $periodeHari; $i++) {
                 $tgl = $tanggalMulai->copy()->addDays($i)->format('Y-m-d');
                 $offlineQty = $penjualanOfflinePerHari[$tgl] ?? 0;
@@ -81,17 +109,31 @@ class UpdateDailyUsageRop extends Command
                 $penjualanGabungan[$tgl] = $offlineQty + $onlineQty;
             }
 
+            // // --- DD() DI SINI UNTUK MELIHAT HASIL LENGKAP (HAPUS SETELAH FIX) ---
+            // if ($produk->id == 1) {
+            //     dd([
+            //         'produk_id' => $produk->id,
+            //         'tanggal_mulai_periode_adjusted' => $tanggalMulai->format('Y-m-d H:i:s'),
+            //         'penjualan_offline_per_hari_collection' => $penjualanOfflinePerHari->toArray(),
+            //         'penjualan_online_per_hari_collection' => $penjualanOnlinePerHari->toArray(),
+            //         'penjualan_gabungan_per_hari_generated_by_loop' => $penjualanGabungan,
+            //         'total_terjual_akhir' => array_sum($penjualanGabungan),
+            //     ]);
+            // }
+            // // --- AKHIR DD() ---
+
             $totalTerjual = array_sum($penjualanGabungan);
             $dailyUsage = $totalTerjual / $periodeHari;
 
             $maxDailySales = max($penjualanGabungan);
-            $leadTime = $produk->lead_time; // diasumsikan lead_time sudah dalam satuan hari
+            $leadTime = $produk->lead_time ?? 0;
 
-            // Hitung safety stock berdasarkan rumus:
-            // Safety Stock = (penjualan harian tertinggi - rata-rata penjualan harian) * lead time
             $safetyStock = max(0, ($maxDailySales - $dailyUsage) * $leadTime);
 
-            // Update produk
+            // --- DEBUGGING START ---
+            if ($produk->id == 1) Log::debug("Produk ID {$produk->id} - Total Terjual: {$totalTerjual}, Daily Usage: {$dailyUsage}, Max Daily Sales: {$maxDailySales}, Lead Time: {$leadTime}, Safety Stock: {$safetyStock}");
+            // --- DEBUGGING END ---
+
             $produk->update([
                 'daily_usage' => $dailyUsage,
                 'safety_stock' => $safetyStock,
@@ -100,7 +142,6 @@ class UpdateDailyUsageRop extends Command
             $rop = ($leadTime * $dailyUsage) + $safetyStock;
 
             $this->info("Produk ID {$produk->id} updated: daily_usage = {$dailyUsage}, safety_stock = {$safetyStock}, rop = {$rop}");
-
             Log::info("UpdateDailyUsageRop | Produk ID: {$produk->id} | Daily Usage: {$dailyUsage} | Max Daily Sales: {$maxDailySales} | Lead Time: {$leadTime} | Safety Stock: {$safetyStock} | ROP: {$rop}");
         }
 

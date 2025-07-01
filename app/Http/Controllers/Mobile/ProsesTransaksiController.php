@@ -139,7 +139,6 @@ class ProsesTransaksiController extends Controller
                 'snap_token' => $snapToken,
                 'order_id' => $kode,
             ]);
-
         } else {
             // --- ALUR UNTUK NON-PAYMENT GATEWAY (COD, Bayar di Toko) ---
             DB::beginTransaction(); // Mulai transaksi database di sini
@@ -216,10 +215,7 @@ class ProsesTransaksiController extends Controller
 
                 DB::commit();
                 Log::info('Transaksi database berhasil di-commit untuk pembayaran non-gateway.');
-                Artisan::call('produk:update-dailyusage-rop');
-                Log::info('Perintah Artisan produk:update-dailyusage-rop dijalankan.');
                 return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
-
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Terjadi kesalahan saat membuat pesanan (catch block, non-gateway): ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -339,7 +335,6 @@ class ProsesTransaksiController extends Controller
                 'snap_token' => $snapToken,
                 'order_id' => $kode,
             ]);
-
         } else {
             // --- ALUR UNTUK NON-PAYMENT GATEWAY (COD, Bayar di Toko) ---
             DB::beginTransaction(); // Mulai transaksi database di sini
@@ -417,10 +412,8 @@ class ProsesTransaksiController extends Controller
 
                 DB::commit();
                 Log::info('Transaksi database berhasil di-commit untuk pembayaran non-gateway.');
-                Artisan::call('produk:update-dailyusage-rop');
-                Log::info('Perintah Artisan produk:update-dailyusage-rop dijalankan.');
-                return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
 
+                return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
             } catch (\Exception $e) {
                 DB::rollBack();
                 Log::error('Terjadi kesalahan saat membuat pesanan (catch block, non-gateway): ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);

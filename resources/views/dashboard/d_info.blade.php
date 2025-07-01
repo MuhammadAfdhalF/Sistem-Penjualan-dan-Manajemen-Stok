@@ -1,5 +1,5 @@
 <div>
-    <h4 class="mb-2 fw-bold" style="font-weight: 700;">Informasi</h4>
+    <h4 class="mb-2 fw-bold" style="font-weight: 700;">ℹ️ Informasi</h4>
     <hr style="border: 0; height: 6px; background-color: rgb(0, 0, 0); margin-bottom: 20px;" />
 
     <div class="d-flex flex-wrap gap-3 justify-content-center">

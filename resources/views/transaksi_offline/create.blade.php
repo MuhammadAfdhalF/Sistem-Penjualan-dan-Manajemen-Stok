@@ -3,7 +3,7 @@
 @section('title', 'Halaman Tambah Transaksi Offline')
 
 <head>
-     <title>Halaman Tambah Transaksi Offline</title>
+    <title>Halaman Tambah Transaksi Offline</title>
 </head>
 
 @section('content')
@@ -16,10 +16,21 @@
     <div class="card-body">
 
         @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
+            <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
         @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        {{-- Menampilkan Error Validasi --}}
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
 
         <form action="{{ route('transaksi_offline.store') }}" method="POST" id="formTransaksi">
@@ -40,7 +51,7 @@
                     <select name="pelanggan_id" id="pelanggan_id" class="form-select">
                         <option value="">-- Tanpa Pelanggan --</option>
                         @foreach ($pelanggans as $pel)
-                        <option value="{{ $pel->id }}" data-jenis="{{ $pel->jenis_pelanggan }}">{{ $pel->nama }}</option>
+                            <option value="{{ $pel->id }}" data-jenis="{{ $pel->jenis_pelanggan }}">{{ $pel->nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -79,7 +90,7 @@
                                     <select name="produk_id[]" class="form-select produk-select" required>
                                         <option value="">Pilih Produk</option>
                                         @foreach ($produk as $item)
-                                        <option value="{{ $item->id }}" data-satuans='@json($item->satuans)'>{{ $item->nama_produk }}</option>
+                                            <option value="{{ $item->id }}" data-satuans='@json($item->satuans)'>{{ $item->nama_produk }}</option>
                                         @endforeach
                                     </select>
                                 </td>

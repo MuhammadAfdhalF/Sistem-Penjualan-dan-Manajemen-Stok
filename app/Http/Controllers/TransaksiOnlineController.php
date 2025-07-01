@@ -166,7 +166,6 @@ class TransaksiOnlineController extends Controller
                 ]);
             }
 
-            Artisan::call('produk:update-dailyusage-rop');
             DB::commit();
 
             return redirect()->route('transaksi_online.index')->with('success', 'Transaksi berhasil disimpan.');
@@ -320,7 +319,6 @@ class TransaksiOnlineController extends Controller
                 ]);
             }
 
-            \Artisan::call('produk:update-dailyusage-rop');
             \DB::commit();
 
             return redirect()->route('transaksi_online.index')->with('success', 'Transaksi berhasil diperbarui.');
@@ -372,7 +370,6 @@ class TransaksiOnlineController extends Controller
             // Hapus transaksi online utama
             $transaksiOnline->delete();
 
-            \Artisan::call('produk:update-dailyusage-rop');
             \DB::commit();
 
             return redirect()->route('transaksi_online.index')->with('success', 'Transaksi berhasil dihapus.');

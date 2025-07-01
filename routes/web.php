@@ -33,6 +33,7 @@ use App\Http\Controllers\Mobile\KeranjangMobileController;
 use App\Http\Controllers\Mobile\ProfilePelangganController;
 use App\Http\Controllers\Mobile\ProsesTransaksiController;
 use App\Http\Controllers\Mobile\RiwayatBelanjaController;
+use Illuminate\Support\Facades\Artisan; 
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -100,12 +101,11 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     // Banner
     Route::resource('banner', BannerController::class);
 
-
-
-    // route tambahan kalau ada yang spesifik
-    Route::get('/pegawai', function () {
-        return view('pegawai');
-    });
+    Route::post('/api/update-rop', function () {
+        Artisan::call('produk:update-dailyusage-rop');
+        // Anda bisa menambahkan logika logging atau notifikasi di sini
+        return response()->json(['message' => 'ROP update initiated successfully.']);
+    })->name('api.update-rop'); // Beri nama route agar mudah dipanggil di frontend
 });
 
 
