@@ -11,13 +11,14 @@ use App\Models\Satuan;
 use App\Models\HargaProduk;
 use App\Models\TransaksiOnline;
 use App\Models\TransaksiOnlineDetail;
-use App\Models\Keuangan;
+use App\Models\Keuangan; // Keuangan tidak digunakan di sini, bisa dihapus jika tidak ada relevansi
 use App\Models\Stok;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
-use App\Models\User;
+use App\Models\User; // User tidak digunakan secara langsung di sini, bisa dihapus jika tidak ada relevansi
 use Illuminate\Support\Facades\Log;
+use App\Helpers\MidtransSnap; // Pastikan helper ini di-import
 
 class ProsesTransaksiController extends Controller
 {
@@ -32,6 +33,7 @@ class ProsesTransaksiController extends Controller
             return redirect()->back()->with('error', 'Pilih minimal 1 produk.');
         }
 
+        // Simpan data produk ke sesi untuk digunakan di formBelanjaCepatStore
         session(['form_cepat_data' => $produkData]);
 
         $produkCollection = collect($produkData)->map(function ($item) {
@@ -69,151 +71,162 @@ class ProsesTransaksiController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
-        DB::beginTransaction(); // Mulai transaksi database di sini
-        try {
-            $total = 0;
-            $kode = 'TX-ON-' . now()->format('ymd') . '-' . strtoupper(Str::random(4));
-            $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
+        $total = 0;
+        $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
+        $itemDetailsForMidtrans = []; // Inisialisasi di luar kondisi agar selalu tersedia
 
-            // Hitung total harga dari produkData
-            foreach ($produkData as $item) {
-                $produk = Produk::with('satuans')->findOrFail($item['produk_id']);
-                $jumlahArr = $item['jumlah_json'];
+        // Hitung total harga dan siapkan itemDetails untuk Midtrans (jika diperlukan)
+        foreach ($produkData as $item) {
+            $produk = Produk::with('satuans')->findOrFail($item['produk_id']);
+            $jumlahArr = $item['jumlah_json'];
 
-                foreach ($jumlahArr as $satuanId => $qty) {
-                    $qty = floatval($qty);
-                    if ($qty <= 0) continue;
+            foreach ($jumlahArr as $satuanId => $qty) {
+                $qty = floatval($qty);
+                if ($qty <= 0) continue;
 
-                    $satuan = Satuan::findOrFail($satuanId);
-                    $harga = HargaProduk::where('produk_id', $produk->id)
-                        ->where('satuan_id', $satuanId)
-                        ->where('jenis_pelanggan', $jenisPelanggan)
-                        ->value('harga') ?? 0;
+                $satuan = Satuan::findOrFail($satuanId);
+                $harga = HargaProduk::where('produk_id', $produk->id)
+                    ->where('satuan_id', $satuanId)
+                    ->where('jenis_pelanggan', $jenisPelanggan)
+                    ->value('harga') ?? 0;
 
-                    $total += $harga * $qty;
-                }
+                $total += $harga * $qty;
+
+                // Siapkan itemDetails untuk Midtrans
+                $itemDetailsForMidtrans[] = [
+                    'id' => $produk->id . '-' . $satuan->id, // ID unik untuk setiap item + satuan
+                    'price' => (int) $harga, // Harga per unit
+                    'quantity' => (int) $qty, // Kuantitas unit
+                    'name' => $produk->nama_produk . ' (' . $satuan->nama_satuan . ')',
+                ];
             }
+        }
 
-            // 🔥 Buat entri TransaksiOnline di database SEBELUM memanggil Midtrans
-            $transaksi = TransaksiOnline::create([
-                'user_id' => $user->id,
-                'kode_transaksi' => $kode,
-                'tanggal' => now(),
-                'metode_pembayaran' => $request->metode_pembayaran,
-                'status_pembayaran' => 'pending', // Status awal selalu pending
-                'status_transaksi' => 'diproses',
-                'catatan' => $request->catatan,
-                'metode_pengambilan' => $request->metode_pengambilan,
-                'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
-                'total' => $total, // Total sudah dihitung di sini
-            ]);
-            Log::info('TransaksiOnline awal berhasil dibuat dengan kode: ' . $transaksi->kode_transaksi);
+        // Generate kode transaksi awal (akan jadi final untuk non-gateway, sementara untuk gateway)
+        $kode = 'TX-ON-' . now()->format('ymd') . '-' . strtoupper(Str::random(4));
 
-            // Simpan detail transaksi dan kurangi stok di sini juga
-            foreach ($produkData as $item) {
-                $produk = Produk::with('satuans')->findOrFail($item['produk_id']);
-                $jumlahArr = $item['jumlah_json'];
-                $subtotalProduk = 0;
-                $hargaArr = [];
+        if ($request->metode_pembayaran === 'payment_gateway') {
+            Log::info('Memproses pembayaran dengan Midtrans (payment_gateway) dari form cepat.');
 
-                foreach ($jumlahArr as $satuanId => $qty) {
-                    $qty = floatval($qty);
-                    if ($qty <= 0) continue;
+            // Untuk Payment Gateway, kita HANYA generate snap token dan TIDAK menyimpan transaksi ke DB dulu.
+            // Data keranjang/form cepat akan tetap utuh sampai webhook Midtrans diterima.
 
-                    $satuan = Satuan::findOrFail($satuanId);
-                    $harga = HargaProduk::where('produk_id', $produk->id)
-                        ->where('satuan_id', $satuanId)
-                        ->where('jenis_pelanggan', $jenisPelanggan)
-                        ->value('harga') ?? 0;
-
-                    $hargaArr[$satuanId] = $harga;
-                    $subtotalProduk += $harga * $qty;
-                    $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
-                    $jumlahUtama = $qty * $konversi;
-
-                    if ($produk->stok < $jumlahUtama) {
-                        DB::rollBack();
-                        Log::error("Stok tidak cukup untuk produk {$produk->nama_produk}. Stok tersedia: {$produk->stok}, Diminta: {$jumlahUtama}.");
-                        return redirect()->back()->withInput()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
-                    }
-
-                    $produk->decrement('stok', $jumlahUtama);
-                    Log::info("Stok produk '{$produk->nama_produk}' dikurangi sebanyak {$jumlahUtama} unit utama.");
-
-                    Stok::create([
-                        'produk_id' => $produk->id,
-                        'satuan_id' => $satuanId,
-                        'jenis' => 'keluar',
-                        'jumlah' => $jumlahUtama,
-                        'keterangan' => 'Transaksi online #' . $kode,
-                    ]);
-                    Log::info("Catatan stok keluar untuk produk '{$produk->nama_produk}' berhasil dibuat.");
-                }
-
-                TransaksiOnlineDetail::create([
-                    'transaksi_id' => $transaksi->id,
-                    'produk_id' => $produk->id,
-                    'jumlah_json' => $jumlahArr,
-                    'harga_json' => $hargaArr,
-                    'subtotal' => $subtotalProduk,
-                ]);
-                Log::info("Detail transaksi untuk produk '{$produk->nama_produk}' berhasil disimpan.");
-            }
-
-            // Bersihkan sesi form_cepat_data setelah data diambil dan diproses
-            session()->forget('form_cepat_data');
-            Log::info('Sesi form_cepat_data dibersihkan.');
-
-            // Jika metode pembayaran BUKAN payment_gateway, commit transaksi di sini
-            if ($request->metode_pembayaran !== 'payment_gateway') {
-                DB::commit();
-                Log::info('Transaksi database berhasil di-commit untuk pembayaran non-gateway.');
-                Artisan::call('produk:update-dailyusage-rop');
-                Log::info('Perintah Artisan produk:update-dailyusage-rop dijalankan.');
-                return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
-            }
-
-            // Jika metode pembayaran adalah payment_gateway, lanjutkan ke Midtrans
-            Log::info('Memproses pembayaran dengan Midtrans (payment_gateway).');
             $customer = [
                 'first_name' => $user->nama,
                 'email' => $user->email,
                 'phone' => $user->no_hp,
             ];
-            $items = [[
-                'id' => $kode,
-                'price' => $total,
-                'quantity' => 1,
-                'name' => 'Total Belanja KZ Family'
-            ]];
+
+            // Data penting yang akan dikirim kembali melalui webhook Midtrans
             $custom_fields = [
                 'user_id' => $user->id,
-                'metode_pembayaran' => $request->metode_pembayaran,
+                'metode_pembayaran_app' => $request->metode_pembayaran, // Menggunakan nama berbeda agar tidak konflik dengan payment_type Midtrans
                 'metode_pengambilan' => $request->metode_pengambilan,
-                'alamat_pengambilan' => $request->alamat_pengambilan,
+                'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
                 'catatan' => $request->catatan,
+                'jenis_pelanggan' => $jenisPelanggan,
+                'produk_data_raw' => json_encode($produkData), // Simpan data mentah produk/kuantitas
             ];
 
-            // Panggil Midtrans Snap dengan orderId yang sudah dibuat
-            $snapToken = \App\Helpers\MidtransSnap::generateSnapToken($kode, $total, $customer, $items, $custom_fields);
-            Log::info('Snap Token Midtrans berhasil digenerate.');
+            // Panggil Midtrans Snap
+            $snapToken = MidtransSnap::generateSnapToken($kode, $total, $customer, $itemDetailsForMidtrans, $custom_fields);
+            Log::info('Snap Token Midtrans berhasil digenerate dari form cepat.');
 
-            // Commit transaksi setelah Snap Token berhasil digenerate
-            DB::commit();
-            Log::info('Transaksi database berhasil di-commit setelah Snap Token digenerate.');
+            // Tidak ada DB::beginTransaction() atau DB::commit() di sini untuk transaksi utama
+            // karena transaksi baru dibuat di webhook setelah pembayaran sukses.
 
             return response()->json([
                 'snap_token' => $snapToken,
                 'order_id' => $kode,
             ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Terjadi kesalahan saat membuat pesanan (catch block): ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+        } else {
+            // --- ALUR UNTUK NON-PAYMENT GATEWAY (COD, Bayar di Toko) ---
+            DB::beginTransaction(); // Mulai transaksi database di sini
+            try {
+                // Buat entri TransaksiOnline di database
+                $transaksi = TransaksiOnline::create([
+                    'user_id' => $user->id,
+                    'kode_transaksi' => $kode,
+                    'tanggal' => now(),
+                    'metode_pembayaran' => $request->metode_pembayaran,
+                    'status_pembayaran' => ($request->metode_pembayaran === 'bayar_di_toko') ? 'lunas' : 'pending',
+                    'status_transaksi' => 'diproses',
+                    'catatan' => $request->catatan,
+                    'metode_pengambilan' => $request->metode_pengambilan,
+                    'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
+                    'total' => $total,
+                ]);
+                Log::info('TransaksiOnline awal berhasil dibuat dengan kode (non-gateway): ' . $transaksi->kode_transaksi);
+
+                // Simpan detail transaksi dan kurangi stok
+                foreach ($produkData as $item) {
+                    $produk = Produk::with('satuans')->findOrFail($item['produk_id']);
+                    $jumlahArr = $item['jumlah_json'];
+                    $subtotalProduk = 0;
+                    $hargaArr = [];
+
+                    foreach ($jumlahArr as $satuanId => $qty) {
+                        $qty = floatval($qty);
+                        if ($qty <= 0) continue;
+
+                        $satuan = Satuan::findOrFail($satuanId);
+                        $harga = HargaProduk::where('produk_id', $produk->id)
+                            ->where('satuan_id', $satuanId)
+                            ->where('jenis_pelanggan', $jenisPelanggan)
+                            ->value('harga') ?? 0;
+
+                        $hargaArr[$satuanId] = $harga;
+                        $subtotalProduk += $harga * $qty;
+                        $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
+                        $jumlahUtama = $qty * $konversi;
+
+                        if ($produk->stok < $jumlahUtama) {
+                            DB::rollBack();
+                            Log::error("Stok tidak cukup untuk produk {$produk->nama_produk}. Stok tersedia: {$produk->stok}, Diminta: {$jumlahUtama}.");
+                            return redirect()->back()->withInput()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
+                        }
+
+                        $produk->decrement('stok', $jumlahUtama);
+                        Log::info("Stok produk '{$produk->nama_produk}' dikurangi sebanyak {$jumlahUtama} unit utama.");
+
+                        Stok::create([
+                            'produk_id' => $produk->id,
+                            'satuan_id' => $satuanId,
+                            'jenis' => 'keluar',
+                            'jumlah' => $jumlahUtama,
+                            'keterangan' => 'Transaksi online #' . $kode,
+                        ]);
+                        Log::info("Catatan stok keluar untuk produk '{$produk->nama_produk}' berhasil dibuat.");
+                    }
+
+                    TransaksiOnlineDetail::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'jumlah_json' => $jumlahArr,
+                        'harga_json' => $hargaArr,
+                        'subtotal' => $subtotalProduk,
+                    ]);
+                    Log::info("Detail transaksi untuk produk '{$produk->nama_produk}' berhasil disimpan.");
+                }
+
+                // Bersihkan sesi form_cepat_data setelah data diambil dan diproses
+                session()->forget('form_cepat_data');
+                Log::info('Sesi form_cepat_data dibersihkan.');
+
+                DB::commit();
+                Log::info('Transaksi database berhasil di-commit untuk pembayaran non-gateway.');
+                Artisan::call('produk:update-dailyusage-rop');
+                Log::info('Perintah Artisan produk:update-dailyusage-rop dijalankan.');
+                return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Terjadi kesalahan saat membuat pesanan (catch block, non-gateway): ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+                return redirect()->back()->withInput()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+            }
         }
     }
-
 
     public function keranjang(Request $request)
     {
@@ -261,153 +274,160 @@ class ProsesTransaksiController extends Controller
             return redirect()->back()->with('error', 'Tidak ada produk yang dipilih.');
         }
 
-        DB::beginTransaction(); // Mulai transaksi database di sini
-        try {
-            $total = 0;
-            $kode = 'TX-ON-' . now()->format('ymd') . '-' . strtoupper(Str::random(4));
-            $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
+        $total = 0;
+        $kode = 'TX-ON-' . now()->format('ymd') . '-' . strtoupper(Str::random(4));
+        $jenisPelanggan = $user->jenis_pelanggan ?? 'Individu';
+        $itemDetailsForMidtrans = []; // Inisialisasi di luar kondisi agar selalu tersedia
 
-            // Hitung total harga dari keranjangs
-            foreach ($keranjangs as $item) {
-                $produk = $item->produk;
-                $jumlahArr = $item->jumlah_json;
+        // Hitung total harga dari keranjangs dan siapkan itemDetails untuk Midtrans (jika diperlukan)
+        foreach ($keranjangs as $item) {
+            $produk = $item->produk;
+            $jumlahArr = $item->jumlah_json;
 
-                foreach ($jumlahArr as $satuanId => $qty) {
-                    $qty = floatval($qty);
-                    if ($qty <= 0) continue;
+            foreach ($jumlahArr as $satuanId => $qty) {
+                $qty = floatval($qty);
+                if ($qty <= 0) continue;
 
-                    $satuan = Satuan::findOrFail($satuanId);
-                    $harga = HargaProduk::where('produk_id', $produk->id)
-                        ->where('satuan_id', $satuanId)
-                        ->where('jenis_pelanggan', $jenisPelanggan)
-                        ->value('harga') ?? 0;
+                $satuan = Satuan::findOrFail($satuanId);
+                $harga = HargaProduk::where('produk_id', $produk->id)
+                    ->where('satuan_id', $satuanId)
+                    ->where('jenis_pelanggan', $jenisPelanggan)
+                    ->value('harga') ?? 0;
 
-                    $total += $harga * $qty;
-                }
+                $total += $harga * $qty;
+
+                // Siapkan itemDetails untuk Midtrans
+                $itemDetailsForMidtrans[] = [
+                    'id' => $produk->id . '-' . $satuan->id, // ID unik untuk setiap item + satuan
+                    'price' => (int) $harga, // Harga per unit
+                    'quantity' => (int) $qty, // Kuantitas unit
+                    'name' => $produk->nama_produk . ' (' . $satuan->nama_satuan . ')',
+                ];
             }
+        }
 
-            // 🔥 Buat entri TransaksiOnline di database SEBELUM memanggil Midtrans
-            $transaksi = TransaksiOnline::create([
-                'user_id' => $user->id,
-                'kode_transaksi' => $kode,
-                'tanggal' => now(),
-                'metode_pembayaran' => $request->metode_pembayaran,
-                'status_pembayaran' => 'pending', // Status awal selalu pending
-                'status_transaksi' => 'diproses',
-                'catatan' => $request->catatan,
-                'metode_pengambilan' => $request->metode_pengambilan,
-                'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
-                'total' => $total, // Total sudah dihitung di sini
-            ]);
-            Log::info('TransaksiOnline awal berhasil dibuat dengan kode: ' . $transaksi->kode_transaksi);
-
-            // Simpan detail transaksi dan kurangi stok di sini juga
-            foreach ($keranjangs as $item) {
-                $produk = $item->produk;
-                $jumlahArr = $item->jumlah_json;
-                $subtotalProduk = 0;
-                $hargaArr = [];
-
-                foreach ($jumlahArr as $satuanId => $qty) {
-                    $qty = floatval($qty);
-                    if ($qty <= 0) continue;
-
-                    $satuan = Satuan::findOrFail($satuanId);
-                    $harga = HargaProduk::where('produk_id', $produk->id)
-                        ->where('satuan_id', $satuanId)
-                        ->where('jenis_pelanggan', $jenisPelanggan)
-                        ->value('harga') ?? 0;
-
-                    $hargaArr[$satuanId] = $harga;
-                    $subtotalProduk += $harga * $qty;
-                    $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
-                    $jumlahUtama = $qty * $konversi;
-
-                    if ($produk->stok < $jumlahUtama) {
-                        DB::rollBack();
-                        Log::error("Stok tidak cukup untuk produk {$produk->nama_produk}. Stok tersedia: {$produk->stok}, Diminta: {$jumlahUtama}.");
-                        return redirect()->back()->withInput()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
-                    }
-
-                    $produk->decrement('stok', $jumlahUtama);
-                    Log::info("Stok produk '{$produk->nama_produk}' dikurangi sebanyak {$jumlahUtama} unit utama.");
-
-                    Stok::create([
-                        'produk_id' => $produk->id,
-                        'satuan_id' => $satuanId,
-                        'jenis' => 'keluar',
-                        'jumlah' => $jumlahUtama,
-                        'keterangan' => 'Transaksi online #' . $kode,
-                    ]);
-                    Log::info("Catatan stok keluar untuk produk '{$produk->nama_produk}' berhasil dibuat.");
-                }
-
-                TransaksiOnlineDetail::create([
-                    'transaksi_id' => $transaksi->id,
-                    'produk_id' => $produk->id,
-                    'jumlah_json' => $jumlahArr,
-                    'harga_json' => $hargaArr,
-                    'subtotal' => $subtotalProduk,
-                ]);
-                Log::info("Detail transaksi untuk produk '{$produk->nama_produk}' berhasil disimpan.");
-            }
-
-            // Bersihkan keranjang pengguna setelah data diambil dan diproses
-            $user->keranjangs()->whereIn('id', $keranjangIds)->delete();
-            session()->forget('keranjang_ids');
-            Log::info('Keranjang pengguna dibersihkan.');
-
-
-            // Jika metode pembayaran BUKAN payment_gateway, commit transaksi di sini
-            if ($request->metode_pembayaran !== 'payment_gateway') {
-                DB::commit();
-                Log::info('Transaksi database berhasil di-commit untuk pembayaran non-gateway.');
-                Artisan::call('produk:update-dailyusage-rop');
-                Log::info('Perintah Artisan produk:update-dailyusage-rop dijalankan.');
-                return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
-            }
-
-            // Jika metode pembayaran adalah payment_gateway, lanjutkan ke Midtrans
+        if ($request->metode_pembayaran === 'payment_gateway') {
             Log::info('Memproses pembayaran dengan Midtrans dari keranjang (payment_gateway).');
+            // Untuk Payment Gateway, kita HANYA generate snap token dan TIDAK menyimpan transaksi ke DB dulu.
+            // Data keranjang akan tetap utuh sampai webhook Midtrans diterima.
+
             $customer = [
                 'first_name' => $user->nama,
                 'email' => $user->email,
                 'phone' => $user->no_hp,
             ];
-            $items = [[
-                'id' => $kode,
-                'price' => $total,
-                'quantity' => 1,
-                'name' => 'Total Belanja KZ Family'
-            ]];
+
+            // Data penting yang akan dikirim kembali melalui webhook Midtrans
             $custom_fields = [
                 'user_id' => $user->id,
-                'metode_pembayaran' => $request->metode_pembayaran,
+                'metode_pembayaran_app' => $request->metode_pembayaran, // Menggunakan nama berbeda
                 'metode_pengambilan' => $request->metode_pengambilan,
-                'alamat_pengambilan' => $request->alamat_pengambilan,
+                'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
                 'catatan' => $request->catatan,
+                'jenis_pelanggan' => $jenisPelanggan,
+                'keranjang_ids_raw' => json_encode($keranjangIds), // Simpan ID keranjang yang dipilih
             ];
 
-            // Panggil Midtrans Snap dengan orderId yang sudah dibuat
-            $snapToken = \App\Helpers\MidtransSnap::generateSnapToken($kode, $total, $customer, $items, $custom_fields);
+            // Panggil Midtrans Snap
+            $snapToken = MidtransSnap::generateSnapToken($kode, $total, $customer, $itemDetailsForMidtrans, $custom_fields);
             Log::info('Snap Token Midtrans berhasil digenerate dari keranjang.');
 
-            // Commit transaksi setelah Snap Token berhasil digenerate
-            DB::commit();
-            Log::info('Transaksi database berhasil di-commit setelah Snap Token digenerate.');
+            // Tidak ada DB::beginTransaction() atau DB::commit() di sini untuk transaksi utama
+            // karena transaksi baru dibuat di webhook setelah pembayaran sukses.
 
             return response()->json([
                 'snap_token' => $snapToken,
                 'order_id' => $kode,
             ]);
 
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Terjadi kesalahan saat membuat pesanan (catch block): ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->back()->withInput()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+        } else {
+            // --- ALUR UNTUK NON-PAYMENT GATEWAY (COD, Bayar di Toko) ---
+            DB::beginTransaction(); // Mulai transaksi database di sini
+            try {
+                // Buat entri TransaksiOnline di database
+                $transaksi = TransaksiOnline::create([
+                    'user_id' => $user->id,
+                    'kode_transaksi' => $kode,
+                    'tanggal' => now(),
+                    'metode_pembayaran' => $request->metode_pembayaran,
+                    'status_pembayaran' => ($request->metode_pembayaran === 'bayar_di_toko') ? 'lunas' : 'pending',
+                    'status_transaksi' => 'diproses',
+                    'catatan' => $request->catatan,
+                    'metode_pengambilan' => $request->metode_pengambilan,
+                    'alamat_pengambilan' => $request->metode_pengambilan === 'diantar' ? $request->alamat_pengambilan : null,
+                    'total' => $total,
+                ]);
+                Log::info('TransaksiOnline awal berhasil dibuat dengan kode (non-gateway): ' . $transaksi->kode_transaksi);
+
+                // Simpan detail transaksi dan kurangi stok
+                foreach ($keranjangs as $item) {
+                    $produk = $item->produk;
+                    $jumlahArr = $item->jumlah_json;
+                    $subtotalProduk = 0;
+                    $hargaArr = [];
+
+                    foreach ($jumlahArr as $satuanId => $qty) {
+                        $qty = floatval($qty);
+                        if ($qty <= 0) continue;
+
+                        $satuan = Satuan::findOrFail($satuanId);
+                        $harga = HargaProduk::where('produk_id', $produk->id)
+                            ->where('satuan_id', $satuanId)
+                            ->where('jenis_pelanggan', $jenisPelanggan)
+                            ->value('harga') ?? 0;
+
+                        $hargaArr[$satuanId] = $harga;
+                        $subtotalProduk += $harga * $qty;
+                        $konversi = $satuan->konversi_ke_satuan_utama ?: 1;
+                        $jumlahUtama = $qty * $konversi;
+
+                        if ($produk->stok < $jumlahUtama) {
+                            DB::rollBack();
+                            Log::error("Stok tidak cukup untuk produk {$produk->nama_produk}. Stok tersedia: {$produk->stok}, Diminta: {$jumlahUtama}.");
+                            return redirect()->back()->withInput()->with('error', "Stok tidak cukup untuk produk {$produk->nama_produk}.");
+                        }
+
+                        $produk->decrement('stok', $jumlahUtama);
+                        Log::info("Stok produk '{$produk->nama_produk}' dikurangi sebanyak {$jumlahUtama} unit utama.");
+
+                        Stok::create([
+                            'produk_id' => $produk->id,
+                            'satuan_id' => $satuanId,
+                            'jenis' => 'keluar',
+                            'jumlah' => $jumlahUtama,
+                            'keterangan' => 'Transaksi online #' . $kode,
+                        ]);
+                        Log::info("Catatan stok keluar untuk produk '{$produk->nama_produk}' berhasil dibuat.");
+                    }
+
+                    TransaksiOnlineDetail::create([
+                        'transaksi_id' => $transaksi->id,
+                        'produk_id' => $produk->id,
+                        'jumlah_json' => $jumlahArr,
+                        'harga_json' => $hargaArr,
+                        'subtotal' => $subtotalProduk,
+                    ]);
+                    Log::info("Detail transaksi untuk produk '{$produk->nama_produk}' berhasil disimpan.");
+                }
+
+                // Bersihkan keranjang pengguna setelah data diambil dan diproses
+                $user->keranjangs()->whereIn('id', $keranjangIds)->delete();
+                session()->forget('keranjang_ids');
+                Log::info('Keranjang pengguna dibersihkan.');
+
+                DB::commit();
+                Log::info('Transaksi database berhasil di-commit untuk pembayaran non-gateway.');
+                Artisan::call('produk:update-dailyusage-rop');
+                Log::info('Perintah Artisan produk:update-dailyusage-rop dijalankan.');
+                return redirect()->route('mobile.home.index')->with('success', 'Pesanan berhasil dibuat!');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Terjadi kesalahan saat membuat pesanan (catch block, non-gateway): ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+                return redirect()->back()->withInput()->with('error', 'Gagal membuat pesanan: ' . $e->getMessage());
+            }
         }
     }
-
 
     /**
      * Metode privat untuk memproses transaksi yang tidak menggunakan payment gateway.

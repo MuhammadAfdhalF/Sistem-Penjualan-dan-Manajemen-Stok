@@ -404,20 +404,56 @@
                 e.preventDefault(); // stop default submit
 
                 const formData = new FormData(form);
-                // Tambahkan total dan order_id dari form ke formData
-                // Asumsi ada hidden input dengan nama 'total' dan 'order_id' di form
-                // Atau Anda bisa menghitungnya dari rincian belanja di view
-                // Untuk kesederhanaan, kita akan ambil dari total yang ditampilkan di view
+
+                // Ambil total dari rincian belanja di view
                 const totalElement = document.querySelector('.card.rincian-belanja .d-flex.justify-content-between.fw-bold span:last-child');
                 const totalText = totalElement ? totalElement.textContent.replace('Rp ', '').replace(/\./g, '') : '0';
                 const total = parseFloat(totalText);
 
-                // Order ID akan digenerate di backend, jadi tidak perlu dikirim dari sini
-                // Namun, kita perlu memanggil endpoint yang akan membuat transaksi dan mengembalikan order_id
-                // Jadi, kita akan submit form ini ke ProsesTransaksiController@store/formBelanjaCepatStore
-                // dan jika itu payment_gateway, controller akan mengembalikan snap_token dan order_id.
+                // Ambil data produk dari rincian belanja untuk item_details
+                const itemDetails = [];
+                document.querySelectorAll('.card.rincian-belanja .row.mt-3').forEach(row => {
+                    const productName = row.querySelector('.col-4').textContent.trim();
+                    const productDetails = row.querySelector('.col-2'); // Ini berisi qty x satuan
+                    const priceDetails = row.querySelector('.col-3:nth-child(3)'); // Ini berisi harga per satuan
 
+                    // Mengurai jumlah dan harga dari HTML
+                    const quantitiesHtml = productDetails.innerHTML.split('<br>').filter(Boolean);
+                    const pricesHtml = priceDetails.innerHTML.split('<br>').filter(Boolean);
+
+                    quantitiesHtml.forEach((qtyHtml, index) => {
+                        const qtyMatch = qtyHtml.match(/(\d+) x (.+)/);
+                        const priceMatch = pricesHtml[index] ? pricesHtml[index].match(/Rp ([\d\.]+)/) : null;
+
+                        if (qtyMatch && priceMatch) {
+                            const quantity = parseInt(qtyMatch[1]);
+                            const unitName = qtyMatch[2].trim();
+                            const price = parseFloat(priceMatch[1].replace(/\./g, '')); // Hapus titik format ribuan
+
+                            // Anda mungkin perlu ID produk dan satuan yang sebenarnya di sini.
+                            // Untuk saat ini, kita akan menggunakan ID dummy atau string unik.
+                            // Idealnya, Anda akan memiliki data-attributes di HTML yang menyimpan ID produk/satuan.
+                            // Karena tidak ada data-attribute di HTML saat ini, kita akan pakai nama produk + satuan sebagai ID unik.
+                            const itemId = `PROD-${productName.replace(/\s/g, '-')}-${unitName.replace(/\s/g, '-')}`;
+
+                            itemDetails.push({
+                                id: itemId,
+                                price: price,
+                                quantity: quantity,
+                                name: `${productName} (${unitName})`
+                            });
+                        }
+                    });
+                });
+
+                // Kirim request ke ProsesTransaksiController@store/formBelanjaCepatStore
+                // Controller akan membuat transaksi dan mengembalikan snap_token + order_id
                 try {
+                    // 🔥 Tambahkan item_details ke formData sebagai string JSON
+                    // Pastikan nama field di backend adalah 'item_details'
+                    formData.append('item_details', JSON.stringify(itemDetails));
+                    formData.append('total', total); // Pastikan total juga dikirim
+
                     const response = await fetch(form.action, {
                         method: "POST",
                         body: formData,
@@ -452,8 +488,6 @@
                     alert('Gagal memproses pembayaran.');
                 }
             }
-            // Jika bukan payment_gateway, biarkan form disubmit secara normal
-            // (Tidak perlu 'else' di sini karena e.preventDefault() hanya dipanggil di dalam if)
         });
     });
 </script>

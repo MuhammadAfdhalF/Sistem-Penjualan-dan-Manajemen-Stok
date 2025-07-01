@@ -7,7 +7,7 @@ use Midtrans\Config;
 
 class MidtransSnap
 {
-    public static function generateSnapToken($order_id, $gross_amount, $customerDetails, $itemDetails)
+    public static function generateSnapToken($order_id, $gross_amount, $customerDetails, $itemDetails, $customFields = []) // Tambahkan $customFields
     {
         Config::$serverKey = config('midtrans.serverKey');
         Config::$isProduction = config('midtrans.isProduction');
@@ -24,6 +24,12 @@ class MidtransSnap
             'customer_details' => $customerDetails,
             'item_details' => $itemDetails,
         ];
+
+        // Tambahkan custom_fields jika tidak kosong
+        if (!empty($customFields)) {
+            $params['custom_field1'] = json_encode($customFields); // Midtrans hanya support custom_field1, custom_field2, custom_field3
+            // Anda bisa menggunakan salah satunya dan menyimpan semua data JSON di dalamnya.
+        }
 
         return Snap::getSnapToken($params);
     }
