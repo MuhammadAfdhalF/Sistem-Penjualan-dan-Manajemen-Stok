@@ -63,7 +63,6 @@
 
 @section('content')
 <div class="container-fluid py-2 px-2" style="max-width: 1280px;">
-    <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-4 ms-3 mt-3 d-block d-lg-none">
         <div>
             <h6 class="fw-bold mb-1 text-body">Toko KZ Family</h6>
@@ -76,14 +75,12 @@
         </div>
     </div>
 
-    <!-- Judul -->
     <div class="text-center mb-1">
         <div class="p-2 shadow" style="border-radius: 8px; background-color: #ffffff; border: 1px solid rgba(0, 0, 0, 0.18);">
             <strong class="fs-6">Riwayat Pesananan Anda</strong>
         </div>
     </div>
 
-    <!-- Card Riwayat -->
     @forelse ($riwayat as $trx)
     <div class="card card-riwayat mb-1 shadow-sm">
         <div class="card-body">
@@ -91,10 +88,37 @@
                 <small class="text-muted">{{ \Carbon\Carbon::parse($trx->tanggal)->translatedFormat('d F Y') }}</small>
                 @php
                 $isOnline = $trx->tipe === 'online';
-                $statusClass = $isOnline
-                ? ($trx->status_transaksi === 'selesai' ? 'bg-success text-white' : 'bg-warning text-dark')
-                : 'bg-secondary text-white';
-                $statusText = $isOnline ? 'Online - ' . ucfirst($trx->status_transaksi) : 'Offline';
+                $statusClass = 'bg-secondary text-white'; // Default for offline
+                $statusText = 'Offline'; // Default for offline
+
+                if ($isOnline) {
+                    switch ($trx->status_transaksi) {
+                        case 'diproses':
+                            $statusClass = 'bg-warning text-dark';
+                            $statusText = 'Online - Sedang Diproses';
+                            break;
+                        case 'diantar':
+                            $statusClass = 'bg-info text-dark';
+                            $statusText = 'Online - Sedang Diantar';
+                            break;
+                        case 'diambil':
+                            $statusClass = 'bg-primary text-white';
+                            $statusText = 'Online - Silahkan Diambil';
+                            break;
+                        case 'selesai':
+                            $statusClass = 'bg-success text-white';
+                            $statusText = 'Online - Pesanan Selesai';
+                            break;
+                        case 'batal':
+                            $statusClass = 'bg-danger text-white';
+                            $statusText = 'Online - Batal';
+                            break;
+                        default:
+                            $statusClass = 'bg-secondary text-white'; // Fallback
+                            $statusText = 'Online - ' . ucfirst($trx->status_transaksi);
+                            break;
+                    }
+                }
                 @endphp
                 <span class="badge badge-status {{ $statusClass }}">
                     {{ $statusText }}
@@ -107,48 +131,48 @@
                 $produkList = [];
 
                 foreach ($trx->detail as $detail) {
-                foreach ($detail->jumlah_json ?? [] as $satuanId => $qty) {
-                $qty = floatval($qty);
-                if ($qty <= 0) continue;
+                    foreach ($detail->jumlah_json ?? [] as $satuanId => $qty) {
+                        $qty = floatval($qty);
+                        if ($qty <= 0) continue;
 
-                    $produkId=$detail->produk_id;
-                    $nama = $detail->produk->nama_produk;
-                    $satuan = $detail->produk->satuans->firstWhere('id', $satuanId);
-                    $unit = $satuan->nama_satuan ?? 'unit';
+                        $produkId=$detail->produk_id;
+                        $nama = $detail->produk->nama_produk;
+                        $satuan = $detail->produk->satuans->firstWhere('id', $satuanId);
+                        $unit = $satuan->nama_satuan ?? 'unit';
 
-                    if (!isset($produkList[$produkId])) {
-                    $produkList[$produkId] = [
-                    'nama' => $nama,
-                    'satuan' => [],
-                    ];
+                        if (!isset($produkList[$produkId])) {
+                            $produkList[$produkId] = [
+                                'nama' => $nama,
+                                'satuan' => [],
+                            ];
+                        }
+
+                        $produkList[$produkId]['satuan'][] = "{$qty} × {$unit}";
                     }
+                }
 
-                    $produkList[$produkId]['satuan'][] = "{$qty} × {$unit}";
-                    }
-                    }
+                $produkArray = array_values($produkList);
+                @endphp
 
-                    $produkArray = array_values($produkList);
-                    @endphp
+                @foreach ($produkArray as $index => $item)
+                @if ($index < 2)
+                    <li class="text-small">
+                    <div class="d-flex justify-content-between">
+                        <span class="me-2">{{ $item['nama'] }}</span>
+                        <span class="text-nowrap">{{ implode(', ', $item['satuan']) }}</span>
+                    </div>
+                    </li>
+                    @endif
+                    @endforeach
 
-                    @foreach ($produkArray as $index => $item)
-                    @if ($index < 2)
-                        <li class="text-small">
+                    @if (count($produkArray) > 2)
+                    <li class="text-small">
                         <div class="d-flex justify-content-between">
-                            <span class="me-2">{{ $item['nama'] }}</span>
-                            <span class="text-nowrap">{{ implode(', ', $item['satuan']) }}</span>
+                            <span class="text-muted">..... (klik untuk selengkapnya)</span>
+                            <span>&nbsp;</span>
                         </div>
-                        </li>
-                        @endif
-                        @endforeach
-
-                        @if (count($produkArray) > 2)
-                        <li class="text-small">
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">..... (klik untuk selengkapnya)</span>
-                                <span>&nbsp;</span>
-                            </div>
-                        </li>
-                        @endif
+                    </li>
+                    @endif
             </ul>
 
             <div class="d-flex justify-content-between align-items-center mt-3">

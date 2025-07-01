@@ -157,15 +157,46 @@
     </div>
 
 
-    <!-- STATUS TRANSAKSI & PEMBAYARAN  -->
     <div class="card status-transaksi shadow-sm mb-2 px-3 py-3" style="border-radius: 12px;">
         @php
         $isOnline = $tipe === 'online';
         $statusTransaksi = strtolower($transaksi->status_transaksi ?? 'menunggu');
         $statusPembayaran = strtolower($transaksi->status_pembayaran ?? 'pending');
 
-        $statusPesananText = $isOnline ? 'Online - ' . ucfirst($statusTransaksi) : 'Offline';
-        $warnaStatus = $isOnline ? ($statusTransaksi === 'selesai' ? 'green' : 'orange') : 'grey';
+        $statusPesananText = '';
+        $warnaStatus = '';
+
+        if ($isOnline) {
+        switch ($statusTransaksi) {
+        case 'diproses':
+        $statusPesananText = 'Online - Sedang Diproses';
+        $warnaStatus = 'orange'; // Corresponds to bg-warning
+        break;
+        case 'diantar':
+        $statusPesananText = 'Online - Sedang Diantar';
+        $warnaStatus = '#17a2b8'; // Corresponds to bg-info
+        break;
+        case 'diambil':
+        $statusPesananText = 'Online - Silahkan Diambil';
+        $warnaStatus = '#007bff'; // Corresponds to bg-primary
+        break;
+        case 'selesai':
+        $statusPesananText = 'Online - Pesanan Selesai';
+        $warnaStatus = 'green'; // Corresponds to bg-success
+        break;
+        case 'batal':
+        $statusPesananText = 'Online - Batal';
+        $warnaStatus = 'red'; // Corresponds to bg-danger
+        break;
+        default:
+        $statusPesananText = 'Online - ' . ucfirst($statusTransaksi);
+        $warnaStatus = 'grey'; // Default fallback
+        break;
+        }
+        } else {
+        $statusPesananText = 'Offline';
+        $warnaStatus = 'grey'; // Corresponds to bg-secondary
+        }
 
         $statusPembayaranText = $isOnline ? ucwords($statusPembayaran) : 'Lunas';
         $warnaPembayaran = $isOnline
@@ -178,8 +209,8 @@
             <div>
                 <span class="badge rounded-pill text-white"
                     style="background-color: {{ $warnaStatus }};
-                         font-size: 0.75rem;
-                         padding: 4px 10px;">
+                           font-size: 0.75rem;
+                           padding: 4px 10px;">
                     {{ $statusPesananText }}
                 </span>
             </div>
@@ -189,8 +220,8 @@
             <div>
                 <span class="badge rounded-pill text-white"
                     style="background-color: {{ $warnaPembayaran }};
-                         font-size: 0.75rem;
-                         padding: 4px 10px;">
+                           font-size: 0.75rem;
+                           padding: 4px 10px;">
                     {{ $statusPembayaranText }}
                 </span>
             </div>
@@ -198,7 +229,6 @@
     </div>
 
 
-    <!-- RINCIAN BELANJA -->
     <div class="card mb-1 shadow rincian-belanja">
         <div class="card-header fw-bold bg-white"><i class="bi bi-receipt me-2"></i>Rincian Belanja</div>
         <div class="card-body">
@@ -252,7 +282,6 @@
                 </div>
         </div>
     </div>
-    <!-- METODE PEMBAYARAN -->
     <div class="card mb-1 shadow metode-pembayaran">
         <div class="card-header fw-bold bg-white"><i class="bi bi-wallet2 me-2"></i>Metode Pembayaran</div>
         <div class="card-body">
@@ -269,7 +298,6 @@
         </div>
     </div>
     @if ($tipe === 'online')
-    <!-- METODE PENGAMBILAN -->
     <div class="card mb-1 shadow metode-pengambilan">
         <div class="card-header fw-bold bg-white"><i class="bi bi-truck me-2"></i>Metode Pengambilan</div>
         <div class="card-body">
@@ -286,7 +314,6 @@
 
 
 
-    <!-- ALAMAT PENGIRIMAN -->
     <div class="card mb-1 shadow card-alamat">
         <div class="card-body">
             <label class="form-label fw-bold"><i class="bi bi-geo-alt-fill me-2"></i>Alamat Pengiriman</label>
@@ -294,7 +321,6 @@
         </div>
     </div>
 
-    <!-- CATATAN -->
     <div class="card mb-4 shadow card-catatan">
         <div class="card-body">
             <label class="form-label fw-bold"><i class="bi bi-journal-text me-2"></i>Catatan</label>
@@ -305,7 +331,6 @@
 
 
 
-    <!-- TOMBOL AKSI -->
     <div class="d-none d-md-flex gap-2 mb-2 justify-content-center mobile-btn-container fixed-bottom-aksi">
         <a href="#" onclick="history.back()" class="btn w-100 text-white mobile-btn-small" style="background:#6c757d;">Kembali</a>
     </div>

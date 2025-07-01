@@ -89,7 +89,7 @@ Halaman Transaksi Online
                             <th>Total</th>
                             <th>Pembayaran</th>
                             <th>Status Transaksi</th>
-                            <th>Metode Pengambilan</th> <!-- Menambahkan kolom untuk metode pengambilan -->
+                            <th>Metode Pengambilan</th>
                             <th>Opsi</th>
                         </tr>
                     </thead>
@@ -110,20 +110,20 @@ Halaman Transaksi Online
                             </td>
                             <td>
                                 @if($item->status_transaksi == 'diproses')
-                                <span class="badge bg-warning text-dark">{{ ucfirst($item->status_transaksi) }}</span>
+                                <span class="badge bg-warning text-dark">Sedang Diproses</span> {{-- Perubahan di sini --}}
                                 @elseif($item->status_transaksi == 'diantar')
-                                <span class="badge bg-info text-dark">{{ ucfirst($item->status_transaksi) }}</span>
+                                <span class="badge bg-info text-dark">Sedang Diantar</span>
                                 @elseif($item->status_transaksi == 'diambil')
-                                <span class="badge bg-primary">{{ ucfirst($item->status_transaksi) }}</span>
+                                <span class="badge bg-primary">Silahkan Diambil</span>
                                 @elseif($item->status_transaksi == 'selesai')
-                                <span class="badge bg-success">{{ ucfirst($item->status_transaksi) }}</span>
+                                <span class="badge bg-success">Pesanan Selesai</span> {{-- Perubahan di sini --}}
                                 @elseif($item->status_transaksi == 'batal')
                                 <span class="badge bg-danger">{{ ucfirst($item->status_transaksi) }}</span>
                                 @else
                                 <span class="badge bg-secondary">{{ ucfirst($item->status_transaksi) }}</span>
                                 @endif
                             </td>
-                            <td>{{ ucfirst($item->metode_pengambilan) }}</td> <!-- Menampilkan metode pengambilan -->
+                            <td>{{ ucfirst($item->metode_pengambilan) }}</td>
                             <td>
                                 <a href="{{ route('transaksi_online.show', $item->id) }}" class="btn btn-info btn-sm" title="Lihat Detail">
                                     <i class="ti ti-eye"></i>
@@ -139,7 +139,6 @@ Halaman Transaksi Online
                             </td>
                         </tr>
 
-                        <!-- Modal Konfirmasi Hapus -->
                         <div class="modal fade" id="confirmDeleteModal{{ $item->id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel{{ $item->id }}" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
