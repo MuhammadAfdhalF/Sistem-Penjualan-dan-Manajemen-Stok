@@ -322,6 +322,8 @@
 
 
 @push('scripts')
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ config('midtrans.client_key') }}"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const alamatCard = document.getElementById('alamat-card');
@@ -329,7 +331,6 @@
         const hiddenPembayaran = document.getElementById('metode_pembayaran');
         const form = document.querySelector('form');
 
-        // Referensi ke tombol-tombol pembayaran
         const btnCod = document.querySelector(".btn-pembayaran[data-value='cod']");
         const btnBayarDiToko = document.querySelector(".btn-pembayaran[data-value='bayar_di_toko']");
         const btnDigital = document.querySelector(".btn-pembayaran[data-value='payment_gateway']");
@@ -337,7 +338,6 @@
         function initializeButtons() {
             const oldPengambilan = hiddenPengambilan.value;
             if (oldPengambilan) {
-                // Trigger klik untuk menjalankan semua logika terkait
                 document.querySelector(`.btn-pengambilan[data-value='${oldPengambilan}']`)?.click();
             }
             const oldPembayaran = hiddenPembayaran.value;
@@ -355,20 +355,17 @@
                 this.classList.add('active');
                 alamatCard.style.display = this.dataset.value === 'diantar' ? 'block' : 'none';
 
-                // 🔥 LOGIKA BARU: Tampilkan/Sembunyikan Metode Pembayaran
                 const pembayaranTerpilih = hiddenPembayaran.value;
                 if (this.dataset.value === 'diantar') {
                     btnBayarDiToko.style.display = 'none';
                     btnCod.style.display = 'block';
-                    // Jika "Bayar di Toko" sedang aktif, reset pilihan
                     if (pembayaranTerpilih === 'bayar_di_toko') {
                         hiddenPembayaran.value = '';
                         btnBayarDiToko.classList.remove('active');
                     }
-                } else { // Jika "ambil di toko"
+                } else {
                     btnBayarDiToko.style.display = 'block';
                     btnCod.style.display = 'none';
-                    // Jika "COD" sedang aktif, reset pilihan
                     if (pembayaranTerpilih === 'cod') {
                         hiddenPembayaran.value = '';
                         btnCod.classList.remove('active');
@@ -385,10 +382,10 @@
             });
         });
 
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
             const metodePengambilan = hiddenPengambilan.value;
             const metodePembayaran = hiddenPembayaran.value;
-            const alamatPengambilan = document.querySelector('textarea[name="alamat_pengambilan"]').value;
+            const alamatPengambilan = document.querySelector('textarea[name="alamat_pengambilan"]')?.value || '';
 
             if (!metodePengambilan || !metodePembayaran) {
                 e.preventDefault();
@@ -401,7 +398,64 @@
                 alert('Alamat pengiriman harus diisi jika memilih metode diantar.');
                 return;
             }
+
+            // Jika metode pembayaran adalah payment_gateway, lakukan AJAX call untuk mendapatkan Snap Token
+            if (metodePembayaran === 'payment_gateway') {
+                e.preventDefault(); // stop default submit
+
+                const formData = new FormData(form);
+                // Tambahkan total dan order_id dari form ke formData
+                // Asumsi ada hidden input dengan nama 'total' dan 'order_id' di form
+                // Atau Anda bisa menghitungnya dari rincian belanja di view
+                // Untuk kesederhanaan, kita akan ambil dari total yang ditampilkan di view
+                const totalElement = document.querySelector('.card.rincian-belanja .d-flex.justify-content-between.fw-bold span:last-child');
+                const totalText = totalElement ? totalElement.textContent.replace('Rp ', '').replace(/\./g, '') : '0';
+                const total = parseFloat(totalText);
+
+                // Order ID akan digenerate di backend, jadi tidak perlu dikirim dari sini
+                // Namun, kita perlu memanggil endpoint yang akan membuat transaksi dan mengembalikan order_id
+                // Jadi, kita akan submit form ini ke ProsesTransaksiController@store/formBelanjaCepatStore
+                // dan jika itu payment_gateway, controller akan mengembalikan snap_token dan order_id.
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                        }
+                    });
+
+                    const result = await response.json();
+
+                    if (result.snap_token) {
+                        window.snap.pay(result.snap_token, {
+                            onSuccess: function(result) {
+                                window.location.href = "/mobile/pesanan/sukses";
+                            },
+                            onPending: function(result) {
+                                window.location.href = "/mobile/pesanan/menunggu";
+                            },
+                            onError: function(result) {
+                                alert("Terjadi kesalahan saat memproses pembayaran.");
+                            },
+                            onClose: function() {
+                                alert('Pembayaran dibatalkan.');
+                            }
+                        });
+                    } else {
+                        alert(result.error || 'Gagal mendapatkan Snap Token.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Gagal memproses pembayaran.');
+                }
+            }
+            // Jika bukan payment_gateway, biarkan form disubmit secara normal
+            // (Tidak perlu 'else' di sini karena e.preventDefault() hanya dipanggil di dalam if)
         });
     });
 </script>
+
 @endpush

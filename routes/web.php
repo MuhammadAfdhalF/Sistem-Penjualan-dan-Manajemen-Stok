@@ -20,6 +20,8 @@ use App\Http\Controllers\SatuanController;
 use App\Http\Controllers\TransaksiOnlineController;
 use App\Http\Controllers\TransaksiOnlineDetailController;
 use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\MidtransController;
+use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\PaymentLogController;
 use App\Http\Controllers\Mobile\CobaController;
 
@@ -157,8 +159,14 @@ Route::middleware(['auth', 'pelangganonly'])->group(function () {
     Route::put('/pelanggan-area/profile_pelanggan/update', [ProfilePelangganController::class, 'update'])->name('mobile.profile_pelanggan.update');
 });
 
+// 🔐 Generate Snap Token (dipanggil dari frontend saat klik "Bayar Sekarang")
+Route::post('/midtrans/token', [MidtransController::class, 'getSnapToken'])->name('mobile.midtrans.token');
 
+// 🌐 Webhook Midtrans (dihubungkan dari dashboard Midtrans ke sini)
+Route::post('/midtrans/webhook', [MidtransController::class, 'handleWebhook'])->name('mobile.midtrans.webhook');
 
+// 🎉 Halaman sukses setelah selesai transaksi
+Route::get('/mobile/pesanan/sukses', [MidtransController::class, 'sukses'])->name('mobile.pesanan.sukses');
 
 
 

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL; // Pastikan baris ini ada
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Tambahkan logika ini untuk memaksa URL menjadi HTTPS jika APP_URL adalah HTTPS
+        if (str_starts_with(env('APP_URL'), 'https://')) {
+            URL::forceScheme('https');
+        }
     }
 }

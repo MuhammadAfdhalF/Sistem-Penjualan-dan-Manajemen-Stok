@@ -12,6 +12,10 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Tambahkan URL webhook Midtrans Anda di sini
+        'midtrans/webhook', // Ini adalah path relatif dari APP_URL Anda
+        // Jika Anda memiliki versi Laravel yang lebih lama dan menggunakan route helper
+        // Anda juga bisa mencoba:
+        // route('mobile.midtrans.webhook', [], false), // false untuk URL relatif
     ];
 }
