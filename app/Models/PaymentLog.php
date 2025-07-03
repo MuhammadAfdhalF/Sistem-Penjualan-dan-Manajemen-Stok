@@ -12,7 +12,8 @@ class PaymentLog extends Model
     protected $table = 'payment_logs';
 
     protected $fillable = [
-        'transaksi_id',
+        'transaksi_id',  
+        'transaksi_offline_id', // <-- TAMBAHKAN INI
         'gateway',
         'external_id',
         'metode',
@@ -26,8 +27,29 @@ class PaymentLog extends Model
         'response_payload' => 'array',
     ];
 
-    public function transaksi()
+    // Karena payment_logs bisa berelasi dengan TransaksiOnline atau TransaksiOffline,
+    // kita membuat dua relasi terpisah.
+    // Anda akan memanggilnya sesuai kebutuhan (misal: $paymentLog->transaksiOnline atau $paymentLog->transaksiOffline).
+
+    public function transaksiOnline()
     {
-        return $this->belongsTo(TransaksiOnline::class, 'transaksi_id');
+        return $this->belongsTo(TransaksiOnline::class, 'transaksi_online_id');
     }
+
+    public function transaksiOffline()
+    {
+        return $this->belongsTo(TransaksiOffline::class, 'transaksi_offline_id');
+    }
+
+    // Anda bisa juga menambahkan accessor jika ingin satu method untuk mendapatkan objek transaksi,
+    // tapi ini opsional dan bisa disesuaikan dengan kebutuhan Anda.
+    // public function payable()
+    // {
+    //     if ($this->transaksi_online_id) {
+    //         return $this->transaksiOnline;
+    //     } elseif ($this->transaksi_offline_id) {
+    //         return $this->transaksiOffline;
+    //     }
+    //     return null;
+    // }
 }

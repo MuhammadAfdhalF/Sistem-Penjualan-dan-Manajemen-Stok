@@ -28,6 +28,8 @@ class MidtransSnap
         // Tambahkan custom_fields jika tidak kosong
         if (!empty($customFields)) {
             $params['custom_field1'] = json_encode($customFields); // Midtrans hanya support custom_field1, custom_field2, custom_field3
+            // $params['custom_field1'] = substr(json_encode($customFields), 0, 100);
+
             // Anda bisa menggunakan salah satunya dan menyimpan semua data JSON di dalamnya.
         }
 

@@ -19,10 +19,19 @@ class TransaksiOffline extends Model
         'dibayar',
         'kembalian',
         'pelanggan_id',
-
+        'metode_pembayaran',   // <-- TAMBAHKAN INI
+        'snap_token',          // <-- TAMBAHKAN INI
+        'payment_type',        // <-- TAMBAHKAN INI
+        'status_pembayaran',   // <-- TAMBAHKAN INI
     ];
+
     protected $casts = [
         'tanggal' => 'datetime',
+        'total' => 'float',
+        'dibayar' => 'float',
+        'kembalian' => 'float',
+        // Tambahkan casting untuk kolom enum jika diperlukan, atau biarkan string
+        'status_pembayaran' => 'string', // atau 'enum' jika Laravel versi baru mendukung
     ];
 
     public function detail()
@@ -30,7 +39,6 @@ class TransaksiOffline extends Model
         return $this->hasMany(TransaksiOfflineDetail::class, 'transaksi_id');
     }
 
-    // TransaksiOffline.php
     public function pelanggan()
     {
         return $this->belongsTo(User::class, 'pelanggan_id');

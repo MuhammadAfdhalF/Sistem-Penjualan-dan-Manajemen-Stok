@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Tidak selalu perlu di webhook, tapi biarkan jika ada konteks lain
-use Illuminate\Support\Str; // Tidak selalu perlu di webhook, tapi biarkan
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Models\TransaksiOnline;
-use Midtrans\Snap; // Tidak perlu Snap::getSnapToken di webhook
-use Midtrans\Config; // Perlu untuk validasi notifikasi
+use Midtrans\Config; // Perlu untuk konfigurasi Midtrans
+use Midtrans\Notification; // Kelas Notification untuk verifikasi
 use Illuminate\Support\Facades\Log;
 use App\Models\Stok;
 use App\Models\TransaksiOnlineDetail;
@@ -16,15 +16,19 @@ use App\Models\Produk;
 use App\Models\Satuan;
 use App\Models\HargaProduk;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
-use App\Models\User; // Import model User untuk mengambil detail user
+use App\Models\User;
+use App\Models\PaymentLog; // Pastikan model PaymentLog di-import
 
 class MidtransController extends Controller
 {
-    public function sukses()
+    public function sukses(Request $request)
     {
+        // Ambil total transaksi dari query parameter 'amount'
+        $lastTransactionAmount = $request->query('amount', 0);
+
         return view('mobile.midtrans_sukses', [
-            'activeMenu' => null
+            'activeMenu' => null,
+            'last_transaction_amount' => $lastTransactionAmount // Teruskan ke view
         ]);
     }
 
@@ -136,7 +140,7 @@ class MidtransController extends Controller
         ];
 
         // Dapatkan token Snap dari Midtrans
-        $snapToken = Snap::getSnapToken($params);
+        $snapToken = \Midtrans\Snap::getSnapToken($params); // Gunakan \Midtrans\Snap karena sudah di-import di atas
 
         return response()->json([
             'token' => $snapToken,
@@ -148,27 +152,40 @@ class MidtransController extends Controller
     public function handleWebhook(Request $request)
     {
         Log::info('Webhook Midtrans diterima.');
-        $notif = file_get_contents("php://input");
-        $data = json_decode($notif);
 
-        $orderId = $data->order_id ?? null;
-        $transactionStatus = $data->transaction_status ?? null;
-        $fraudStatus = $data->fraud_status ?? null;
-        $grossAmount = $data->gross_amount ?? 0;
-        $paymentType = $data->payment_type ?? null;
-
-        Log::info("Webhook data: OrderID={$orderId}, Status={$transactionStatus}, FraudStatus={$fraudStatus}");
-
-        if (!$orderId || !$transactionStatus) {
-            Log::warning('Webhook: OrderID atau TransactionStatus kosong.', ['data' => $data]);
-            return response()->json(['status' => 'invalid'], 400);
-        }
-
-        // Konfigurasi Midtrans untuk verifikasi notifikasi (disarankan untuk keamanan)
+        // 1. Konfigurasi Midtrans untuk verifikasi notifikasi
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false) === 'true';
         Config::$isSanitized = true;
         Config::$is3ds = true;
+
+        // 2. Dapatkan notifikasi dari Midtrans
+        // Menggunakan Notification::init() untuk mendapatkan objek notifikasi
+        try {
+            $notif = new Notification();
+        } catch (\Exception $e) {
+            Log::error('Webhook: Gagal menginisialisasi Midtrans Notification: ' . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Failed to initialize Midtrans Notification'], 500);
+        }
+
+        $transactionStatus = $notif->transaction_status;
+        $orderId = $notif->order_id;
+        $fraudStatus = $notif->fraud_status;
+        $grossAmount = $notif->gross_amount;
+        $paymentType = $notif->payment_type;
+        $statusCode = $notif->status_code; // Tambahkan status code
+
+        Log::info("Webhook data: OrderID={$orderId}, Status={$transactionStatus}, FraudStatus={$fraudStatus}, PaymentType={$paymentType}, GrossAmount={$grossAmount}");
+
+        // 3. Verifikasi Signature Key (SANGAT PENTING UNTUK KEAMANAN)
+        // Midtrans SDK secara otomatis memverifikasi signature key saat objek Notification dibuat.
+        // Jika verifikasi gagal, exception akan dilempar.
+        // Namun, kita bisa menambahkan pengecekan eksplisit jika diperlukan, atau mengandalkan try-catch di atas.
+        // Untuk memastikan, kita bisa cek ulang order_id dan status
+        if (!$orderId || !$transactionStatus) {
+            Log::warning('Webhook: OrderID atau TransactionStatus kosong setelah inisialisasi Notification.', ['data' => $notif]);
+            return response()->json(['status' => 'invalid'], 400);
+        }
 
         DB::beginTransaction();
         try {
@@ -182,31 +199,39 @@ class MidtransController extends Controller
                 return response()->json(['status' => 'already paid'], 200);
             }
 
+            $statusPembayaranFinal = '';
+            $statusTransaksiFinal = '';
             $processCreationAndStock = false; // Flag untuk membuat transaksi dan mengurangi stok
-            $updateStatusOnly = false; // Flag untuk hanya mengupdate status transaksi yang sudah ada
+            $updateExistingTransaction = false; // Flag untuk hanya mengupdate status transaksi yang sudah ada
 
             if ($transactionStatus == 'capture') {
                 if ($paymentType == 'credit_card') {
                     if ($fraudStatus == 'accept') {
+                        $statusPembayaranFinal = 'lunas';
+                        $statusTransaksiFinal = 'diproses';
                         $processCreationAndStock = true;
                     } else {
-                        $updateStatusOnly = true; // Gagal karena fraud
+                        $statusPembayaranFinal = 'gagal'; // Gagal karena fraud
+                        $statusTransaksiFinal = 'gagal';
+                        $updateExistingTransaction = true;
                     }
                 }
             } elseif ($transactionStatus == 'settlement') {
+                $statusPembayaranFinal = 'lunas';
+                $statusTransaksiFinal = 'diproses';
                 $processCreationAndStock = true;
             } elseif ($transactionStatus == 'pending') {
-                // Jika transaksi belum ada, tidak ada aksi krusial.
-                // Jika transaksi sudah ada (misal dari pending sebelumnya), kita bisa update statusnya.
-                if ($transaksi) {
-                    $updateStatusOnly = true;
-                } else {
-                    Log::info('Webhook: Transaksi pending diterima dan belum ada di DB. Tidak ada aksi yang diambil saat ini.');
-                    DB::commit(); // Commit transaksi kosong jika tidak ada yang dilakukan
-                    return response()->json(['status' => 'ok']);
-                }
+                $statusPembayaranFinal = 'pending';
+                $statusTransaksiFinal = 'diproses';
+                $updateExistingTransaction = true; // Update status pending jika sudah ada
             } elseif ($transactionStatus == 'deny' || $transactionStatus == 'expire' || $transactionStatus == 'cancel') {
-                $updateStatusOnly = true; // Gagal
+                $statusPembayaranFinal = 'gagal';
+                $statusTransaksiFinal = 'gagal';
+                $updateExistingTransaction = true;
+            } else {
+                Log::warning('Webhook: Status transaksi tidak dikenal atau tidak ditangani: ' . $transactionStatus, ['order_id' => $orderId]);
+                DB::commit();
+                return response()->json(['status' => 'unhandled_status'], 200);
             }
 
             // --- Logika Kreasi Transaksi & Pengurangan Stok (HANYA UNTUK PAYMENT GATEWAY) ---
@@ -215,7 +240,8 @@ class MidtransController extends Controller
                     Log::info('Webhook: Pembayaran LUNAS, membuat TransaksiOnline baru dan mengurangi stok.');
 
                     // Dapatkan data yang dikirim di custom_fields
-                    $customFields = json_decode($data->custom_field1 ?? '{}', true); // Ambil dari custom_field1
+                    // Gunakan $notif->custom_field1 karena ini sudah diproses oleh Midtrans SDK
+                    $customFields = json_decode($notif->custom_field1 ?? '{}', true);
 
                     $userId = $customFields['user_id'] ?? null;
                     $metodePembayaranApp = $customFields['metode_pembayaran_app'] ?? 'payment_gateway';
@@ -225,7 +251,7 @@ class MidtransController extends Controller
                     $jenisPelanggan = $customFields['jenis_pelanggan'] ?? 'Individu';
 
                     if (!$userId) {
-                        Log::error('Webhook: User ID tidak ditemukan di custom_fields.', ['data' => $data]);
+                        Log::error('Webhook: User ID tidak ditemukan di custom_fields.', ['data' => $notif]);
                         DB::rollBack();
                         return response()->json(['status' => 'error', 'message' => 'User ID not found'], 400);
                     }
@@ -252,15 +278,17 @@ class MidtransController extends Controller
                             ->get();
 
                         foreach ($keranjangsFromDb as $kItem) {
+                            // Pastikan jumlah_json adalah array/objek yang bisa di-iterasi
+                            $jumlahJsonDecoded = is_string($kItem->jumlah_json) ? json_decode($kItem->jumlah_json, true) : $kItem->jumlah_json;
                             $produkItems[] = [
                                 'produk_id' => $kItem->produk_id,
-                                'jumlah_json' => $kItem->jumlah_json,
+                                'jumlah_json' => $jumlahJsonDecoded,
                             ];
                         }
                     }
 
                     if (empty($produkItems)) {
-                        Log::error('Webhook: Produk data tidak ditemukan dari custom_fields atau keranjang.', ['data' => $data]);
+                        Log::error('Webhook: Produk data tidak ditemukan dari custom_fields atau keranjang.', ['data' => $notif]);
                         DB::rollBack();
                         return response()->json(['status' => 'error', 'message' => 'Product data not found'], 400);
                     }
@@ -271,10 +299,10 @@ class MidtransController extends Controller
                         'kode_transaksi' => $orderId, // Gunakan orderId dari Midtrans
                         'tanggal' => now(),
                         'metode_pembayaran' => $metodePembayaranApp,
-                        'snap_token' => $data->snap_token ?? null, // Simpan snap token jika ada
+                        'snap_token' => $notif->snap_token ?? null, // Simpan snap token jika ada
                         'payment_type' => $paymentType,
-                        'status_pembayaran' => 'lunas',
-                        'status_transaksi' => 'diproses',
+                        'status_pembayaran' => $statusPembayaranFinal, // Gunakan status final yang sudah ditentukan
+                        'status_transaksi' => $statusTransaksiFinal, // Gunakan status final yang sudah ditentukan
                         'total' => $grossAmount, // Gunakan gross_amount dari Midtrans (total final)
                         'catatan' => $catatan,
                         'alamat_pengambilan' => $alamatPengambilan,
@@ -341,49 +369,79 @@ class MidtransController extends Controller
                         Log::info('Webhook: Keranjang pengguna dibersihkan.');
                     }
 
+                    // --- TAMBAHKAN LOGIKA PAYMENT_LOG DI SINI (SETELAH TRANSAKSI DIBUAT) ---
+                    PaymentLog::create([
+                        'transaksi_id' => $transaksi->id, // ID dari TransaksiOnline yang baru dibuat
+                        'gateway' => 'midtrans',
+                        'external_id' => $notif->transaction_id ?? null, // ID transaksi dari Midtrans
+                        'metode' => $paymentType,
+                        'status' => $transactionStatus, // Status dari Midtrans webhook
+                        'nominal' => $grossAmount,
+                        'response_payload' => json_encode($notif->getResponse()), // Simpan seluruh payload Midtrans
+                    ]);
+                    Log::info('Webhook: PaymentLog baru berhasil dibuat untuk transaksi: ' . $transaksi->kode_transaksi);
                 } else {
                     // Transaksi sudah ada di DB (misal dari status pending sebelumnya)
                     // Cukup update status pembayaran saja
                     $transaksi->update([
-                        'status_pembayaran' => 'lunas',
-                        'status_transaksi' => 'diproses',
-                        'snap_token' => $data->snap_token ?? $transaksi->snap_token,
+                        'status_pembayaran' => $statusPembayaranFinal,
+                        'status_transaksi' => $statusTransaksiFinal,
+                        'snap_token' => $notif->snap_token ?? $transaksi->snap_token,
                         'payment_type' => $paymentType ?? $transaksi->payment_type,
                         'total' => $grossAmount, // Update total jika ada perubahan
                     ]);
                     Log::info("Webhook: Transaksi {$orderId} diupdate dari pending ke LUNAS. Status Pembayaran: {$transaksi->status_pembayaran}, Status Transaksi: {$transaksi->status_transaksi}");
-                    // Stok dan keranjang diasumsikan sudah diproses jika transaksi sudah ada.
-                    // Jika Anda pernah membuat transaksi dengan status pending di awal dan mengurangi stok,
-                    // maka logika pengurangan stok tidak boleh diulang di sini.
+
+                    // --- TAMBAHKAN LOGIKA PAYMENT_LOG DI SINI (SETELAH TRANSAKSI DIUPDATE) ---
+                    // Menggunakan updateOrCreate agar jika sudah ada log untuk transaksi ini, diupdate.
+                    PaymentLog::updateOrCreate(
+                        [
+                            'transaksi_id' => $transaksi->id,
+                            'gateway' => 'midtrans',
+                            'external_id' => $notif->transaction_id ?? null, // Gunakan external_id dari Midtrans
+                        ],
+                        [
+                            'metode' => $paymentType,
+                            'status' => $transactionStatus,
+                            'nominal' => $grossAmount,
+                            'response_payload' => json_encode($notif->getResponse()),
+                        ]
+                    );
+                    Log::info('Webhook: PaymentLog berhasil diupdate/dibuat untuk transaksi: ' . $transaksi->kode_transaksi);
                 }
-            }
-            // --- Akhir Logika Kreasi Transaksi & Pengurangan Stok ---
+                session(['last_transaction_amount' => $grossAmount]); // Gunakan grossAmount dari Midtrans
 
-            // Logika untuk mengupdate status transaksi yang sudah ada menjadi gagal/pending
-            elseif ($transaksi && $updateStatusOnly) {
-                $statusPembayaranFinal = '';
-                $statusTransaksiFinal = '';
-
-                if ($transactionStatus == 'pending') {
-                    $statusPembayaranFinal = 'pending';
-                    $statusTransaksiFinal = 'diproses';
-                } elseif ($transactionStatus == 'deny' || $transactionStatus == 'expire' || $transactionStatus == 'cancel') {
-                    $statusPembayaranFinal = 'gagal';
-                    $statusTransaksiFinal = 'gagal';
-                } elseif ($transactionStatus == 'capture' && $paymentType == 'credit_card' && $fraudStatus != 'accept') {
-                    $statusPembayaranFinal = 'gagal';
-                    $statusTransaksiFinal = 'gagal';
-                }
-
+            } elseif ($transaksi && $updateExistingTransaction) {
+                // Logika untuk mengupdate status transaksi yang sudah ada menjadi gagal/pending
                 if (!empty($statusPembayaranFinal)) {
                     $transaksi->update([
                         'status_pembayaran' => $statusPembayaranFinal,
                         'status_transaksi' => $statusTransaksiFinal,
-                        'snap_token' => $data->snap_token ?? $transaksi->snap_token,
+                        'snap_token' => $notif->snap_token ?? $transaksi->snap_token,
                         'payment_type' => $paymentType ?? $transaksi->payment_type,
                     ]);
                     Log::info("Webhook: Transaksi {$orderId} diupdate. Status Pembayaran: {$transaksi->status_pembayaran}, Status Transaksi: {$transaksi->status_transaksi}");
+
+                    // --- TAMBAHKAN LOGIKA PAYMENT_LOG DI SINI (UNTUK STATUS LAINNYA) ---
+                    PaymentLog::updateOrCreate(
+                        [
+                            'transaksi_id' => $transaksi->id,
+                            'gateway' => 'midtrans',
+                            'external_id' => $notif->transaction_id ?? null,
+                        ],
+                        [
+                            'metode' => $paymentType,
+                            'status' => $transactionStatus,
+                            'nominal' => $grossAmount,
+                            'response_payload' => json_encode($notif->getResponse()),
+                        ]
+                    );
+                    Log::info('Webhook: PaymentLog berhasil diupdate/dibuat untuk transaksi: ' . $transaksi->kode_transaksi);
                 }
+            } else {
+                // Jika transaksi belum ada dan status bukan settlement/capture (misal pending pertama kali),
+                // atau status tidak ditangani, tidak ada yang dilakukan untuk transaksi.
+                Log::info('Webhook: Tidak ada aksi yang diambil untuk order_id ini atau status tidak memicu update krusial. OrderID: ' . $orderId . ', Status: ' . $transactionStatus);
             }
 
             DB::commit();

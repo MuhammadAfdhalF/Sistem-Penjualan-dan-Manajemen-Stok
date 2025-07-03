@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\User;
 use App\Models\Keuangan;
+use Illuminate\Support\Facades\Log;
+use App\Helpers\MidtransSnap;
+
 
 
 
@@ -59,9 +62,9 @@ class TransaksiOfflineController extends Controller
 
     public function create()
     {
-        $produk = Produk::with('satuans')->get();  // <- eager load relasi satuan
+        $produk = Produk::with(['satuans', 'hargaProduks'])->get();
         $pelanggans = User::where('role', 'pelanggan')->get();
-        $kode_transaksi = 'TX-' . now()->format('ymd-His');
+        $kode_transaksi = 'TX-OFF-' . now()->format('ymd-His') . '-' . strtoupper(Str::random(4));
         $tanggal = now();
 
         return view('transaksi_offline.create', compact('produk', 'pelanggans', 'kode_transaksi', 'tanggal'));
@@ -69,85 +72,146 @@ class TransaksiOfflineController extends Controller
 
     public function store(Request $request)
     {
-        \Log::info('produk_id:', $request->produk_id ?? []);
-        \Log::info('jumlah_json:', $request->jumlah_json ?? []);
-        \Log::info('harga_json:', $request->harga_json ?? []);
+        Log::info('Request input:', $request->all());
 
-        $request->validate([
+        $rules = [
             'kode_transaksi' => 'required|unique:transaksi_offline,kode_transaksi',
             'tanggal' => 'required|date',
             'jenis_pelanggan' => 'required|in:Individu,Toko Kecil',
             'total' => 'required|numeric',
-            'dibayar' => 'required|numeric',
-            'kembalian' => 'required|numeric',
             'pelanggan_id' => 'nullable|exists:users,id',
             'produk_id.*' => 'required|exists:produks,id',
             'jumlah_json.*' => 'required|string',
             'harga_json.*' => 'required|string',
-        ]);
+            'metode_pembayaran' => 'required|in:cash,payment_gateway',
+        ];
+
+        if ($request->metode_pembayaran === 'cash') {
+            $rules['dibayar'] = 'required|numeric';
+            $rules['kembalian'] = 'required|numeric';
+
+            $dibayar = floatval(str_replace(['.', ','], ['', '.'], $request->dibayar));
+            $total = floatval(str_replace(['.', ','], ['', '.'], $request->total));
+            if ($dibayar < $total) {
+                return back()->with('error', 'Jumlah dibayar tidak boleh kurang dari total.')->withInput();
+            }
+        }
+
+        $request->validate($rules);
 
         $sanitizeMoney = fn($val) => floatval(str_replace(['.', ','], ['', '.'], $val));
+        $totalTransaksi = $sanitizeMoney($request->total);
+        $kodeTransaksi = $request->kode_transaksi;
+        $jenisPelanggan = $request->jenis_pelanggan;
+        $pelangganId = $request->pelanggan_id;
+        $tanggalTransaksi = $request->tanggal;
 
+        $itemDetailsForMidtrans = [];
+        $produkDataRaw = [];
+
+        foreach ($request->produk_id as $i => $produkId) {
+            $jumlahArr = json_decode($request->jumlah_json[$i], true);
+            $hargaArr = json_decode($request->harga_json[$i], true);
+            if (!is_array($jumlahArr)) continue;
+
+            $produk = Produk::findOrFail($produkId);
+            $subtotalProduk = 0;
+
+            foreach ($jumlahArr as $satuanId => $qty) {
+                if ((int) $qty < 1) continue; // Hindari error Midtrans
+
+                $satuan = \App\Models\Satuan::find($satuanId);
+                if (!$satuan) continue;
+
+                $hargaSatuan = $sanitizeMoney($hargaArr[$satuanId] ?? 0);
+                $subtotalProduk += $qty * $hargaSatuan;
+
+                $itemDetailsForMidtrans[] = [
+                    'id' => $produk->id . '-' . $satuan->id,
+                    'price' => (int) $hargaSatuan,
+                    'quantity' => (int) $qty,
+                    'name' => substr($produk->nama_produk . ' (' . $satuan->nama_satuan . ')', 0, 50), // hindari nama terlalu panjang
+                ];
+            }
+
+            $produkDataRaw[] = [
+                'produk_id' => $produkId,
+                'jumlah_json' => $jumlahArr,
+                'harga_json' => $hargaArr,
+            ];
+        }
+
+        // === Payment Gateway ===
+        if ($request->metode_pembayaran === 'payment_gateway') {
+            $customer = [
+                'first_name' => 'Pelanggan Offline',
+                'email' => 'offline@example.com',
+                'phone' => '081234567890',
+            ];
+
+            if ($pelangganId && $userPelanggan = User::find($pelangganId)) {
+                $customer['first_name'] = $userPelanggan->nama;
+                $customer['email'] = $userPelanggan->email;
+                $customer['phone'] = $userPelanggan->no_hp;
+            }
+
+            $custom_fields = [
+                'custom_field1' => substr($kodeTransaksi, 0, 30),
+                'custom_field2' => substr($jenisPelanggan, 0, 30),
+                'custom_field3' => substr($tanggalTransaksi, 0, 30),
+            ];
+
+            try {
+                $snapToken = MidtransSnap::generateSnapToken(
+                    $kodeTransaksi,
+                    $totalTransaksi,
+                    $customer,
+                    $itemDetailsForMidtrans,
+                    $custom_fields
+                );
+
+                return response()->json([
+                    'snap_token' => $snapToken,
+                    'order_id' => $kodeTransaksi,
+                    'total' => $totalTransaksi,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Gagal generate Snap Token Midtrans: ' . $e->getMessage());
+                return response()->json(['error' => 'Gagal memproses pembayaran: ' . $e->getMessage()], 500);
+            }
+        }
+
+        // === Tunai ===
         try {
             DB::beginTransaction();
 
             $transaksi = TransaksiOffline::create([
-                'kode_transaksi' => $request->kode_transaksi,
-                'tanggal' => $request->tanggal,
-                'jenis_pelanggan' => $request->jenis_pelanggan,
-                'total' => $sanitizeMoney($request->total),
+                'kode_transaksi' => $kodeTransaksi,
+                'tanggal' => $tanggalTransaksi,
+                'jenis_pelanggan' => $jenisPelanggan,
+                'total' => $totalTransaksi,
                 'dibayar' => $sanitizeMoney($request->dibayar),
                 'kembalian' => $sanitizeMoney($request->kembalian),
-                'pelanggan_id' => $request->pelanggan_id ?? null,
+                'pelanggan_id' => $pelangganId,
+                'metode_pembayaran' => 'cash',
+                'status_pembayaran' => 'lunas',
             ]);
 
-            foreach ($request->produk_id as $i => $produkId) {
-                \Log::info("Processing produk index $i, produk_id: $produkId");
-
-                $rawJumlahJson = $request->jumlah_json[$i] ?? null;
-                $rawHargaJson = $request->harga_json[$i] ?? null;
-
-                \Log::info("Raw jumlah_json[$i]: " . json_encode($rawJumlahJson));
-                \Log::info("Raw harga_json[$i]: " . json_encode($rawHargaJson));
-
-                // Pastikan raw JSON berupa string sebelum decode
-                if (!is_string($rawJumlahJson) || !is_string($rawHargaJson)) {
-                    \Log::error("Invalid JSON string for produk_id $produkId, skipping...");
-                    continue;
-                }
-
-                $jumlahArr = json_decode($rawJumlahJson, true);
-                $hargaArr = json_decode($rawHargaJson, true);
-
-                \Log::info("Decoded jumlahArr:", (array) $jumlahArr);
-                \Log::info("Decoded hargaArr:", (array) $hargaArr);
-
-                if (
-                    json_last_error() !== JSON_ERROR_NONE ||
-                    empty($jumlahArr) || !is_array($jumlahArr) ||
-                    empty($hargaArr) || !is_array($hargaArr)
-                ) {
-                    \Log::error("JSON decode error or invalid array for produk_id $produkId, skipping...");
-                    continue;
-                }
+            foreach ($produkDataRaw as $item) {
+                $produkId = $item['produk_id'];
+                $jumlahArr = $item['jumlah_json'];
+                $hargaArr = $item['harga_json'];
 
                 $produk = Produk::findOrFail($produkId);
-
-                $subtotalTotal = 0;
+                $subtotalProduk = 0;
                 $totalJumlahUtama = 0;
 
                 foreach ($jumlahArr as $satuanId => $qty) {
                     $satuan = \App\Models\Satuan::find($satuanId);
-                    if (!$satuan) {
-                        \Log::warning("Satuan ID $satuanId tidak ditemukan, produk_id $produkId");
-                        continue;
-                    }
+                    if (!$satuan) continue;
 
-                    $hargaSatuanRaw = $hargaArr[$satuanId] ?? 0;
-                    $hargaSatuan = $sanitizeMoney($hargaSatuanRaw);
-
-                    $subtotal = $qty * $hargaSatuan;
-                    $subtotalTotal += $subtotal;
+                    $hargaSatuan = $hargaArr[$satuanId] ?? 0;
+                    $subtotalProduk += $qty * $hargaSatuan;
 
                     $konversi = $satuan->konversi_ke_satuan_utama ?? 1;
                     $totalJumlahUtama += $qty * $konversi;
@@ -158,7 +222,7 @@ class TransaksiOfflineController extends Controller
                     'produk_id' => $produkId,
                     'jumlah_json' => $jumlahArr,
                     'harga_json' => $hargaArr,
-                    'subtotal' => $subtotalTotal,
+                    'subtotal' => $subtotalProduk,
                 ]);
 
                 if ($produk->stok < $totalJumlahUtama) {
@@ -173,29 +237,28 @@ class TransaksiOfflineController extends Controller
                     'produk_id' => $produkId,
                     'jenis' => 'keluar',
                     'jumlah' => $totalJumlahUtama,
-                    'keterangan' => 'Transaksi penjualan ' . $transaksi->kode_transaksi,
+                    'keterangan' => 'Transaksi penjualan offline ' . $transaksi->kode_transaksi,
                 ]);
             }
 
-
             Keuangan::create([
                 'transaksi_id' => $transaksi->id,
-                'tanggal' => $request->tanggal,
+                'tanggal' => $tanggalTransaksi,
                 'jenis' => 'pemasukan',
                 'nominal' => $transaksi->total,
-                'keterangan' => 'Pemasukan dari transaksi #' . $transaksi->kode_transaksi,
+                'keterangan' => 'Pemasukan dari transaksi offline #' . $transaksi->kode_transaksi,
                 'sumber' => 'offline',
             ]);
 
             DB::commit();
-
             return redirect()->route('transaksi_offline.index')->with('success', 'Transaksi berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error saving transaksi offline: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal menyimpan transaksi: ' . $e->getMessage());
         }
     }
+
+
 
 
     public function edit($id)

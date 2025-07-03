@@ -72,10 +72,6 @@ Halaman Transaksi Offline
                 </div>
             </form>
 
-
-
-
-
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">
                     <thead>
@@ -85,8 +81,8 @@ Halaman Transaksi Offline
                             <th>Tanggal</th>
                             <th>Nama Pelanggan</th>
                             <th>Total</th>
-                            <th>Dibayar</th>
-                            <th>Kembalian</th>
+                            <th>Metode Pembayaran</th> {{-- Kolom baru --}}
+                            <th>Status Pembayaran</th> {{-- Kolom baru --}}
                             <th>Opsi</th>
                         </tr>
                     </thead>
@@ -96,15 +92,47 @@ Halaman Transaksi Offline
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->kode_transaksi }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y H:i') }}</td>
-                            <td>{{ $item->pelanggan?->nama ?? 'Bukan Member' }}</td> {{-- ✅ Ambil relasi nama pelanggan --}}
-
+                            <td>{{ $item->pelanggan?->nama ?? 'Bukan Member' }}</td>
                             <td>Rp {{ number_format($item->total, 0, ',', '.') }}</td>
-                            <td>Rp {{ number_format($item->dibayar, 0, ',', '.') }}</td>
-                            <td>Rp {{ number_format($item->kembalian, 0, ',', '.') }}</td>
+                            <td>
+                                {{-- Tampilkan metode pembayaran, jika payment_gateway, tampilkan juga payment_type --}}
+                                @if ($item->metode_pembayaran === 'payment_gateway')
+                                {{ ucwords(str_replace('_', ' ', $item->metode_pembayaran)) }}
+                                @if ($item->payment_type)
+                                <br><small>({{ ucwords(str_replace('_', ' ', $item->payment_type)) }})</small>
+                                @endif
+                                @else
+                                {{ ucwords(str_replace('_', ' ', $item->metode_pembayaran)) }}
+                                @endif
+                            </td>
+                            <td>
+                                @php
+                                $badgeClass = '';
+                                switch ($item->status_pembayaran) {
+                                case 'lunas':
+                                $badgeClass = 'bg-success';
+                                break;
+                                case 'pending':
+                                $badgeClass = 'bg-warning';
+                                break;
+                                case 'gagal':
+                                case 'expire':
+                                $badgeClass = 'bg-danger';
+                                break;
+                                default:
+                                $badgeClass = 'bg-secondary';
+                                break;
+                                }
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">{{ ucwords($item->status_pembayaran) }}</span>
+                            </td>
                             <td>
                                 <a href="{{ route('transaksi_offline.show', $item->id) }}" class="btn btn-info btn-sm" title="Lihat Detail">
                                     <i class="ti ti-eye"></i>
                                 </a>
+                                {{-- Tombol Edit dan Hapus hanya tampil jika status pembayaran belum "lunas" atau bukan "payment_gateway" --}}
+                                {{-- Atau sesuaikan logika bisnis Anda kapan transaksi boleh diedit/dihapus --}}
+                                @if ($item->status_pembayaran !== 'lunas' || $item->metode_pembayaran !== 'payment_gateway')
                                 <a href="{{ route('transaksi_offline.edit', $item->id) }}" class="btn btn-warning btn-sm">
                                     <i class="ti ti-edit"></i>
                                 </a>
@@ -113,6 +141,7 @@ Halaman Transaksi Offline
                                     data-bs-target="#confirmDeleteModal{{ $item->id }}">
                                     <i class="ti ti-trash"></i>
                                 </button>
+                                @endif
                             </td>
                         </tr>
 

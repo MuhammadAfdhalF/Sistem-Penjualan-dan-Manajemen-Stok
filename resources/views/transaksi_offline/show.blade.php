@@ -3,7 +3,7 @@
 @section('title', 'Detail Transaksi Offline')
 
 <head>
-     <title>Halaman Detail Transaksi Offline</title>
+    <title>Halaman Detail Transaksi Offline</title>
 </head>
 
 @section('content')
@@ -16,6 +16,40 @@
         <p><strong>Kode Transaksi:</strong> {{ $transaksi->kode_transaksi }}</p>
         <p><strong>Nama Pelanggan:</strong> {{ $transaksi->pelanggan?->nama ?? 'Bukan Member' }}</p>
         <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($transaksi->tanggal)->format('d-m-Y H:i') }}</p>
+        <p>
+            <strong>Metode Pembayaran:</strong>
+            @if ($transaksi->metode_pembayaran === 'payment_gateway')
+            {{ ucwords(str_replace('_', ' ', $transaksi->metode_pembayaran)) }}
+            @if ($transaksi->payment_type)
+            <br><small>({{ ucwords(str_replace('_', ' ', $transaksi->payment_type)) }})</small>
+            @endif
+            @else
+            {{ ucwords(str_replace('_', ' ', $transaksi->metode_pembayaran)) }}
+            @endif
+        </p>
+        <p>
+            <strong>Status Pembayaran:</strong>
+            @php
+            $badgeClass = '';
+            switch ($transaksi->status_pembayaran) {
+            case 'lunas':
+            $badgeClass = 'bg-success';
+            break;
+            case 'pending':
+            $badgeClass = 'bg-warning';
+            break;
+            case 'gagal':
+            case 'expire':
+            $badgeClass = 'bg-danger';
+            break;
+            default:
+            $badgeClass = 'bg-secondary';
+            break;
+            }
+            @endphp
+            <span class="badge {{ $badgeClass }}">{{ ucwords($transaksi->status_pembayaran) }}</span>
+        </p>
+
 
         <h5 class="mt-4">Detail Produk</h5>
         <table class="table table-bordered">
@@ -75,6 +109,8 @@
                     <td colspan="4" class="text-end"><strong>Total</strong></td>
                     <td><strong>Rp {{ number_format($transaksi->total, 0, ',', '.') }}</strong></td>
                 </tr>
+                {{-- Sembunyikan Dibayar dan Kembalian jika metode pembayaran adalah payment_gateway --}}
+                @if ($transaksi->metode_pembayaran !== 'payment_gateway')
                 <tr>
                     <td colspan="4" class="text-end"><strong>Dibayar</strong></td>
                     <td><strong>Rp {{ number_format($transaksi->dibayar, 0, ',', '.') }}</strong></td>
@@ -83,6 +119,7 @@
                     <td colspan="4" class="text-end"><strong>Kembalian</strong></td>
                     <td><strong>Rp {{ number_format($transaksi->kembalian, 0, ',', '.') }}</strong></td>
                 </tr>
+                @endif
             </tfoot>
         </table>
     </div>

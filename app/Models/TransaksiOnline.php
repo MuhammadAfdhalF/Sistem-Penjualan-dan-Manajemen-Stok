@@ -18,6 +18,8 @@ class TransaksiOnline extends Model
         'metode_pembayaran',  // Mengganti diambil_di_toko menjadi metode_pengambilan
         'status_pembayaran',
         'status_transaksi',
+        'snap_token', // <-- TAMBAHKAN INI
+        'payment_type', // <-- T
         'total',
         'catatan',
         'metode_pengambilan', // Menambahkan metode_pengambilan
