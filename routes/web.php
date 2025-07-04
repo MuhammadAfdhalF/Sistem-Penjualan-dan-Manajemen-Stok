@@ -33,7 +33,8 @@ use App\Http\Controllers\Mobile\KeranjangMobileController;
 use App\Http\Controllers\Mobile\ProfilePelangganController;
 use App\Http\Controllers\Mobile\ProsesTransaksiController;
 use App\Http\Controllers\Mobile\RiwayatBelanjaController;
-use Illuminate\Support\Facades\Artisan; 
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Artisan;
 use App\Models\HargaProduk;
 
 Route::get('/', function () {
@@ -100,6 +101,12 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 
     // Banner
     Route::resource('banner', BannerController::class);
+
+    // Rute untuk Ganti Password (khusus Admin)
+    Route::get('/ganti-password', [ProfileController::class, 'changePasswordForm'])->name('password.change');
+    Route::post('/ganti-password', [ProfileController::class, 'updatePassword'])->name('password.update');
+
+
 
     Route::post('/api/update-rop', function () {
         Artisan::call('produk:update-dailyusage-rop');
