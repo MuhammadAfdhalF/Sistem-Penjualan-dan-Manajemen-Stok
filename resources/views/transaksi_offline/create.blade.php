@@ -237,8 +237,8 @@
 
                     if (result.snap_token) {
                         window.snap.pay(result.snap_token, {
-                            onSuccess: function() {
-                                window.location.href = "/transaksi-offline/sukses";
+                            onSuccess: function(responseMidtrans) {
+                                window.location.href = result.redirect_url; // Menggunakan URL dari backend
                             },
                             onPending: function() {
                                 window.location.href = "/transaksi-offline/menunggu";

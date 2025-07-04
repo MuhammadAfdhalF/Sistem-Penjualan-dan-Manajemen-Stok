@@ -130,9 +130,6 @@ Halaman Transaksi Offline
                                 <a href="{{ route('transaksi_offline.show', $item->id) }}" class="btn btn-info btn-sm" title="Lihat Detail">
                                     <i class="ti ti-eye"></i>
                                 </a>
-                                {{-- Tombol Edit dan Hapus hanya tampil jika status pembayaran belum "lunas" atau bukan "payment_gateway" --}}
-                                {{-- Atau sesuaikan logika bisnis Anda kapan transaksi boleh diedit/dihapus --}}
-                                @if ($item->status_pembayaran !== 'lunas' || $item->metode_pembayaran !== 'payment_gateway')
                                 <a href="{{ route('transaksi_offline.edit', $item->id) }}" class="btn btn-warning btn-sm">
                                     <i class="ti ti-edit"></i>
                                 </a>
@@ -141,7 +138,6 @@ Halaman Transaksi Offline
                                     data-bs-target="#confirmDeleteModal{{ $item->id }}">
                                     <i class="ti ti-trash"></i>
                                 </button>
-                                @endif
                             </td>
                         </tr>
 

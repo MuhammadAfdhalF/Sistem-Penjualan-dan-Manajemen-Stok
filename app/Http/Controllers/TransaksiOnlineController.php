@@ -18,9 +18,13 @@ class TransaksiOnlineController extends Controller
     public function index(Request $request)
     {
         // Ambil semua user pelanggan untuk dropdown filter
-        $users = \App\Models\User::where('role', 'pelanggan')->orderBy('nama')->get();
+        $users = User::where('role', 'pelanggan')->orderBy('nama')->get();
 
-        $query = \App\Models\TransaksiOnline::with('user')->latest();
+        // Mulai query untuk TransaksiOnline
+        $query = TransaksiOnline::with('user')->latest();
+
+        // Filter: TIDAK MENAMPILKAN TRANSAKSI DENGAN STATUS PEMBAYARAN 'gagal'
+        $query->where('status_pembayaran', '!=', 'gagal');
 
         // Filter berdasarkan tanggal, bulan, tahun
         if ($request->filled('date')) {
@@ -42,7 +46,6 @@ class TransaksiOnlineController extends Controller
 
         return view('transaksi_online.index', compact('transaksis', 'users'));
     }
-
 
     public function create()
     {

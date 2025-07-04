@@ -18,7 +18,16 @@ Detail Transaksi Online
         <p><strong>Kode Transaksi:</strong> {{ $transaksiOnline->kode_transaksi }}</p>
         <p><strong>Pelanggan:</strong> {{ $transaksiOnline->user->nama ?? '-' }}</p>
         <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($transaksiOnline->tanggal)->format('d-m-Y H:i') }}</p>
-        <p><strong>Metode Pembayaran:</strong> {{ ucfirst(str_replace('_', ' ', $transaksiOnline->metode_pembayaran)) }}</p>
+        <p><strong>Metode Pembayaran:</strong>
+            @if ($transaksiOnline->metode_pembayaran === 'payment_gateway')
+            {{ ucfirst(str_replace('_', ' ', $transaksiOnline->metode_pembayaran)) }}
+            @if ($transaksiOnline->payment_type)
+            ({{ ucwords(str_replace('_', ' ', $transaksiOnline->payment_type)) }})
+            @endif
+            @else
+            {{ ucfirst(str_replace('_', ' ', $transaksiOnline->metode_pembayaran)) }}
+            @endif
+        </p>
         <p><strong>Status Pembayaran:</strong> {{ ucfirst($transaksiOnline->status_pembayaran) }}</p>
         <p><strong>Status Transaksi:</strong> {{ ucfirst($transaksiOnline->status_transaksi) }}</p>
         <p><strong>Metode Pengambilan:</strong> {{ ucfirst($transaksiOnline->metode_pengambilan) }}</p>
