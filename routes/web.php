@@ -107,7 +107,6 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
     Route::post('/ganti-password', [ProfileController::class, 'updatePassword'])->name('password.update');
 
 
-
     Route::post('/api/update-rop', function () {
         Artisan::call('produk:update-dailyusage-rop');
         // Anda bisa menambahkan logika logging atau notifikasi di sini

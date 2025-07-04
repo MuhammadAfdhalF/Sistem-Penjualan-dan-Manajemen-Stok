@@ -51,6 +51,7 @@
 </div>
 
 
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -78,25 +79,71 @@
                         datasets: [{
                             label: `Total ${tipe}`,
                             data: data,
-                            borderColor: tipe === 'pemasukan' ? '#28a745' : (tipe === 'pengeluaran' ? '#dc3545' : '#007bff'),
-                            backgroundColor: '#ffffff00',
-                            tension: 0.3,
-                            pointRadius: 4,
-                            fill: true
+                            borderColor: tipe === 'pemasukan' ? '#34D399' : (tipe === 'pengeluaran' ? '#EF4444' : '#60A5FA'),
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const { ctx, chartArea } = chart;
+                                if (!chartArea) {
+                                    return null;
+                                }
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                const color = tipe === 'pemasukan' ? '#34D399' : (tipe === 'pengeluaran' ? '#EF4444' : '#60A5FA');
+                                gradient.addColorStop(0, `${color}00`);
+                                gradient.addColorStop(0.5, `${color}40`);
+                                gradient.addColorStop(1, `${color}80`);
+                                return gradient;
+                            },
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: tipe === 'pemasukan' ? '#34D399' : (tipe === 'pengeluaran' ? '#EF4444' : '#60A5FA'),
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 7,
+                            pointHoverBackgroundColor: tipe === 'pemasukan' ? '#22C55E' : (tipe === 'pengeluaran' ? '#DC2626' : '#2563EB'),
+                            pointHoverBorderColor: '#fff',
+                            fill: true,
+                            borderWidth: 2,
                         }]
                     },
                     options: {
                         responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeInOutQuart'
+                        },
                         plugins: {
                             legend: {
                                 display: false
+                            },
+                            tooltip: {
+                                backgroundColor: '#333',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#666',
+                                borderWidth: 1,
+                                cornerRadius: 4,
+                                displayColors: false,
                             }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.08)',
+                                    drawBorder: false,
+                                },
                                 ticks: {
+                                    color: '#666',
                                     callback: v => 'Rp ' + v.toLocaleString('id-ID')
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.08)',
+                                    drawBorder: false,
+                                },
+                                ticks: {
+                                    color: '#666',
                                 }
                             }
                         }
