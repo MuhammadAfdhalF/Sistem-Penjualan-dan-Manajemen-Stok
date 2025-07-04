@@ -173,9 +173,9 @@
 
         #filterForm input.form-control,
         #filterForm select.form-select {
-            font-size: 0.53rem !important;
+            font-size: 0.6rem !important;
             padding: 2px 5px !important;
-            height: 26px !important;
+            height: 35px !important;
             border-radius: 7px !important;
             flex: 1 1 0 !important;
             min-width: 0 !important;
@@ -185,7 +185,7 @@
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             overflow: hidden !important;
-            max-width: 34vw !important;
+            max-width: 50vw !important;
         }
 
         #filterForm .btn-danger {
