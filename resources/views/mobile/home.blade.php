@@ -705,6 +705,7 @@
 @push('body')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Redirect produk-card
         document.querySelectorAll('.produk-card').forEach(function(card) {
             card.addEventListener('click', function(e) {
                 window.location = this.getAttribute('data-detail-url');
@@ -717,9 +718,26 @@
                 }
             });
         });
-    });
-    document.getElementById('kategoriSelect').addEventListener('change', function() {
-        document.getElementById('filterForm').submit();
+
+        // Submit kategori otomatis saat select berubah
+        document.getElementById('kategoriSelect').addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+
+        // ✅ Debounce untuk search input (auto submit setelah 500ms)
+        const searchInput = document.getElementById('searchInput');
+        const filterForm = document.getElementById('filterForm');
+        let debounceTimer;
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (searchInput.value.trim() !== '' || filterForm.querySelector('select[name="kategori"]').value !== '') {
+                    filterForm.submit();
+                }
+            }, 500);
+        });
     });
 </script>
+
 @endpush

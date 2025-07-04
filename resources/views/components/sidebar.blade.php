@@ -4,7 +4,7 @@
             <div class="m-header" style="background-color: white; border-bottom: 2px solid #ddd; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); height: 100px; padding: 10px 20px;">
                 <a class="b-brand text-primary d-flex text-decoration-none align-items-center">
                     <!-- Logo -->
-                    <img src="{{ asset('storage/logo/logo_kz.png') }}"
+                    <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}"
                         class="img-fluid logo-lg me-2"
                         style="width: 70px; height: auto;"
                         alt="Logo KZ Family">

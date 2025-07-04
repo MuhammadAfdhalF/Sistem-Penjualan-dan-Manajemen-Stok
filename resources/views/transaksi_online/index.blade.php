@@ -19,17 +19,19 @@ Halaman Transaksi Online
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="card-title mb-0">Data Transaksi Online</h4>
-            <a href="{{ route('transaksi_online.create') }}" class="btn btn-primary btn-sm">+ Tambah Transaksi</a>
         </div>
 
         <div class="card-body">
 
-            <form method="GET" class="row gx-2 gy-1 align-items-end mb-3 flex-wrap">
-                <div class="col-auto">
+            <form method="GET" class="row g-2 align-items-end mb-3">
+                {{-- Tanggal --}}
+                <div class="col-12 col-md-auto">
                     <label for="filter_date" class="form-label small mb-1">Tanggal</label>
                     <input type="date" id="filter_date" name="date" value="{{ request('date') }}" class="form-control form-control-sm">
                 </div>
-                <div class="col-auto">
+
+                {{-- Bulan --}}
+                <div class="col-6 col-md-auto">
                     <label for="filter_month" class="form-label small mb-1">Bulan</label>
                     <select id="filter_month" name="month" class="form-select form-select-sm">
                         <option value="">-- Semua Bulan --</option>
@@ -40,7 +42,9 @@ Halaman Transaksi Online
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+
+                {{-- Tahun --}}
+                <div class="col-6 col-md-auto">
                     <label for="filter_year" class="form-label small mb-1">Tahun</label>
                     <select id="filter_year" name="year" class="form-select form-select-sm">
                         <option value="">-- Semua Tahun --</option>
@@ -51,16 +55,22 @@ Halaman Transaksi Online
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+
+                {{-- Pelanggan --}}
+                <div class="col-12 col-md-auto">
                     <label for="filter_user" class="form-label small mb-1">Pelanggan</label>
                     <select id="filter_user" name="user_id" class="form-select form-select-sm">
                         <option value="">-- Semua Pelanggan --</option>
                         @foreach($users as $user)
-                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->nama }}</option>
+                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                            {{ $user->nama }}
+                        </option>
                         @endforeach
                     </select>
                 </div>
-                <div class="col-auto">
+
+                {{-- Metode Pengambilan --}}
+                <div class="col-12 col-md-auto">
                     <label for="filter_metode_pengambilan" class="form-label small mb-1">Metode Pengambilan</label>
                     <select id="filter_metode_pengambilan" name="metode_pengambilan" class="form-select form-select-sm">
                         <option value="">-- Semua Metode --</option>
@@ -68,15 +78,18 @@ Halaman Transaksi Online
                         <option value="diantar" {{ request('metode_pengambilan') == 'diantar' ? 'selected' : '' }}>Diantar</option>
                     </select>
                 </div>
-                <div class="col-auto d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary btn-sm px-2 py-1 me-1" style="font-size: 0.8rem;">
+
+                {{-- Tombol Aksi --}}
+                <div class="col-12 col-md-auto d-flex gap-1">
+                    <button type="submit" class="btn btn-primary btn-sm px-3 py-1">
                         <i class="ti ti-filter"></i>
                     </button>
-                    <a href="{{ route('transaksi_online.index') }}" class="btn btn-secondary btn-sm px-2 py-1" style="font-size: 0.8rem;">
+                    <a href="{{ route('transaksi_online.index') }}" class="btn btn-secondary btn-sm px-3 py-1">
                         <i class="ti ti-refresh"></i>
                     </a>
                 </div>
             </form>
+
 
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">

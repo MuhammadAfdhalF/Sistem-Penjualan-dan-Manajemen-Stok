@@ -33,7 +33,7 @@
 
             <!-- Logo + Headline -->
             <div class="flex flex-row items-center w-full mb-4 lg:mb-8">
-                <img src="{{ asset('storage/logo/logo_kz.png') }}" alt="Logo KZ" class="w-20 lg:w-28 h-auto">
+                <img src="{{ asset('storage/logo/LogoKZ_transparant.png') }}" alt="Logo KZ" class="w-20 lg:w-28 h-auto">
                 <h1 class="ml-4 text-[1.175rem] lg:text-[1.675rem] font-extrabold text-black text-left" style="font-family: 'Liita', sans-serif;">
                     Selamat datang di Toko KZ Family
                 </h1>

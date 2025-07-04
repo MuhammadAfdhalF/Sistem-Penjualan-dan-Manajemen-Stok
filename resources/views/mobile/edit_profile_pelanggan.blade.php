@@ -55,16 +55,28 @@
             padding-top: 0 !important;
         }
     }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #6c757d;
+    }
 </style>
 
 <div class="container py-4" style="max-width: 1280px;">
-
     <form method="POST" action="{{ route('mobile.profile_pelanggan.update') }}" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <h5 class="text-center fw-bold mb-4 page-title">Edit Profil Anda</h5>
 
-        {{-- Tambahkan alert untuk pesan success/error --}}
+        {{-- ALERT --}}
         @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             {{ session('success') }}
@@ -89,7 +101,6 @@
         </div>
         @endif
 
-
         {{-- FOTO PROFIL --}}
         <div class="mb-4 text-center">
             <label for="foto_user" style="cursor: pointer; position: relative; display: inline-block;">
@@ -108,7 +119,6 @@
         </div>
 
         {{-- FORM --}}
-
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Nama</label>
             <input type="text" class="form-control @error('nama') is-invalid @enderror" name="nama" value="{{ old('nama', $user->nama) }}" required>
@@ -133,7 +143,6 @@
             @enderror
         </div>
 
-        {{-- Ganti input Umur dengan Tanggal Lahir --}}
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Tanggal Lahir</label>
             <input type="date" class="form-control @error('tanggal_lahir') is-invalid @enderror" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir?->format('Y-m-d')) }}" required>
@@ -161,9 +170,13 @@
             @enderror
         </div>
 
+        {{-- PASSWORD --}}
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Password Baru</label>
-            <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="Biarkan kosong jika tidak diubah">
+            <div class="password-wrapper">
+                <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" id="password" placeholder="Biarkan kosong jika tidak diubah">
+                <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
+            </div>
             @error('password')
             <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -171,26 +184,23 @@
 
         <div class="mb-3">
             <label class="form-label fw-semibold ms-2">Konfirmasi Password</label>
-            <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" placeholder="Ulangi password baru">
-            @error('password_confirmation') {{-- Pastikan ini juga dicek jika ada error --}}
+            <div class="password-wrapper">
+                <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" id="password_confirmation" placeholder="Ulangi password baru">
+                <i class="bi bi-eye-slash password-toggle" id="toggleConfirmPassword"></i>
+            </div>
+            @error('password_confirmation')
             <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
 
         <div class="d-flex justify-content-between mt-4">
-            <a href="{{ route('mobile.profile_pelanggan.index') }}" class="btn w-50 me-2 text-white fw-semibold" style="background-color: #BB2124;">
-                Batalkan
-            </a>
-            <button type="submit" class="btn w-50 ms-2 text-white fw-semibold" style="background-color: #0572BA;">
-                Update Profile
-            </button>
+            <a href="{{ route('mobile.profile_pelanggan.index') }}" class="btn w-50 me-2 text-white fw-semibold" style="background-color: #BB2124;">Batalkan</a>
+            <button type="submit" class="btn w-50 ms-2 text-white fw-semibold" style="background-color: #0572BA;">Simpan Data</button>
         </div>
-
     </form>
-
 </div>
 
-{{-- PREVIEW JS --}}
+{{-- SCRIPT PREVIEW DAN TOGGLE --}}
 @push('scripts')
 <script>
     function previewGambar(event) {
@@ -201,6 +211,31 @@
         };
         reader.readAsDataURL(event.target.files[0]);
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const confirmPassword = document.getElementById('password_confirmation');
+
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                this.classList.toggle('bi-eye');
+                this.classList.toggle('bi-eye-slash');
+            });
+        }
+
+        if (toggleConfirmPassword && confirmPassword) {
+            toggleConfirmPassword.addEventListener('click', function() {
+                const type = confirmPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+                confirmPassword.setAttribute('type', type);
+                this.classList.toggle('bi-eye');
+                this.classList.toggle('bi-eye-slash');
+            });
+        }
+    });
 </script>
 @endpush
 
