@@ -38,11 +38,12 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'root' => storage_path(''), // ✅ TEMPAT penyimpanan asli
+            'url' => env('APP_URL') . '/public/storage', // ✅ URL untuk akses publik
             'visibility' => 'public',
             'throw' => false,
         ],
+
 
         's3' => [
             'driver' => 's3',
