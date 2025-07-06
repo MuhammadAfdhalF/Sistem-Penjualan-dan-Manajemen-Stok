@@ -2,7 +2,8 @@
 
 return [
     'serverKey' => env('MIDTRANS_SERVER_KEY'),
-    'isProduction' => env('MIDTRANS_IS_PRODUCTION'),
-    'isSanitized' => env('MIDTRANS_IS_SANITIZED'),
-    'is3ds' => env('MIDTRANS_IS_3DS'),
+    // Pastikan env('MIDTRANS_IS_PRODUCTION') dikonversi ke boolean
+    'isProduction' => filter_var(env('MIDTRANS_IS_PRODUCTION'), FILTER_VALIDATE_BOOLEAN),
+    'isSanitized' => filter_var(env('MIDTRANS_IS_SANITIZED', true), FILTER_VALIDATE_BOOLEAN),
+    'is3ds' => filter_var(env('MIDTRANS_IS_3DS', true), FILTER_VALIDATE_BOOLEAN),
 ];

@@ -3,23 +3,23 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Mungkin tidak perlu di sini, tapi tidak masalah jika ada
-use Illuminate\Support\Str; // Digunakan untuk Str::contains
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Models\TransaksiOnline;
-use App\Models\TransaksiOffline; // Import model TransaksiOffline
+use App\Models\TransaksiOffline;
 use Midtrans\Config;
 use Midtrans\Notification;
 use Illuminate\Support\Facades\Log;
 use App\Models\Stok;
 use App\Models\TransaksiOnlineDetail;
-use App\Models\TransaksiOfflineDetail; // Import model TransaksiOfflineDetail
+use App\Models\TransaksiOfflineDetail;
 use App\Models\Produk;
 use App\Models\Satuan;
-use App\Models\HargaProduk; // Mungkin tidak perlu di sini
+use App\Models\HargaProduk;
 use Illuminate\Support\Facades\DB;
-use App\Models\User; // Mungkin tidak perlu di sini
+use App\Models\User;
 use App\Models\PaymentLog;
-use App\Models\Keuangan; // Import model Keuangan
+use App\Models\Keuangan;
 
 class MidtransController extends Controller
 {
@@ -34,9 +34,6 @@ class MidtransController extends Controller
         ]);
     }
 
-    // Metode getSnapToken ini sekarang hanya menerima data yang sudah siap dari ProsesTransaksiController
-    // Metode ini tidak perlu diubah karena sudah sesuai dengan alur baru:
-    // Hanya menerima data, menyiapkan parameter Midtrans, dan mengembalikan snap token.
     public function getSnapToken(Request $request)
     {
         // 🔥 LOG PALING AWAL UNTUK DEBUGGING REQUEST DATA
@@ -56,11 +53,11 @@ class MidtransController extends Controller
             'item_details' => 'required|string', // Validasi sebagai string karena dikirim sebagai JSON.stringify
         ]);
 
-        // Konfigurasi Midtrans
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false) === 'true';
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        // Konfigurasi Midtrans - Ambil dari file config/midtrans.php
+        Config::$serverKey = config('midtrans.serverKey');
+        Config::$isProduction = config('midtrans.isProduction'); // Sekarang ini akan menjadi boolean
+        Config::$isSanitized = config('midtrans.isSanitized');
+        Config::$is3ds = config('midtrans.is3ds');
 
         $orderId = $request->order_id;
         $totalFinal = $request->total;
@@ -156,11 +153,16 @@ class MidtransController extends Controller
         Log::info('Webhook Midtrans diterima.');
         Log::info('Raw Webhook Payload: ' . $request->getContent());
 
-        // 1. Konfigurasi Midtrans untuk verifikasi notifikasi
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false) === 'true';
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+        // 1. Konfigurasi Midtrans untuk verifikasi notifikasi - Ambil dari file config/midtrans.php
+        Config::$serverKey = config('midtrans.serverKey');
+        Config::$isProduction = config('midtrans.isProduction'); // Sekarang ini akan menjadi boolean
+        Config::$isSanitized = config('midtrans.isSanitized');
+        Config::$is3ds = config('midtrans.is3ds');
+
+        // 🔥🔥🔥 TAMBAHKAN LOGGING INI DI SINI 🔥🔥🔥
+        Log::info('DEBUG: Config::$serverKey: ' . Config::$serverKey);
+        Log::info('DEBUG: Config::$isProduction: ' . (Config::$isProduction ? 'true' : 'false'));
+        // 🔥🔥🔥 AKHIR LOGGING TAMBAHAN 🔥🔥🔥
 
         // 2. Dapatkan notifikasi dari Midtrans
         try {

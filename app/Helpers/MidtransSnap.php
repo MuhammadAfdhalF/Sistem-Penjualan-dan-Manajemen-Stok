@@ -9,8 +9,9 @@ class MidtransSnap
 {
     public static function generateSnapToken($order_id, $gross_amount, $customerDetails, $itemDetails, $customFields = []) // Tambahkan $customFields
     {
+        // Ambil konfigurasi dari file config/midtrans.php
         Config::$serverKey = config('midtrans.serverKey');
-        Config::$isProduction = config('midtrans.isProduction');
+        Config::$isProduction = config('midtrans.isProduction'); // Ini akan menjadi boolean karena sudah dikonversi di config/midtrans.php
         Config::$isSanitized = config('midtrans.isSanitized');
         Config::$is3ds = config('midtrans.is3ds');
 
@@ -28,9 +29,6 @@ class MidtransSnap
         // Tambahkan custom_fields jika tidak kosong
         if (!empty($customFields)) {
             $params['custom_field1'] = json_encode($customFields); // Midtrans hanya support custom_field1, custom_field2, custom_field3
-            // $params['custom_field1'] = substr(json_encode($customFields), 0, 100);
-
-            // Anda bisa menggunakan salah satunya dan menyimpan semua data JSON di dalamnya.
         }
 
         return Snap::getSnapToken($params);
