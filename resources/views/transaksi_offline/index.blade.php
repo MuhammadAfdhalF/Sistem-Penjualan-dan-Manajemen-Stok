@@ -23,7 +23,7 @@ Halaman Transaksi Offline
         </div>
 
         <div class="card-body">
-
+            
             <form method="GET" action="{{ route('transaksi_offline.index') }}"
                 class="row row-cols-1 row-cols-md-auto g-2 mb-3 align-items-end flex-wrap">
                 <div class="col">
@@ -62,6 +62,15 @@ Halaman Transaksi Offline
                         @endforeach
                     </select>
                 </div>
+                {{-- Filter Metode Pembayaran (BARU) --}}
+                <div class="col">
+                    <label for="filter_metode" class="form-label small mb-1">Metode Bayar</label>
+                    <select id="filter_metode" name="metode_pembayaran" class="form-select form-select-sm">
+                        <option value="">-- Semua --</option>
+                        <option value="cash" {{ ($filterMetodePembayaran ?? '') == 'cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="payment_gateway" {{ ($filterMetodePembayaran ?? '') == 'payment_gateway' ? 'selected' : '' }}>Payment Gateway</option>
+                    </select>
+                </div>
                 <div class="col d-flex gap-1">
                     <button type="submit" class="btn btn-primary btn-sm px-2 py-1" style="font-size: 0.8rem;">
                         <i class="ti ti-filter"></i>
@@ -81,13 +90,13 @@ Halaman Transaksi Offline
                             <th>Tanggal</th>
                             <th>Nama Pelanggan</th>
                             <th>Total</th>
-                            <th>Metode Pembayaran</th> {{-- Kolom baru --}}
-                            <th>Status Pembayaran</th> {{-- Kolom baru --}}
+                            <th>Metode Pembayaran</th>
+                            <th>Status Pembayaran</th>
                             <th>Opsi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($transaksi as $index => $item)
+                        @forelse ($transaksi as $index => $item)
                         <tr>
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->kode_transaksi }}</td>
@@ -95,7 +104,6 @@ Halaman Transaksi Offline
                             <td>{{ $item->pelanggan?->nama ?? 'Bukan Member' }}</td>
                             <td>Rp {{ number_format($item->total, 0, ',', '.') }}</td>
                             <td>
-                                {{-- Tampilkan metode pembayaran, jika payment_gateway, tampilkan juga payment_type --}}
                                 @if ($item->metode_pembayaran === 'payment_gateway')
                                 {{ ucwords(str_replace('_', ' ', $item->metode_pembayaran)) }}
                                 @if ($item->payment_type)
@@ -109,19 +117,12 @@ Halaman Transaksi Offline
                                 @php
                                 $badgeClass = '';
                                 switch ($item->status_pembayaran) {
-                                case 'lunas':
-                                $badgeClass = 'bg-success';
-                                break;
-                                case 'pending':
-                                $badgeClass = 'bg-warning';
-                                break;
+                                case 'lunas': $badgeClass = 'bg-success'; break;
+                                case 'pending': $badgeClass = 'bg-warning'; break;
                                 case 'gagal':
                                 case 'expire':
-                                $badgeClass = 'bg-danger';
-                                break;
-                                default:
-                                $badgeClass = 'bg-secondary';
-                                break;
+                                $badgeClass = 'bg-danger'; break;
+                                default: $badgeClass = 'bg-secondary'; break;
                                 }
                                 @endphp
                                 <span class="badge {{ $badgeClass }}">{{ ucwords($item->status_pembayaran) }}</span>
@@ -141,7 +142,6 @@ Halaman Transaksi Offline
                             </td>
                         </tr>
 
-                        <!-- Modal Hapus -->
                         <div class="modal fade" id="confirmDeleteModal{{ $item->id }}" tabindex="-1" aria-labelledby="confirmDeleteModalLabel{{ $item->id }}" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -163,7 +163,11 @@ Halaman Transaksi Offline
                                 </div>
                             </div>
                         </div>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="8" class="text-center">Tidak ada data transaksi offline.</td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

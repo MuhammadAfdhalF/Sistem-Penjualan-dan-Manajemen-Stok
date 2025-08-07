@@ -4,24 +4,26 @@ namespace App\Http\Controllers;
 
 use App\Models\Stok;
 use App\Models\Produk;
+use App\Models\Satuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
-use App\Models\Satuan;
 
 class StokController extends Controller
 {
     public function index(Request $request)
     {
-        $query = \App\Models\Stok::with(['produk', 'satuan'])->orderByDesc('created_at');
+        $query = \App\Models\Stok::with(['produk', 'satuan'])
+            ->latest(); // sama dengan orderBy('created_at', 'desc')
 
         // Filter tanggal (format: yyyy-mm-dd)
         if ($request->date) {
             $query->whereDate('created_at', $request->date);
         }
+
         // Filter bulan & tahun
         if ($request->month) {
             $query->whereMonth('created_at', $request->month);
@@ -29,20 +31,29 @@ class StokController extends Controller
         if ($request->year) {
             $query->whereYear('created_at', $request->year);
         }
+
         // Filter nama produk (produk_id)
         if ($request->produk_id) {
             $query->where('produk_id', $request->produk_id);
         }
+
         // Filter jenis masuk/keluar
         if ($request->jenis) {
             $query->where('jenis', $request->jenis);
         }
 
+        // Ambil data stok
         $stok = $query->get();
 
         // Untuk dropdown produk dan tahun
-        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')->orderBy('nama_produk')->get();
-        $tahunTersedia = \App\Models\Stok::selectRaw('YEAR(created_at) as tahun')->distinct()->pluck('tahun')->toArray();
+        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')
+            ->orderBy('nama_produk')
+            ->get();
+
+        $tahunTersedia = \App\Models\Stok::selectRaw('YEAR(created_at) as tahun')
+            ->distinct()
+            ->pluck('tahun')
+            ->toArray();
 
         return view('stok.index', compact('stok', 'daftarProduk', 'tahunTersedia'));
     }
@@ -229,6 +240,69 @@ class StokController extends Controller
             return redirect()->route('stok.index')->with('success', 'Data stok berhasil dihapus.');
         } catch (\Exception $e) {
             return redirect()->route('stok.index')->with('error', 'Gagal menghapus data stok. Silakan coba lagi.');
+        }
+    }
+
+    public function createInitialStok($produk_id)
+    {
+        $produk = Produk::with('satuans')->findOrFail($produk_id);
+        $satuans = $produk->satuans;
+
+        return view('stok.create-initial', compact('produk', 'satuans'));
+    }
+
+    public function storeInitialStok(Request $request)
+    {
+        $request->validate([
+            'produk_id' => 'required|exists:produks,id',
+            'stok_awal.*.jumlah' => 'nullable|numeric|min:0',
+            'stok_awal.*.satuan_id' => 'required|exists:satuans,id',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $produk = Produk::findOrFail($request->produk_id);
+            $totalStokAwal = 0;
+            $keteranganGabungan = [];
+
+            // Hitung total stok dan buat string keterangan gabungan
+            foreach ($request->stok_awal as $stokData) {
+                $jumlah = floatval($stokData['jumlah'] ?? 0);
+                if ($jumlah > 0) {
+                    $satuan = Satuan::findOrFail($stokData['satuan_id']);
+                    $konversi = $satuan->konversi_ke_satuan_utama;
+
+                    $totalStokAwal += $jumlah * $konversi;
+
+                    $keteranganGabungan[] = $jumlah . ' ' . $satuan->nama_satuan;
+                }
+            }
+            // Gunakan implode untuk menggabungkan keterangan, pastikan tidak kosong
+            $keteranganAkhir = 'Stok awal produk baru masuk ' ;
+
+
+            // Buat satu entri stok untuk transaksi gabungan
+            if ($totalStokAwal >= 0) { // Gunakan >= 0 agar stok 0 juga tercatat jika memang itu tujuannya
+                Stok::create([
+                    'produk_id' => $produk->id,
+                    'jenis' => 'masuk',
+                    'jumlah' => $totalStokAwal,
+                    'keterangan' => $keteranganAkhir,
+                    'satuan_id' => null, // Tidak ada satu satuan spesifik
+                ]);
+            }
+
+            // Perbarui total stok produk
+            $produk->stok = $totalStokAwal;
+            $produk->save();
+
+            DB::commit();
+
+            return redirect()->route('produk.index')->with('success', 'Stok awal produk berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal menyimpan stok awal: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal menyimpan data. Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 }

@@ -13,7 +13,11 @@ class PelangganController extends Controller
     public function index()
     {
         try {
-            $pelanggan = User::where('role', 'pelanggan')->get();
+            // Ambil data pelanggan terbaru di atas
+            $pelanggan = User::where('role', 'pelanggan')
+                ->latest() // urutkan berdasarkan created_at desc
+                ->get();
+
             return view('pelanggan.index', compact('pelanggan'));
         } catch (\Exception $e) {
             Log::error('Gagal mengambil data pelanggan: ' . $e->getMessage());

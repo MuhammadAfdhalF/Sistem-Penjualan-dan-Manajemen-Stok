@@ -44,9 +44,18 @@ class TransaksiOfflineController extends Controller
             $query->where('pelanggan_id', $request->pelanggan_id);
         }
 
+        // Filter by metode_pembayaran (BARU DITAMBAHKAN)
+        if ($request->filled('metode_pembayaran')) {
+            $query->where('metode_pembayaran', $request->metode_pembayaran);
+        }
+
         $transaksi = $query->get();
 
-        return view('transaksi_offline.index', compact('transaksi', 'pelanggans'));
+        // Ambil nilai filter yang dipilih untuk dikirim kembali ke view
+        $filterMetodePembayaran = $request->metode_pembayaran;
+
+
+        return view('transaksi_offline.index', compact('transaksi', 'pelanggans', 'filterMetodePembayaran'));
     }
 
     public function show($id)

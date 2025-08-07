@@ -23,7 +23,7 @@ Halaman Transaksi Online
 
         <div class="card-body">
 
-            <form method="GET" class="row g-2 align-items-end mb-3">
+            <form method="GET" action="{{ route('transaksi_online.index') }}" class="row g-2 align-items-end mb-3">
                 {{-- Tanggal --}}
                 <div class="col-12 col-md-auto">
                     <label for="filter_date" class="form-label small mb-1">Tanggal</label>
@@ -69,6 +69,17 @@ Halaman Transaksi Online
                     </select>
                 </div>
 
+                {{-- Metode Pembayaran (BARU DITAMBAHKAN) --}}
+                <div class="col-12 col-md-auto">
+                    <label for="filter_metode_pembayaran" class="form-label small mb-1">Metode Pembayaran</label>
+                    <select id="filter_metode_pembayaran" name="metode_pembayaran" class="form-select form-select-sm">
+                        <option value="">-- Semua Metode --</option>
+                        <option value="payment_gateway" {{ ($filterMetodePembayaran ?? '') == 'payment_gateway' ? 'selected' : '' }}>Payment Gateway</option>
+                        <option value="cod" {{ ($filterMetodePembayaran ?? '') == 'cod' ? 'selected' : '' }}>COD</option>
+                        <option value="bayar_di_toko" {{ ($filterMetodePembayaran ?? '') == 'bayar_di_toko' ? 'selected' : '' }}>Bayar di Toko</option>
+                    </select>
+                </div>
+                
                 {{-- Metode Pengambilan --}}
                 <div class="col-12 col-md-auto">
                     <label for="filter_metode_pengambilan" class="form-label small mb-1">Metode Pengambilan</label>
@@ -89,7 +100,6 @@ Halaman Transaksi Online
                     </a>
                 </div>
             </form>
-
 
             <div class="table-responsive">
                 <table class="table table-bordered" id="table">
@@ -117,19 +127,43 @@ Halaman Transaksi Online
                             </td>
                             <td>Rp {{ number_format($item->total, 0, ',', '.') }}</td>
                             <td>
-                                <span class="badge bg-{{ $item->status_pembayaran == 'lunas' ? 'success' : ($item->status_pembayaran == 'gagal' ? 'danger' : 'warning') }}">
-                                    {{ ucfirst($item->status_pembayaran) }}
+                                @php
+                                $statusPembayaran = $item->status_pembayaran;
+                                $metodePembayaran = $item->metode_pembayaran;
+                                $paymentType = $item->payment_type;
+
+                                $badgeClass = '';
+                                switch ($statusPembayaran) {
+                                    case 'lunas':
+                                        $badgeClass = 'bg-success';
+                                        break;
+                                    case 'pending':
+                                        $badgeClass = 'bg-warning';
+                                        break;
+                                    case 'gagal':
+                                        $badgeClass = 'bg-danger';
+                                        break;
+                                    default:
+                                        $badgeClass = 'bg-secondary';
+                                        break;
+                                }
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">
+                                    {{ ucfirst($statusPembayaran) }}
                                 </span>
+                                @if($metodePembayaran === 'payment_gateway' && $paymentType)
+                                <br><small>({{ ucwords(str_replace('_', ' ', $paymentType)) }})</small>
+                                @endif
                             </td>
                             <td>
                                 @if($item->status_transaksi == 'diproses')
-                                <span class="badge bg-warning text-dark">Sedang Diproses</span> {{-- Perubahan di sini --}}
+                                <span class="badge bg-warning text-dark">Sedang Diproses</span>
                                 @elseif($item->status_transaksi == 'diantar')
                                 <span class="badge bg-info text-dark">Sedang Diantar</span>
                                 @elseif($item->status_transaksi == 'diambil')
                                 <span class="badge bg-primary">Silahkan Diambil</span>
                                 @elseif($item->status_transaksi == 'selesai')
-                                <span class="badge bg-success">Pesanan Selesai</span> {{-- Perubahan di sini --}}
+                                <span class="badge bg-success">Pesanan Selesai</span>
                                 @elseif($item->status_transaksi == 'batal')
                                 <span class="badge bg-danger">{{ ucfirst($item->status_transaksi) }}</span>
                                 @else

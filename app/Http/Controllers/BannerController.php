@@ -9,19 +9,22 @@ use Illuminate\Support\Facades\Storage;
 
 class BannerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         try {
-            $banners = Banner::orderBy('urutan')->orderBy('id')->get();
+            // Urutkan berdasarkan urutan naik, lalu banner terbaru di atas untuk urutan yang sama
+            $banners = Banner::orderBy('urutan')
+                ->latest()
+                ->get();
+
             return view('banner.index', compact('banners'));
         } catch (\Exception $e) {
             Log::error('Gagal mengambil data banner: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Gagal menampilkan data banner.');
         }
     }
+
 
     /**
      * Show the form for creating a new resource.

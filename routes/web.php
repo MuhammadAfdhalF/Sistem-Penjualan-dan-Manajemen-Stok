@@ -64,6 +64,11 @@ Route::middleware(['auth', 'adminonly'])->group(function () {
 
     // produk
     Route::resource('produk', ProdukController::class);
+    // Rute untuk form terpadu
+    // Rute untuk halaman stok awal produk baru
+    Route::get('/produk/{produk_id}/stok-awal', [StokController::class, 'createInitialStok'])->name('produk.stok_awal.create');
+    // Rute untuk menyimpan stok awal produk baru
+    Route::post('/stok/store-initial', [StokController::class, 'storeInitialStok'])->name('stok.storeInitialStok');
 
     // satuan
     Route::resource('satuan', SatuanController::class);

@@ -42,9 +42,17 @@ class TransaksiOnlineController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
+        // Filter by metode_pembayaran (BARU DITAMBAHKAN)
+        if ($request->filled('metode_pembayaran')) {
+            $query->where('metode_pembayaran', $request->metode_pembayaran);
+        }
+
         $transaksis = $query->get();
 
-        return view('transaksi_online.index', compact('transaksis', 'users'));
+        // Ambil nilai filter yang dipilih untuk dikirim kembali ke view
+        $filterMetodePembayaran = $request->metode_pembayaran;
+
+        return view('transaksi_online.index', compact('transaksis', 'users', 'filterMetodePembayaran'));
     }
 
     public function create()

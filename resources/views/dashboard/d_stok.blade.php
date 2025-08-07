@@ -27,8 +27,17 @@
                 </tr>
             </thead>
             <tbody>
-                {{-- Gunakan @forelse untuk data produk dari controller --}}
-                @forelse ($produk as $item)
+                @php
+                // Urutkan produk: butuh reorder di atas, stok paling sedikit di atas
+                $produkTerurut = $produk->sortBy(function($item) {
+                return [
+                $item->isStokDiBawahROP() ? 0 : 1, // Prioritas: butuh reorder
+                $item->stok // Urut stok dari sedikit ke banyak
+                ];
+                });
+                @endphp
+
+                @forelse ($produkTerurut as $item)
                 <tr class="{{ $item->isStokDiBawahROP() ? 'table-danger' : '' }}">
                     <td class="py-2 px-2">{{ $item->nama_produk }}</td>
                     <td class="py-2 px-2">
@@ -71,9 +80,8 @@
         const updateRopBtn = document.getElementById('updateRopBtn');
         const updateStatus = document.getElementById('updateStatus');
 
-        if (updateRopBtn && updateStatus) { // Pastikan elemen ada sebelum menambahkan event listener
+        if (updateRopBtn && updateStatus) {
             updateRopBtn.addEventListener('click', function() {
-                // Nonaktifkan tombol dan tampilkan status loading
                 updateRopBtn.disabled = true;
                 updateRopBtn.textContent = 'Memperbarui ROP...';
                 updateStatus.classList.remove('hidden');
@@ -81,28 +89,18 @@
                 updateStatus.style.color = '#333';
                 updateStatus.style.backgroundColor = '#e0e0e0';
 
-                // Simulasikan panggilan backend asinkron
-                // Dalam aplikasi nyata, Anda akan melakukan panggilan AJAX ke endpoint Laravel
-                // yang akan memicu Artisan Command Anda di server.
-                // Contoh: fetch('/api/update-rop', { method: 'POST' })
-                // .then(response => response.json())
-                // .then(data => { /* tangani sukses */ })
-                // .catch(error => { /* tangani error */ });
-
                 setTimeout(() => {
-                    // Simulasikan keberhasilan pembaruan
                     updateStatus.textContent = 'ROP berhasil diperbarui!';
                     updateStatus.style.color = 'green';
-                    updateStatus.style.backgroundColor = '#d4edda'; // Warna hijau muda untuk sukses
+                    updateStatus.style.backgroundColor = '#d4edda';
 
-                    // Reset tombol setelah jeda singkat
                     setTimeout(() => {
                         updateRopBtn.disabled = false;
                         updateRopBtn.textContent = 'Update ROP';
                         updateStatus.classList.add('hidden');
-                        updateStatus.style.backgroundColor = ''; // Reset background
-                    }, 1000); // Sembunyikan pesan status setelah 2 detik
-                }, 1000); // Simulasikan waktu pemrosesan backend 3 detik
+                        updateStatus.style.backgroundColor = '';
+                    }, 1000);
+                }, 1000);
             });
         }
     });

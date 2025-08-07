@@ -39,9 +39,7 @@
                         Manajemen Stok
                     </li>
                     <x-sidebar.links title="Produk" icon="ti ti-package" route='produk.index' />
-                    <x-sidebar.links title="Satuan" icon="ti ti-basket" route='satuan.index' />
-                    <x-sidebar.links title="Harga Produk" icon="ti ti-cash" route='harga_produk.index' />
-                    <x-sidebar.links title="Stok" icon="ti ti-stack" route='stok.index' />
+                    <x-sidebar.links title="Mutasi Stok" icon="ti ti-stack" route='stok.index' />
 
                     <li class="pc-caption text-uppercase mt-0 mb-1 ps-3 fw-semibold" style="font-size: 0.65rem;">
                         Lain-lain
@@ -52,8 +50,6 @@
                     <x-sidebar.links title="Banner" icon="ti ti-photo" route="banner.index" />
 
                 </ul>
-
-
 
 
                 <!-- Logout di bawah -->

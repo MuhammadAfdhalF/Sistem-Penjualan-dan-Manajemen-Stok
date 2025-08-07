@@ -11,18 +11,25 @@ class SatuanController extends Controller
     public function index(Request $request)
     {
         // Ambil semua produk untuk filter dropdown
-        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')->orderBy('nama_produk')->get();
+        $daftarProduk = \App\Models\Produk::select('id', 'nama_produk')
+            ->orderBy('nama_produk')
+            ->get();
+
         $produkId = $request->produk_id;
 
-        // Query satuan, filter jika ada produk_id
-        $query = \App\Models\Satuan::with('produk');
+        // Query satuan, filter jika ada produk_id, dan urut terbaru di atas
+        $query = \App\Models\Satuan::with('produk')
+            ->latest(); // urut berdasarkan created_at desc
+
         if ($produkId) {
             $query->where('produk_id', $produkId);
         }
+
         $satuans = $query->get();
 
         return view('satuan.index', compact('satuans', 'daftarProduk', 'produkId'));
     }
+
 
 
     public function create()
